@@ -508,12 +508,12 @@ export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
     fabricBand = "Moderate";
   }
 
-  const validUValues: Array<[string, number | null]> = [
-    ["Walls", wallU],
-    ["Windows / glazing", windowU],
-    ["Floor", floorU],
-    ["Roof", roofU],
-  ].filter((item) => item[1] !== null);
+  const validUValues = [
+  ["Walls", wallU],
+  ["Windows / glazing", windowU],
+  ["Floor", floorU],
+  ["Roof", roofU],
+].filter((item): item is [string, number] => item[1] !== null);
 
   const biggestLossArea =
     validUValues.length > 0
