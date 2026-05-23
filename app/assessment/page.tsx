@@ -314,7 +314,9 @@ export default function AssessmentPage() {
             value={answers.country}
             options={COUNTRY_OPTIONS}
             onChange={(value) => {
-              const defaults = COUNTRY_DEFAULTS[value] ?? COUNTRY_DEFAULTS.Ireland;
+              const defaults =
+                COUNTRY_DEFAULTS[value] ?? COUNTRY_DEFAULTS.Ireland;
+
               setAnswers((current) => ({
                 ...current,
                 country: value,
