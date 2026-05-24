@@ -58,6 +58,38 @@ const defaultAnswers: EnergyAssessmentAnswers = {
   appliances: [],
 };
 
+type AiAssessment = {
+  top_energy_drains?: string[];
+  top_recommended_actions?: string[];
+  quick_wins?: string[];
+  bigger_upgrades?: string[];
+  extra_insights?: string[];
+  bottom_line?: string;
+};
+
+function AiList({
+  title,
+  items,
+}: {
+  title: string;
+  items?: string[];
+}) {
+  if (!items || items.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border bg-white p-4">
+      <h3 className="font-bold">{title}</h3>
+      <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-gray-700">
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function SelectField({
   label,
   value,
@@ -173,6 +205,11 @@ export default function AssessmentPage() {
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [aiErrorMessage, setAiErrorMessage] = useState("");
+  const [aiReportText, setAiReportText] = useState("");
+  const [aiReport, setAiReport] = useState<AiAssessment | null>(null);
+
   const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
   const countryDefaults =
     COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.Ireland;
@@ -185,6 +222,9 @@ export default function AssessmentPage() {
       ...current,
       [key]: value,
     }));
+
+    setAiReport(null);
+    setAiReportText("");
   }
 
   function updateFabricMeta(key: string, value: string) {
@@ -195,6 +235,9 @@ export default function AssessmentPage() {
         [key]: value,
       },
     }));
+
+    setAiReport(null);
+    setAiReportText("");
   }
 
   function toggleAppliance(category: string, appliance: string) {
@@ -226,6 +269,9 @@ export default function AssessmentPage() {
         ],
       };
     });
+
+    setAiReport(null);
+    setAiReportText("");
   }
 
   function updateAppliance(
@@ -239,6 +285,37 @@ export default function AssessmentPage() {
         item.appliance === appliance ? { ...item, [field]: value } : item
       ),
     }));
+
+    setAiReport(null);
+    setAiReportText("");
+  }
+
+  async function handleGenerateAiAssessment() {
+    setGeneratingAi(true);
+    setAiErrorMessage("");
+
+    const response = await fetch("/api/generate-assessment-ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        answers,
+        scores: analysis,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setGeneratingAi(false);
+      setAiErrorMessage(result.error || "Failed to generate AI assessment.");
+      return;
+    }
+
+    setAiReportText(result.reportText);
+    setAiReport(result.report);
+    setGeneratingAi(false);
   }
 
   async function handleSubmit() {
@@ -256,19 +333,37 @@ export default function AssessmentPage() {
       return;
     }
 
-    const { error } = await supabase.from("assessments").insert({
-      user_id: user.id,
-      answers,
-      scores: analysis,
-    });
+    const { data: savedAssessment, error } = await supabase
+      .from("assessments")
+      .insert({
+        user_id: user.id,
+        answers,
+        scores: analysis,
+      })
+      .select("id")
+      .single();
 
-    if (error) {
+    if (error || !savedAssessment) {
       setSaving(false);
-      setErrorMessage(error.message);
+      setErrorMessage(error?.message || "Failed to save assessment.");
       return;
     }
 
-    router.push("/dashboard");
+    if (aiReportText) {
+      const { error: reportError } = await supabase.from("reports").insert({
+        user_id: user.id,
+        assessment_id: savedAssessment.id,
+        report_text: aiReportText,
+      });
+
+      if (reportError) {
+        setSaving(false);
+        setErrorMessage(reportError.message);
+        return;
+      }
+    }
+
+    router.push(`/report/${savedAssessment.id}`);
     router.refresh();
   }
 
@@ -322,6 +417,9 @@ export default function AssessmentPage() {
                 country: value,
                 unit_rate: defaults.electricity_price,
               }));
+
+              setAiReport(null);
+              setAiReportText("");
             }}
           />
 
@@ -701,6 +799,61 @@ export default function AssessmentPage() {
         </div>
       </section>
 
+      <section className="mt-6 rounded-2xl border bg-white p-6 shadow-sm">
+        <h2 className="text-2xl font-bold">6. AI assessment</h2>
+
+        <p className="mt-2 max-w-3xl text-sm text-gray-600">
+          Generate a personalised Save Your EGO AI assessment before saving.
+          This uses the current home details, bills, fabric inputs, appliance
+          estimates and rule-based findings.
+        </p>
+
+        {aiErrorMessage && (
+          <p className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+            {aiErrorMessage}
+          </p>
+        )}
+
+        <button
+          type="button"
+          disabled={generatingAi}
+          onClick={handleGenerateAiAssessment}
+          className="mt-5 rounded-md bg-black px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {generatingAi ? "Generating AI assessment..." : "Generate AI assessment"}
+        </button>
+
+        {aiReport && (
+          <div className="mt-6 space-y-5">
+            <div className="rounded-xl border bg-green-50 p-5">
+              <h3 className="font-bold">Bottom line</h3>
+              <p className="mt-2 text-sm text-gray-800">
+                {aiReport.bottom_line}
+              </p>
+            </div>
+
+            <AiList
+              title="Top 3 likely energy drains"
+              items={aiReport.top_energy_drains}
+            />
+
+            <AiList
+              title="Top 3 recommended actions"
+              items={aiReport.top_recommended_actions}
+            />
+
+            <AiList title="Quick wins" items={aiReport.quick_wins} />
+
+            <AiList
+              title="Bigger upgrades"
+              items={aiReport.bigger_upgrades}
+            />
+
+            <AiList title="Extra insights" items={aiReport.extra_insights} />
+          </div>
+        )}
+      </section>
+
       {errorMessage && (
         <p className="mt-6 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
           {errorMessage}
@@ -722,7 +875,11 @@ export default function AssessmentPage() {
           onClick={handleSubmit}
           className="rounded-md bg-black px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Save assessment"}
+          {saving
+            ? "Saving..."
+            : aiReportText
+              ? "Save assessment and AI report"
+              : "Save assessment"}
         </button>
       </div>
     </main>
