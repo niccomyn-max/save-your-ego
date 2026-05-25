@@ -339,11 +339,11 @@ export default function AssessmentPage() {
       return;
     }
 
-    const tooLarge = selectedFiles.find((file) => file.size > 2_000_000);
+    const tooLarge = selectedFiles.find((file) => file.size > 10_000_000);
 
     if (tooLarge) {
       setPhotoErrorMessage(
-        "Please keep each photo under 2 MB for now. Smaller appliance label photos work best."
+        "Please keep each photo under 10 MB. Clear appliance label photos work best."
       );
       return;
     }
