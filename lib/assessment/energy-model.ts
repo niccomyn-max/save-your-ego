@@ -273,11 +273,27 @@ export type EnergyAssessmentAnswers = {
   has_battery: boolean;
   notes: string;
 
-  bill_frequency: string;
+    bill_frequency: string;
+
   avg_electricity_bill: number;
   unit_rate: number;
   standing_charge: number;
   annual_bill_override: number;
+
+  uses_gas: boolean;
+  avg_gas_bill: number;
+  gas_bill_frequency: string;
+  gas_unit_rate: number;
+  annual_gas_spend: number;
+  gas_boiler_age: string;
+  gas_heating_usage: string;
+
+  uses_oil: boolean;
+  oil_litres_per_year: number;
+  oil_price_per_litre: number;
+  annual_oil_spend: number;
+  oil_boiler_age: string;
+  oil_heating_usage: string;
 
   fabric_meta: Record<string, string>;
   wall_rating: string;

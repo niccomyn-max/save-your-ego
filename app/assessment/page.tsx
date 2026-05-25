@@ -40,6 +40,21 @@ const defaultAnswers: EnergyAssessmentAnswers = {
   standing_charge: 25,
   annual_bill_override: 0,
 
+  uses_gas: false,
+  avg_gas_bill: 0,
+  gas_bill_frequency: "Monthly",
+  gas_unit_rate: 0.12,
+  annual_gas_spend: 0,
+  gas_boiler_age: "Unknown",
+  gas_heating_usage: "Medium",
+
+  uses_oil: false,
+  oil_litres_per_year: 0,
+  oil_price_per_litre: 1.1,
+  annual_oil_spend: 0,
+  oil_boiler_age: "Unknown",
+  oil_heating_usage: "Medium",
+
   fabric_meta: {
     "Wall type": "Unknown",
     "Roof type": "Unknown",
@@ -469,7 +484,7 @@ export default function AssessmentPage() {
           <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
             Assessment focus
           </p>
-          <p className="mt-1 font-bold">Energy, cost and waste</p>
+          <p className="mt-1 font-bold">Electricity, Gas, Oil, cost and waste</p>
         </div>
       </div>
 
@@ -589,48 +604,184 @@ export default function AssessmentPage() {
       </section>
 
       <section className="mt-6 rounded-2xl border bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-bold">2. Bills and energy costs</h2>
+        <h2 className="text-2xl font-bold">2. Electricity, Gas and Oil costs</h2>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-3">
-          <SelectField
-            label="Billing frequency"
-            value={answers.bill_frequency}
-            options={BILLING_FREQUENCIES}
-            onChange={(value) => updateAnswer("bill_frequency", value)}
-          />
+        <p className="mt-2 text-sm text-gray-600">
+          Save Your EGO means Electricity, Gas and Oil. Add what you know.
+          Unknown values can be left at zero.
+        </p>
 
-          <NumberField
-            label={`Average electricity bill (${countryDefaults.currency})`}
-            value={answers.avg_electricity_bill}
-            min={0}
-            step={10}
-            onChange={(value) => updateAnswer("avg_electricity_bill", value)}
-          />
+        <div className="mt-6 rounded-xl border p-4">
+          <h3 className="text-lg font-bold">Electricity</h3>
 
-          <NumberField
-            label={`Electricity unit rate (${countryDefaults.currency}/kWh)`}
-            value={answers.unit_rate}
-            min={0.05}
-            max={2}
-            step={0.01}
-            onChange={(value) => updateAnswer("unit_rate", value)}
-          />
+          <div className="mt-4 grid gap-5 md:grid-cols-3">
+            <SelectField
+              label="Electricity billing frequency"
+              value={answers.bill_frequency}
+              options={BILLING_FREQUENCIES}
+              onChange={(value) => updateAnswer("bill_frequency", value)}
+            />
 
-          <NumberField
-            label={`Standing charge per bill (${countryDefaults.currency})`}
-            value={answers.standing_charge}
-            min={0}
-            step={1}
-            onChange={(value) => updateAnswer("standing_charge", value)}
-          />
+            <NumberField
+              label={`Average electricity bill (${countryDefaults.currency})`}
+              value={answers.avg_electricity_bill}
+              min={0}
+              step={10}
+              onChange={(value) => updateAnswer("avg_electricity_bill", value)}
+            />
 
-          <NumberField
-            label={`Annual electricity spend if known (${countryDefaults.currency})`}
-            value={answers.annual_bill_override}
-            min={0}
-            step={50}
-            onChange={(value) => updateAnswer("annual_bill_override", value)}
-          />
+            <NumberField
+              label={`Electricity unit rate (${countryDefaults.currency}/kWh)`}
+              value={answers.unit_rate}
+              min={0.05}
+              max={2}
+              step={0.01}
+              onChange={(value) => updateAnswer("unit_rate", value)}
+            />
+
+            <NumberField
+              label={`Standing charge per electricity bill (${countryDefaults.currency})`}
+              value={answers.standing_charge}
+              min={0}
+              step={1}
+              onChange={(value) => updateAnswer("standing_charge", value)}
+            />
+
+            <NumberField
+              label={`Annual electricity spend if known (${countryDefaults.currency})`}
+              value={answers.annual_bill_override}
+              min={0}
+              step={50}
+              onChange={(value) =>
+                updateAnswer("annual_bill_override", value)
+              }
+            />
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-xl border p-4">
+          <h3 className="text-lg font-bold">Gas</h3>
+
+          <div className="mt-4">
+            <ToggleField
+              label="Gas used in this home"
+              value={answers.uses_gas}
+              onChange={(value) => updateAnswer("uses_gas", value)}
+            />
+          </div>
+
+          {answers.uses_gas && (
+            <div className="mt-4 grid gap-5 md:grid-cols-3">
+              <SelectField
+                label="Gas billing frequency"
+                value={answers.gas_bill_frequency}
+                options={BILLING_FREQUENCIES}
+                onChange={(value) =>
+                  updateAnswer("gas_bill_frequency", value)
+                }
+              />
+
+              <NumberField
+                label={`Average gas bill (${countryDefaults.currency})`}
+                value={answers.avg_gas_bill}
+                min={0}
+                step={10}
+                onChange={(value) => updateAnswer("avg_gas_bill", value)}
+              />
+
+              <NumberField
+                label={`Gas unit rate if known (${countryDefaults.currency}/kWh)`}
+                value={answers.gas_unit_rate}
+                min={0}
+                step={0.01}
+                onChange={(value) => updateAnswer("gas_unit_rate", value)}
+              />
+
+              <NumberField
+                label={`Annual gas spend if known (${countryDefaults.currency})`}
+                value={answers.annual_gas_spend}
+                min={0}
+                step={50}
+                onChange={(value) => updateAnswer("annual_gas_spend", value)}
+              />
+
+              <SelectField
+                label="Gas boiler age"
+                value={answers.gas_boiler_age}
+                options={AGE_BANDS}
+                onChange={(value) => updateAnswer("gas_boiler_age", value)}
+              />
+
+              <SelectField
+                label="Gas heating usage"
+                value={answers.gas_heating_usage}
+                options={USAGE_LEVELS}
+                onChange={(value) =>
+                  updateAnswer("gas_heating_usage", value)
+                }
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 rounded-xl border p-4">
+          <h3 className="text-lg font-bold">Oil</h3>
+
+          <div className="mt-4">
+            <ToggleField
+              label="Oil used in this home"
+              value={answers.uses_oil}
+              onChange={(value) => updateAnswer("uses_oil", value)}
+            />
+          </div>
+
+          {answers.uses_oil && (
+            <div className="mt-4 grid gap-5 md:grid-cols-3">
+              <NumberField
+                label="Oil litres used per year if known"
+                value={answers.oil_litres_per_year}
+                min={0}
+                step={50}
+                onChange={(value) =>
+                  updateAnswer("oil_litres_per_year", value)
+                }
+              />
+
+              <NumberField
+                label={`Oil price per litre if known (${countryDefaults.currency})`}
+                value={answers.oil_price_per_litre}
+                min={0}
+                step={0.01}
+                onChange={(value) =>
+                  updateAnswer("oil_price_per_litre", value)
+                }
+              />
+
+              <NumberField
+                label={`Annual oil spend if known (${countryDefaults.currency})`}
+                value={answers.annual_oil_spend}
+                min={0}
+                step={50}
+                onChange={(value) => updateAnswer("annual_oil_spend", value)}
+              />
+
+              <SelectField
+                label="Oil boiler age"
+                value={answers.oil_boiler_age}
+                options={AGE_BANDS}
+                onChange={(value) => updateAnswer("oil_boiler_age", value)}
+              />
+
+              <SelectField
+                label="Oil heating usage"
+                value={answers.oil_heating_usage}
+                options={USAGE_LEVELS}
+                onChange={(value) =>
+                  updateAnswer("oil_heating_usage", value)
+                }
+              />
+            </div>
+          )}
         </div>
       </section>
 
@@ -826,7 +977,7 @@ export default function AssessmentPage() {
         <div className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-xl bg-gray-50 p-4">
             <p className="text-xs font-bold uppercase text-gray-500">
-              Bill-based annual use
+              Bill-based annual electricity use
             </p>
             <p className="mt-1 text-2xl font-bold">
               {analysis.estimatedBillKwh.toFixed(0)} kWh
@@ -883,8 +1034,9 @@ export default function AssessmentPage() {
 
         <p className="mt-2 max-w-3xl text-sm text-gray-600">
           Generate a personalised Save Your EGO AI assessment before saving.
-          This uses the current home details, bills, fabric inputs, appliance
-          estimates, optional appliance photos and rule-based findings.
+          This uses Electricity, Gas and Oil inputs, home details, bills,
+          fabric inputs, appliance estimates, optional appliance photos and
+          rule-based findings.
         </p>
 
         <div className="mt-5 rounded-xl border bg-gray-50 p-4">
