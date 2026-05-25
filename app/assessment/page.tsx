@@ -150,6 +150,7 @@ function NumberField({
         min={min}
         max={max}
         step={step}
+        onFocus={(event) => event.target.select()}
         onChange={(event) => onChange(Number(event.target.value))}
         className="rounded-md border px-3 py-2 font-normal"
       />
