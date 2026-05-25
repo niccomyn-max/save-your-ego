@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { GenerateReportButton } from "@/components/generate-report-button";
+import { PrintReportButton } from "@/components/print-report-button";
 
 type ReportPageProps = {
   params: Promise<{
@@ -109,9 +110,13 @@ async function ReportContent({ params }: ReportPageProps) {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <Link href="/dashboard" className="text-sm underline">
-        Back to dashboard
-      </Link>
+      <div className="flex items-center justify-between gap-4 print:hidden">
+  <Link href="/dashboard" className="text-sm underline">
+    Back to dashboard
+  </Link>
+
+  <PrintReportButton />
+</div>
 
       <div className="mt-6">
         <Image
