@@ -59,12 +59,19 @@ const defaultAnswers: EnergyAssessmentAnswers = {
 };
 
 type AiAssessment = {
+  photo_summary?: string;
   top_energy_drains?: string[];
   top_recommended_actions?: string[];
   quick_wins?: string[];
   bigger_upgrades?: string[];
   extra_insights?: string[];
   bottom_line?: string;
+};
+
+type UploadedPhoto = {
+  name: string;
+  mimeType: string;
+  dataUrl: string;
 };
 
 function AiList({
@@ -210,9 +217,18 @@ export default function AssessmentPage() {
   const [aiReportText, setAiReportText] = useState("");
   const [aiReport, setAiReport] = useState<AiAssessment | null>(null);
 
+  const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
+  const [photoErrorMessage, setPhotoErrorMessage] = useState("");
+
   const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
   const countryDefaults =
     COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.Ireland;
+
+  function clearAiReport() {
+    setAiReport(null);
+    setAiReportText("");
+    setAiErrorMessage("");
+  }
 
   function updateAnswer<K extends keyof EnergyAssessmentAnswers>(
     key: K,
@@ -223,8 +239,7 @@ export default function AssessmentPage() {
       [key]: value,
     }));
 
-    setAiReport(null);
-    setAiReportText("");
+    clearAiReport();
   }
 
   function updateFabricMeta(key: string, value: string) {
@@ -236,8 +251,7 @@ export default function AssessmentPage() {
       },
     }));
 
-    setAiReport(null);
-    setAiReportText("");
+    clearAiReport();
   }
 
   function toggleAppliance(category: string, appliance: string) {
@@ -270,8 +284,7 @@ export default function AssessmentPage() {
       };
     });
 
-    setAiReport(null);
-    setAiReportText("");
+    clearAiReport();
   }
 
   function updateAppliance(
@@ -286,36 +299,99 @@ export default function AssessmentPage() {
       ),
     }));
 
-    setAiReport(null);
-    setAiReportText("");
+    clearAiReport();
+  }
+
+  function fileToDataUrl(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("Could not read image file."));
+        }
+      };
+
+      reader.onerror = () => reject(new Error("Could not read image file."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handlePhotoUpload(files: FileList | null) {
+    setPhotoErrorMessage("");
+
+    if (!files || files.length === 0) {
+      setUploadedPhotos([]);
+      clearAiReport();
+      return;
+    }
+
+    const selectedFiles = Array.from(files).slice(0, 5);
+
+    const invalidFile = selectedFiles.find(
+      (file) => !["image/jpeg", "image/png", "image/jpg"].includes(file.type)
+    );
+
+    if (invalidFile) {
+      setPhotoErrorMessage("Please upload JPG or PNG appliance photos only.");
+      return;
+    }
+
+    const tooLarge = selectedFiles.find((file) => file.size > 2_000_000);
+
+    if (tooLarge) {
+      setPhotoErrorMessage(
+        "Please keep each photo under 2 MB for now. Smaller appliance label photos work best."
+      );
+      return;
+    }
+
+    const convertedPhotos = await Promise.all(
+      selectedFiles.map(async (file) => ({
+        name: file.name,
+        mimeType: file.type,
+        dataUrl: await fileToDataUrl(file),
+      }))
+    );
+
+    setUploadedPhotos(convertedPhotos);
+    clearAiReport();
   }
 
   async function handleGenerateAiAssessment() {
     setGeneratingAi(true);
     setAiErrorMessage("");
 
-    const response = await fetch("/api/generate-assessment-ai", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        answers,
-        scores: analysis,
-      }),
-    });
+    try {
+      const response = await fetch("/api/generate-assessment-ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          answers,
+          scores: analysis,
+          photos: uploadedPhotos,
+        }),
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setGeneratingAi(false);
+        setAiErrorMessage(result.error || "Failed to generate AI assessment.");
+        return;
+      }
+
+      setAiReportText(result.reportText);
+      setAiReport(result.report);
       setGeneratingAi(false);
-      setAiErrorMessage(result.error || "Failed to generate AI assessment.");
-      return;
+    } catch {
+      setGeneratingAi(false);
+      setAiErrorMessage("Failed to generate AI assessment.");
     }
-
-    setAiReportText(result.reportText);
-    setAiReport(result.report);
-    setGeneratingAi(false);
   }
 
   async function handleSubmit() {
@@ -337,7 +413,10 @@ export default function AssessmentPage() {
       .from("assessments")
       .insert({
         user_id: user.id,
-        answers,
+        answers: {
+          ...answers,
+          uploaded_photo_count: uploadedPhotos.length,
+        },
         scores: analysis,
       })
       .select("id")
@@ -418,8 +497,7 @@ export default function AssessmentPage() {
                 unit_rate: defaults.electricity_price,
               }));
 
-              setAiReport(null);
-              setAiReportText("");
+              clearAiReport();
             }}
           />
 
@@ -805,8 +883,50 @@ export default function AssessmentPage() {
         <p className="mt-2 max-w-3xl text-sm text-gray-600">
           Generate a personalised Save Your EGO AI assessment before saving.
           This uses the current home details, bills, fabric inputs, appliance
-          estimates and rule-based findings.
+          estimates, optional appliance photos and rule-based findings.
         </p>
+
+        <div className="mt-5 rounded-xl border bg-gray-50 p-4">
+          <h3 className="font-bold">Optional appliance photos</h3>
+
+          <p className="mt-2 text-sm text-gray-600">
+            Upload up to 5 appliance photos, rating plates, labels or controls.
+            These photos are used for this AI assessment only and are not stored
+            permanently yet.
+          </p>
+
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/jpg"
+            multiple
+            onChange={(event) => handlePhotoUpload(event.target.files)}
+            className="mt-4 block w-full text-sm"
+          />
+
+          {photoErrorMessage && (
+            <p className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+              {photoErrorMessage}
+            </p>
+          )}
+
+          {uploadedPhotos.length > 0 && (
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              {uploadedPhotos.map((photo) => (
+                <div key={photo.name} className="rounded-lg border bg-white p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.dataUrl}
+                    alt={photo.name}
+                    className="h-36 w-full rounded-md object-cover"
+                  />
+                  <p className="mt-2 truncate text-xs text-gray-600">
+                    {photo.name}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {aiErrorMessage && (
           <p className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-700">
@@ -831,6 +951,15 @@ export default function AssessmentPage() {
                 {aiReport.bottom_line}
               </p>
             </div>
+
+            {aiReport.photo_summary && (
+              <div className="rounded-xl border bg-blue-50 p-5">
+                <h3 className="font-bold">Photo notes</h3>
+                <p className="mt-2 text-sm text-gray-800">
+                  {aiReport.photo_summary}
+                </p>
+              </div>
+            )}
 
             <AiList
               title="Top 3 likely energy drains"
