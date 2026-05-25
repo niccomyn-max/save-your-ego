@@ -318,13 +318,49 @@ export default function AssessmentPage() {
     clearAiReport();
   }
 
-  function fileToDataUrl(file: File) {
+  function compressImageToDataUrl(file: File) {
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
 
       reader.onload = () => {
+        const image = new window.Image();
+
+        image.onload = () => {
+          const maxWidth = 1200;
+          const maxHeight = 1200;
+
+          let { width, height } = image;
+
+          if (width > height && width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const context = canvas.getContext("2d");
+
+          if (!context) {
+            reject(new Error("Could not compress image."));
+            return;
+          }
+
+          context.drawImage(image, 0, 0, width, height);
+
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.72);
+
+          resolve(compressedDataUrl);
+        };
+
+        image.onerror = () => reject(new Error("Could not load image."));
+
         if (typeof reader.result === "string") {
-          resolve(reader.result);
+          image.src = reader.result;
         } else {
           reject(new Error("Could not read image file."));
         }
@@ -344,7 +380,7 @@ export default function AssessmentPage() {
       return;
     }
 
-    const selectedFiles = Array.from(files).slice(0, 5);
+    const selectedFiles = Array.from(files).slice(0, 3);
 
     const invalidFile = selectedFiles.find(
       (file) => !["image/jpeg", "image/png", "image/jpg"].includes(file.type)
@@ -364,16 +400,22 @@ export default function AssessmentPage() {
       return;
     }
 
-    const convertedPhotos = await Promise.all(
-      selectedFiles.map(async (file) => ({
-        name: file.name,
-        mimeType: file.type,
-        dataUrl: await fileToDataUrl(file),
-      }))
-    );
+    try {
+      const convertedPhotos = await Promise.all(
+        selectedFiles.map(async (file) => ({
+          name: file.name,
+          mimeType: "image/jpeg",
+          dataUrl: await compressImageToDataUrl(file),
+        }))
+      );
 
-    setUploadedPhotos(convertedPhotos);
-    clearAiReport();
+      setUploadedPhotos(convertedPhotos);
+      clearAiReport();
+    } catch {
+      setPhotoErrorMessage(
+        "One or more photos could not be processed. Try using a clearer, smaller photo."
+      );
+    }
   }
 
   async function handleGenerateAiAssessment() {
@@ -1043,9 +1085,10 @@ export default function AssessmentPage() {
           <h3 className="font-bold">Optional appliance photos</h3>
 
           <p className="mt-2 text-sm text-gray-600">
-            Upload up to 5 appliance photos, rating plates, labels or controls.
-            These photos are used for this AI assessment only and are not stored
-            permanently yet.
+            Upload up to 3 appliance photos, rating plates, labels or controls.
+            The photos are compressed before analysis so they work better on
+            mobile connections. These photos are used for this AI assessment
+            only and are not stored permanently yet.
           </p>
 
           <input
