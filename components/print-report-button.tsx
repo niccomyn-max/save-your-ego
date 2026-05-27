@@ -2,6 +2,16 @@
 
 export function PrintReportButton() {
   function handlePrint() {
+    const originalTitle = document.title;
+
+    document.title = "Save Your EGO Home Energy Report";
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+
+    window.addEventListener("afterprint", restoreTitle);
     window.print();
   }
 

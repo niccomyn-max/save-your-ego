@@ -275,3 +275,109 @@ section {
     display: none !important;
   }
 }
+@media (max-width: 640px) {
+  main {
+    overflow-x: hidden;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  section {
+    border-radius: 1.25rem !important;
+  }
+
+  .mobile-sticky-action {
+    position: sticky;
+    bottom: 0;
+    z-index: 30;
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+    border-top: 1px solid rgba(219, 232, 242, 0.95);
+    background: rgba(255, 255, 255, 0.92);
+    padding: 1rem 1.5rem;
+    backdrop-filter: blur(14px);
+  }
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: white !important;
+    color: #172033 !important;
+  }
+
+  .report-page {
+    background: white !important;
+    padding: 0 !important;
+  }
+
+  .report-page > div {
+    max-width: 100% !important;
+  }
+
+  .report-cover {
+    box-shadow: none !important;
+    border: 1px solid #dbe8f2 !important;
+    page-break-after: avoid;
+  }
+
+  .report-section,
+  .report-disclaimer {
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .report-section {
+    margin-top: 14px !important;
+  }
+
+  button,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  pre,
+  details {
+    display: none !important;
+  }
+
+  a {
+    text-decoration: none !important;
+    color: inherit !important;
+  }
+}
+@media print {
+  * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .report-cover {
+    margin-bottom: 14px !important;
+  }
+
+  .report-cover,
+  .report-section,
+  .report-disclaimer {
+    border-color: #dbe8f2 !important;
+  }
+
+  .report-page {
+    background: #ffffff !important;
+  }
+
+  .report-section h2,
+  .report-disclaimer h2 {
+    color: #17356f !important;
+  }
+}
