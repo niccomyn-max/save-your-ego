@@ -27,6 +27,8 @@ export const HEATING_SYSTEMS = [
   "Other",
 ] as const;
 
+export const UNKNOWN_OPTION = "Unknown / Don't know";
+
 export const USAGE_LEVELS = ["Low", "Medium", "High"] as const;
 
 export const AGE_BANDS = [
@@ -37,6 +39,7 @@ export const AGE_BANDS = [
 ] as const;
 
 export const INSULATION_LEVELS = [
+  UNKNOWN_OPTION,
   "Poor",
   "Medium",
   "Good",
@@ -49,6 +52,44 @@ export const BILLING_FREQUENCIES = [
   "Quarterly",
   "Annual",
 ] as const;
+
+export const SOLAR_ROOF_ORIENTATIONS = [
+  UNKNOWN_OPTION,
+  "South-facing",
+  "South-east / South-west",
+  "East / West",
+  "North-facing",
+  "Multiple roof faces",
+] as const;
+
+export const SOLAR_ROOF_SHADING = [
+  UNKNOWN_OPTION,
+  "Little or no shading",
+  "Some shading",
+  "Heavy shading",
+] as const;
+
+export const SOLAR_ROOF_SPACE = [
+  UNKNOWN_OPTION,
+  "Small",
+  "Medium",
+  "Large",
+] as const;
+
+export const SOLAR_DAYTIME_USE = [
+  UNKNOWN_OPTION,
+  "Low",
+  "Medium",
+  "High",
+] as const;
+
+export const SOLAR_EV_STATUS = [
+  "No",
+  "Yes, already present",
+  "Planned",
+] as const;
+
+export const SOLAR_INTEREST = ["Yes", "Maybe", "No"] as const;
 
 export const COUNTRY_DEFAULTS: Record<
   string,
@@ -259,6 +300,15 @@ export type ApplianceRow = {
   notes: string;
 };
 
+export type SolarSuitability = {
+  rating: "Strong" | "Possible" | "Not first priority" | "Unknown";
+  suggested_system_size: string;
+  battery_view: string;
+  reason: string;
+  installer_questions: string[];
+  cautions: string[];
+};
+
 export type EnergyAssessmentAnswers = {
   country: string;
   property_type: string;
@@ -271,10 +321,17 @@ export type EnergyAssessmentAnswers = {
   occupants: number;
   has_solar: boolean;
   has_battery: boolean;
+
+  solar_roof_orientation: string;
+  solar_roof_shading: string;
+  solar_roof_space: string;
+  solar_daytime_use: string;
+  solar_ev_status: string;
+  solar_interest: string;
+
   notes: string;
 
-    bill_frequency: string;
-
+  bill_frequency: string;
   avg_electricity_bill: number;
   unit_rate: number;
   standing_charge: number;
@@ -323,7 +380,19 @@ export function getUValue(
     return manualValue && manualValue > 0 ? manualValue : null;
   }
 
+  if (rating === UNKNOWN_OPTION || rating === "Unknown") {
+    return null;
+  }
+
   return U_VALUE_DEFAULTS[elementName]?.[rating] ?? null;
+}
+
+function normaliseUsage(usage: string) {
+  if (usage === UNKNOWN_OPTION || usage === "Unknown") {
+    return "Medium";
+  }
+
+  return usage;
 }
 
 export function applianceEstimate(name: string, usage: string, age: string) {
@@ -333,7 +402,8 @@ export function applianceEstimate(name: string, usage: string, age: string) {
     return 0;
   }
 
-  const base = profile.kwh_year[usage] ?? 0;
+  const usageBand = normaliseUsage(usage);
+  const base = profile.kwh_year[usageBand] ?? profile.kwh_year.Medium ?? 0;
   const factor = AGE_FACTORS[age] ?? 1;
 
   return Math.round(base * factor * 10) / 10;
@@ -375,6 +445,9 @@ export function calculateScores(input: {
     improvementPoints += 1;
   } else if (input.glazing === "Double glazing") {
     heatLossPoints += 1;
+  } else if (input.glazing === "Unknown") {
+    heatLossPoints += 1;
+    improvementPoints += 1;
   }
 
   if (input.wall_u && input.wall_u > 0.6) {
@@ -448,8 +521,167 @@ export function calculateScores(input: {
   };
 }
 
+export function calculateSolarSuitability(input: {
+  annualElectricityKwh: number;
+  hasSolar: boolean;
+  hasBattery: boolean;
+  roofOrientation?: string;
+  roofShading?: string;
+  roofSpace?: string;
+  daytimeUse?: string;
+  evStatus?: string;
+  solarInterest?: string;
+  hasHeatPump: boolean;
+  hasEvAppliance: boolean;
+}): SolarSuitability {
+  if (input.hasSolar) {
+    return {
+      rating: "Not first priority",
+      suggested_system_size:
+        "Existing solar is already installed. Review monitoring, export, self-consumption and battery value before adding more capacity.",
+      battery_view: input.hasBattery
+        ? "A battery is already installed, so the priority is to check charging settings, tariff alignment and actual self-consumption."
+        : "A battery may be worth reviewing if evening use is high, but it should be priced separately from any PV expansion.",
+      reason:
+        "The home already has solar PV, so the next step is optimisation rather than treating solar as a new default recommendation.",
+      installer_questions: [
+        "What annual generation is the existing system actually producing?",
+        "How much of the generated electricity is used in the home versus exported?",
+        "Would extra panels or a battery improve payback, or would controls and tariff changes be better first?",
+      ],
+      cautions: [
+        "Do not assume extra solar capacity is worthwhile without checking inverter limits, export limits, roof space and usage pattern.",
+        "Battery value depends heavily on tariffs, evening demand and export rates.",
+        "Any roof or electrical work should be checked by a qualified installer.",
+      ],
+    };
+  }
+
+  let score = 0;
+
+  if (input.annualElectricityKwh >= 8000) {
+    score += 3;
+  } else if (input.annualElectricityKwh >= 5000) {
+    score += 2;
+  } else if (input.annualElectricityKwh >= 3000) {
+    score += 1;
+  }
+
+  if (
+    input.roofOrientation === "South-facing" ||
+    input.roofOrientation === "South-east / South-west"
+  ) {
+    score += 3;
+  } else if (
+    input.roofOrientation === "East / West" ||
+    input.roofOrientation === "Multiple roof faces"
+  ) {
+    score += 2;
+  } else if (input.roofOrientation === "North-facing") {
+    score -= 2;
+  }
+
+  if (input.roofShading === "Little or no shading") {
+    score += 2;
+  } else if (input.roofShading === "Some shading") {
+    score += 0;
+  } else if (input.roofShading === "Heavy shading") {
+    score -= 3;
+  }
+
+  if (input.roofSpace === "Large") {
+    score += 2;
+  } else if (input.roofSpace === "Medium") {
+    score += 1;
+  } else if (input.roofSpace === "Small") {
+    score -= 1;
+  }
+
+  if (input.daytimeUse === "High") {
+    score += 2;
+  } else if (input.daytimeUse === "Medium") {
+    score += 1;
+  }
+
+  if (
+    input.evStatus === "Yes, already present" ||
+    input.evStatus === "Planned" ||
+    input.hasHeatPump ||
+    input.hasEvAppliance
+  ) {
+    score += 1;
+  }
+
+  if (input.solarInterest === "No") {
+    score -= 2;
+  }
+
+  const hasUnknowns =
+    !input.roofOrientation ||
+    input.roofOrientation === UNKNOWN_OPTION ||
+    !input.roofShading ||
+    input.roofShading === UNKNOWN_OPTION ||
+    !input.roofSpace ||
+    input.roofSpace === UNKNOWN_OPTION;
+
+  let rating: SolarSuitability["rating"] = "Possible";
+
+  if (score >= 7) {
+    rating = "Strong";
+  } else if (score <= 1) {
+    rating = hasUnknowns ? "Unknown" : "Not first priority";
+  } else if (hasUnknowns) {
+    rating = "Unknown";
+  }
+
+  let suggestedSize = "A 3-5 kW system may be worth reviewing.";
+  if (input.annualElectricityKwh >= 12000) {
+    suggestedSize = "An 8-12 kW+ system may be worth reviewing if roof space, inverter limits and local rules allow.";
+  } else if (input.annualElectricityKwh >= 8000) {
+    suggestedSize = "A 6-9 kW system may be worth reviewing, especially if there is an EV, heat pump or strong daytime use.";
+  } else if (input.annualElectricityKwh >= 5000) {
+    suggestedSize = "A 4-7 kW system may be worth reviewing, depending on roof layout and daytime usage.";
+  } else if (input.annualElectricityKwh < 3000) {
+    suggestedSize = "A smaller 2-4 kW system may be more appropriate unless future electricity use is expected to rise.";
+  }
+
+  const batteryView =
+    input.daytimeUse === "High"
+      ? "A battery may be less urgent if much of the electricity can be used during daylight hours."
+      : "A battery may be useful if much of the home's electricity use happens in the evening, but it should be priced separately because payback varies widely.";
+
+  return {
+    rating,
+    suggested_system_size: suggestedSize,
+    battery_view: input.hasBattery
+      ? "A battery is already installed, so the priority is checking settings, charge/discharge timing and tariff alignment."
+      : batteryView,
+    reason:
+      rating === "Strong"
+        ? "The electricity use, likely demand profile and roof details suggest solar PV could be a strong candidate for review."
+        : rating === "Not first priority"
+          ? "Solar PV does not appear to be the first priority from the current inputs. Reducing demand or resolving roof constraints may matter more first."
+          : rating === "Unknown"
+            ? "Solar PV cannot be assessed confidently because key roof details are unknown. Orientation, shading and usable roof area should be checked first."
+            : "Solar PV may be worth reviewing, but the value depends on roof orientation, shading, usable roof area, tariffs and daytime electricity use.",
+    installer_questions: [
+      "What system size fits the usable roof area after allowing for shading, setbacks and roof obstructions?",
+      "What is the estimated annual generation based on the exact roof orientation and pitch?",
+      "How much of the generation is expected to be used in the home versus exported?",
+      "What does the payback look like with and without a battery?",
+      "Are there any panel, inverter, export, planning, roof condition or electrical upgrade constraints?",
+    ],
+    cautions: [
+      "This is an indicative sizing guide only, not a solar design.",
+      "Roof structure, shading, electrical capacity, export limits and local rules must be checked by a qualified installer.",
+      "Battery payback depends heavily on tariffs, usage pattern, evening demand and export rates.",
+      "The best first step is usually to reduce avoidable electricity demand before oversizing generation.",
+    ],
+  };
+}
+
 export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
-  const countryDefaults = COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.Ireland;
+  const countryDefaults = COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.US;
 
   const annualBillEstimate =
     answers.annual_bill_override > 0
@@ -525,11 +757,11 @@ export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
   }
 
   const validUValues = [
-  ["Walls", wallU],
-  ["Windows / glazing", windowU],
-  ["Floor", floorU],
-  ["Roof", roofU],
-].filter((item): item is [string, number] => item[1] !== null);
+    ["Walls", wallU],
+    ["Windows / glazing", windowU],
+    ["Floor", floorU],
+    ["Roof", roofU],
+  ].filter((item): item is [string, number] => item[1] !== null);
 
   const biggestLossArea =
     validUValues.length > 0
@@ -548,13 +780,29 @@ export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
     heating_system: answers.main_heating,
     avg_bill: answers.avg_electricity_bill,
     top_appliances: topAppliances,
-    has_ev: applianceRows.some((row) => row.appliance === "EV charger"),
+    has_ev:
+      applianceRows.some((row) => row.appliance === "EV charger") ||
+      answers.solar_ev_status === "Yes, already present",
     has_immersion: applianceRows.some(
       (row) => row.appliance === "Immersion heater"
     ),
     has_electric_shower: applianceRows.some(
       (row) => row.appliance === "Electric shower"
     ),
+  });
+
+  const solarSuitability = calculateSolarSuitability({
+    annualElectricityKwh: estimatedBillKwh,
+    hasSolar: answers.has_solar,
+    hasBattery: answers.has_battery,
+    roofOrientation: answers.solar_roof_orientation,
+    roofShading: answers.solar_roof_shading,
+    roofSpace: answers.solar_roof_space,
+    daytimeUse: answers.solar_daytime_use,
+    evStatus: answers.solar_ev_status,
+    solarInterest: answers.solar_interest,
+    hasHeatPump: answers.main_heating === "Heat pump",
+    hasEvAppliance: applianceRows.some((row) => row.appliance === "EV charger"),
   });
 
   const recommendations = buildRecommendations({
@@ -565,6 +813,8 @@ export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
     applianceRows,
     applianceKwh,
     estimatedBillKwh,
+    solarSuitability,
+    hasSolar: answers.has_solar,
   });
 
   const priorityRows = [
@@ -597,6 +847,7 @@ export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
     quickScores,
     recommendations,
     priorityRows,
+    solarSuitability,
   };
 }
 
@@ -608,6 +859,8 @@ function buildRecommendations(input: {
   applianceRows: ApplianceRow[];
   applianceKwh: number;
   estimatedBillKwh: number;
+  solarSuitability: SolarSuitability;
+  hasSolar: boolean;
 }) {
   const recommendations: string[] = [];
 
@@ -637,7 +890,7 @@ function buildRecommendations(input: {
     input.applianceRows.some(
       (row) =>
         row.appliance === "Immersion heater" &&
-        ["Medium", "High"].includes(row.usage)
+        ["Medium", "High"].includes(normaliseUsage(row.usage))
     )
   ) {
     recommendations.push(
@@ -647,7 +900,7 @@ function buildRecommendations(input: {
 
   if (
     input.applianceRows.some(
-      (row) => row.appliance === "Electric shower" && row.usage === "High"
+      (row) => row.appliance === "Electric shower" && normaliseUsage(row.usage) === "High"
     )
   ) {
     recommendations.push(
@@ -657,7 +910,9 @@ function buildRecommendations(input: {
 
   if (
     input.applianceRows.some(
-      (row) => row.appliance === "EV charger" && ["Medium", "High"].includes(row.usage)
+      (row) =>
+        row.appliance === "EV charger" &&
+        ["Medium", "High"].includes(normaliseUsage(row.usage))
     )
   ) {
     recommendations.push(
@@ -670,11 +925,21 @@ function buildRecommendations(input: {
       (row) =>
         ["Tumble dryer", "Washer-dryer", "Portable electric heater", "Hot tub"].includes(
           row.appliance
-        ) && row.usage === "High"
+        ) && normaliseUsage(row.usage) === "High"
     )
   ) {
     recommendations.push(
       "One or more high-load appliances are in heavy use. These may be the biggest quick-win area after obvious fabric issues."
+    );
+  }
+
+  if (
+    !input.hasSolar &&
+    (input.solarSuitability.rating === "Strong" ||
+      input.solarSuitability.rating === "Possible")
+  ) {
+    recommendations.push(
+      `Solar PV is a ${input.solarSuitability.rating.toLowerCase()} candidate for review. ${input.solarSuitability.suggested_system_size}`
     );
   }
 

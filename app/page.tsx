@@ -8,8 +8,10 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-white px-5 py-10">
-          <p>Loading Save Your EGO...</p>
+        <main className="min-h-screen bg-[#f7fbff] px-5 py-10">
+          <p className="text-sm font-semibold text-slate-600">
+            Loading Save Your EGO...
+          </p>
         </main>
       }
     >
@@ -28,7 +30,7 @@ async function HomeContent() {
   } = await supabase.auth.getUser();
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#f7fbff]">
+    <main className="min-h-screen overflow-hidden bg-[#f7fbff] text-[#050505]">
       <section className="relative px-5 py-6 sm:px-8 lg:px-12">
         <div className="absolute left-[-120px] top-[-120px] h-72 w-72 rounded-full bg-[#ffd600]/30 blur-3xl" />
         <div className="absolute right-[-120px] top-10 h-80 w-80 rounded-full bg-[#59b9ec]/30 blur-3xl" />
@@ -50,7 +52,7 @@ async function HomeContent() {
             {user ? (
               <Link
                 href="/dashboard"
-                className="rounded-full bg-[#17356f] px-4 py-2 text-sm font-bold text-white shadow-lg shadow-[#17356f]/20"
+                className="rounded-full bg-[#17356f] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black"
               >
                 Dashboard
               </Link>
@@ -58,13 +60,14 @@ async function HomeContent() {
               <>
                 <Link
                   href="/auth/login"
-                  className="hidden rounded-full px-4 py-2 text-sm font-bold text-[#17356f] sm:inline-flex"
+                  className="hidden rounded-full px-4 py-2 text-sm font-black text-[#17356f] transition hover:bg-[#e9f6fe] sm:inline-flex"
                 >
                   Log in
                 </Link>
+
                 <Link
                   href="/auth/sign-up"
-                  className="rounded-full bg-[#17356f] px-4 py-2 text-sm font-bold text-white shadow-lg shadow-[#17356f]/20"
+                  className="rounded-full bg-[#17356f] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black"
                 >
                   Start
                 </Link>
@@ -73,9 +76,9 @@ async function HomeContent() {
           </div>
         </nav>
 
-        <div className="relative z-10 mx-auto grid max-w-7xl gap-8 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-16">
+        <div className="relative z-10 mx-auto grid max-w-7xl gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-16">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#ffd600]/40 bg-white/80 px-4 py-2 text-sm font-bold text-[#17356f] shadow-sm backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#ffd600]/50 bg-white/80 px-4 py-2 text-sm font-black text-[#17356f] shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-[#ffd600]" />
               Electricity, Gas and Oil home energy AI
             </div>
@@ -90,30 +93,23 @@ async function HomeContent() {
               assessment you can save as a PDF.
             </p>
 
-            <div className="mt-7 flex flex-wrap gap-3">
-              <span className="rounded-full border border-[#ffd600]/50 bg-[#fff6bf] px-4 py-2 text-sm font-black text-[#6b5200]">
-                Electricity
-              </span>
-              <span className="rounded-full border border-[#59b9ec]/50 bg-[#e9f6fe] px-4 py-2 text-sm font-black text-[#17356f]">
-                Gas
-              </span>
-              <span className="rounded-full border border-black/10 bg-slate-100 px-4 py-2 text-sm font-black text-black">
-                Oil
-              </span>
-            </div>
+            <p className="mt-7 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
+              Covering Electricity, Gas and Oil
+            </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               {user ? (
                 <>
                   <Link
                     href="/assessment"
-                    className="rounded-2xl bg-[#17356f] px-6 py-4 text-center text-base font-black text-white shadow-xl shadow-[#17356f]/25 transition hover:-translate-y-0.5"
+                    className="rounded-2xl bg-[#17356f] px-6 py-4 text-center text-base font-black text-white shadow-xl shadow-[#17356f]/25 transition hover:-translate-y-0.5 hover:bg-black"
                   >
                     Start new assessment
                   </Link>
+
                   <Link
                     href="/dashboard"
-                    className="rounded-2xl border border-[#dbe8f2] bg-white/80 px-6 py-4 text-center text-base font-black text-[#17356f] shadow-sm backdrop-blur transition hover:-translate-y-0.5"
+                    className="rounded-2xl border border-[#dbe8f2] bg-white/80 px-6 py-4 text-center text-base font-black text-[#17356f] shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:bg-[#e9f6fe]"
                   >
                     View dashboard
                   </Link>
@@ -122,13 +118,14 @@ async function HomeContent() {
                 <>
                   <Link
                     href="/auth/sign-up"
-                    className="rounded-2xl bg-[#17356f] px-6 py-4 text-center text-base font-black text-white shadow-xl shadow-[#17356f]/25 transition hover:-translate-y-0.5"
+                    className="rounded-2xl bg-[#17356f] px-6 py-4 text-center text-base font-black text-white shadow-xl shadow-[#17356f]/25 transition hover:-translate-y-0.5 hover:bg-black"
                   >
                     Create account
                   </Link>
+
                   <Link
                     href="/auth/login"
-                    className="rounded-2xl border border-[#dbe8f2] bg-white/80 px-6 py-4 text-center text-base font-black text-[#17356f] shadow-sm backdrop-blur transition hover:-translate-y-0.5"
+                    className="rounded-2xl border border-[#dbe8f2] bg-white/80 px-6 py-4 text-center text-base font-black text-[#17356f] shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:bg-[#e9f6fe]"
                   >
                     Log in
                   </Link>
@@ -139,8 +136,8 @@ async function HomeContent() {
 
           <div className="relative">
             <div className="rounded-[2rem] border border-white/80 bg-white/85 p-4 shadow-2xl shadow-[#17356f]/10 backdrop-blur-xl sm:p-6">
-              <div className="rounded-[1.5rem] bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-[#050505] p-5 text-white">
-                <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#ffd600]">
+              <div className="rounded-[1.5rem] bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-[#050505] p-5 text-white sm:p-6">
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-[#ffd600]">
                   Your report
                 </p>
 
@@ -148,14 +145,14 @@ async function HomeContent() {
                   AI Energy Assessment
                 </h2>
 
-                <p className="mt-3 text-sm leading-6 text-white/75">
+                <p className="mt-3 text-sm leading-6 text-white/80">
                   Practical insights across Electricity, Gas and Oil, with
-                  appliance photo notes and a downloadable report.
+                  optional appliance photo analysis and a PDF-ready report.
                 </p>
 
                 <div className="mt-6 grid gap-3">
                   <div className="rounded-2xl bg-white/12 p-4 backdrop-blur">
-                    <p className="text-xs font-bold uppercase text-white/60">
+                    <p className="text-xs font-black uppercase text-white/60">
                       Likely energy drains
                     </p>
                     <p className="mt-1 text-lg font-black">
@@ -166,22 +163,28 @@ async function HomeContent() {
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-2xl bg-[#ffd600] p-4 text-black">
                       <p className="text-xs font-black">Electricity</p>
-                      <p className="mt-3 text-2xl font-black">AI</p>
+                      <p className="mt-3 text-lg font-black leading-tight">
+                        Usage review
+                      </p>
                     </div>
 
                     <div className="rounded-2xl bg-[#59b9ec] p-4 text-[#17356f]">
                       <p className="text-xs font-black">Gas</p>
-                      <p className="mt-3 text-2xl font-black">AI</p>
+                      <p className="mt-3 text-lg font-black leading-tight">
+                        Usage review
+                      </p>
                     </div>
 
                     <div className="rounded-2xl bg-white p-4 text-black">
                       <p className="text-xs font-black">Oil</p>
-                      <p className="mt-3 text-2xl font-black">AI</p>
+                      <p className="mt-3 text-lg font-black leading-tight">
+                        Usage review
+                      </p>
                     </div>
                   </div>
 
                   <div className="rounded-2xl bg-white p-4 text-black">
-                    <p className="text-xs font-bold uppercase text-slate-500">
+                    <p className="text-xs font-black uppercase text-slate-500">
                       Output
                     </p>
                     <p className="mt-1 text-lg font-black">
@@ -193,12 +196,10 @@ async function HomeContent() {
             </div>
 
             <div className="absolute -bottom-5 -left-3 rounded-2xl border border-white bg-white px-5 py-4 shadow-xl sm:-left-6">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              <p className="text-xs font-black uppercase tracking-wide text-slate-500">
                 Built for
               </p>
-              <p className="text-lg font-black text-[#17356f]">
-                Real households
-              </p>
+              <p className="text-lg font-black text-[#17356f]">Real homes</p>
             </div>
           </div>
         </div>
@@ -206,19 +207,23 @@ async function HomeContent() {
         <div className="relative z-10 mx-auto grid max-w-7xl gap-4 pb-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
             <p className="text-3xl font-black text-[#ffd600]">01</p>
-            <h3 className="mt-3 font-black text-slate-950">Enter home data</h3>
+            <h3 className="mt-3 font-black text-slate-950">
+              Enter home data
+            </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Capture property type, bills, fuel use, fabric and heating.
+              Capture property details, bills, fuel use, fabric, heating and
+              solar suitability.
             </p>
           </div>
 
           <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
             <p className="text-3xl font-black text-[#59b9ec]">02</p>
             <h3 className="mt-3 font-black text-slate-950">
-              Add appliance photos
+              Add appliance detail
             </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Upload rating plates or appliance images for AI review.
+              Select common appliances, add anything unusual and upload optional
+              appliance photos.
             </p>
           </div>
 
@@ -228,15 +233,19 @@ async function HomeContent() {
               Generate AI insight
             </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Get quick wins, likely drains and bigger upgrade options.
+              Get usage checks, likely drains, top priorities, costs, savings
+              and payback guidance.
             </p>
           </div>
 
           <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
             <p className="text-3xl font-black text-black">04</p>
-            <h3 className="mt-3 font-black text-slate-950">Save the report</h3>
+            <h3 className="mt-3 font-black text-slate-950">
+              Save the report
+            </h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Keep the result on your dashboard and export it as a PDF.
+              Keep the result on your dashboard and export a polished PDF-ready
+              report.
             </p>
           </div>
         </div>
