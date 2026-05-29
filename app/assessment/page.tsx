@@ -99,10 +99,7 @@ const AGE_BAND_OPTIONS = [
   ...AGE_BANDS.filter((option) => option !== "Unknown"),
 ];
 
-const USAGE_LEVEL_OPTIONS = [
-  UNKNOWN_OPTION,
-  ...USAGE_LEVELS.filter((option) => option !== UNKNOWN_OPTION),
-];
+const USAGE_LEVEL_OPTIONS = [UNKNOWN_OPTION, ...USAGE_LEVELS];
 
 type AiAssessment = {
   photo_summary?: string;
