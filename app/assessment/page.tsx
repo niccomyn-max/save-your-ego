@@ -101,6 +101,79 @@ const AGE_BAND_OPTIONS = [
 
 const USAGE_LEVEL_OPTIONS = [UNKNOWN_OPTION, ...USAGE_LEVELS];
 
+const APPLIANCE_LIBRARY_BASE = APPLIANCE_LIBRARY as Record<
+  string,
+  readonly string[]
+>;
+
+function mergeAppliances(category: string, extras: string[]) {
+  return Array.from(
+    new Set([...(APPLIANCE_LIBRARY_BASE[category] ?? []), ...extras]),
+  );
+}
+
+const APPLIANCE_LIBRARY_WITH_HOMEOWNER_EXTRAS: Record<
+  string,
+  readonly string[]
+> = {
+  ...APPLIANCE_LIBRARY_BASE,
+  Cooking: mergeAppliances("Cooking", ["Air fryer"]),
+  "Personal care": mergeAppliances("Personal care", [
+    "Hair straighteners / curling tongs",
+  ]),
+  "Laundry and cleaning": mergeAppliances("Laundry and cleaning", [
+    "Clothes iron",
+  ]),
+};
+
+function toHomeownerCopy(text?: string) {
+  if (!text) {
+    return "";
+  }
+
+  return text
+    .replace(/\bbuilding fabric\b/gi, "walls, roof, floors, windows and doors")
+    .replace(/\bfabric upgrades\b/gi, "home heat loss improvements")
+    .replace(/\bfabric upgrade\b/gi, "home heat loss improvement")
+    .replace(/\bfabric performance\b/gi, "how well the home keeps heat in")
+    .replace(/\bfabric inputs\b/gi, "home heat loss inputs")
+    .replace(/\bfabric\b/gi, "home heat loss")
+    .replace(/\bhome battery storage\b/gi, "__HOME_BATTERY_STORAGE__")
+    .replace(/\bsolar battery storage\b/gi, "__SOLAR_BATTERY_STORAGE__")
+    .replace(/\bbattery\b/gi, "home battery storage")
+    .replace(/__HOME_BATTERY_STORAGE__/g, "home battery storage")
+    .replace(/__SOLAR_BATTERY_STORAGE__/g, "solar battery storage")
+    .replace(
+      /Estimated cost:\s*(?:[$€£]\s*)?0\s*(?:-|–|—|to)\s*(?:[$€£]\s*)?50/gi,
+      "Cost: No purchase needed",
+    )
+    .replace(
+      /Cost:\s*(?:[$€£]\s*)?0\s*(?:-|–|—|to)\s*(?:[$€£]\s*)?50/gi,
+      "Cost: No purchase needed",
+    )
+    .replace(/Estimated cost:\s*(?:[$€£]\s*)?0\b/gi, "Cost: No purchase needed")
+    .replace(/Cost:\s*(?:[$€£]\s*)?0\b/gi, "Cost: No purchase needed")
+    .replace(/low\/no cost/gi, "no purchase needed or low-cost item");
+}
+
+function toHomeownerCopyList(items?: string[]) {
+  return items?.map((item) => toHomeownerCopy(item));
+}
+
+function cleanAiReport(report: AiAssessment): AiAssessment {
+  return {
+    photo_summary: toHomeownerCopy(report.photo_summary),
+    top_energy_drains: toHomeownerCopyList(report.top_energy_drains),
+    top_recommended_actions: toHomeownerCopyList(
+      report.top_recommended_actions,
+    ),
+    quick_wins: toHomeownerCopyList(report.quick_wins),
+    bigger_upgrades: toHomeownerCopyList(report.bigger_upgrades),
+    extra_insights: toHomeownerCopyList(report.extra_insights),
+    bottom_line: toHomeownerCopy(report.bottom_line),
+  };
+}
+
 type AiAssessment = {
   photo_summary?: string;
   top_energy_drains?: string[];
@@ -117,13 +190,7 @@ type UploadedPhoto = {
   dataUrl: string;
 };
 
-function AiList({
-  title,
-  items,
-}: {
-  title: string;
-  items?: string[];
-}) {
+function AiList({ title, items }: { title: string; items?: string[] }) {
   if (!items || items.length === 0) {
     return null;
   }
@@ -355,7 +422,7 @@ export default function AssessmentPage() {
 
   function updateAnswer<K extends keyof EnergyAssessmentAnswers>(
     key: K,
-    value: EnergyAssessmentAnswers[K]
+    value: EnergyAssessmentAnswers[K],
   ) {
     setAnswers((current) => ({
       ...current,
@@ -380,14 +447,14 @@ export default function AssessmentPage() {
   function toggleAppliance(category: string, appliance: string) {
     setAnswers((current) => {
       const alreadySelected = current.appliances.some(
-        (item) => item.appliance === appliance
+        (item) => item.appliance === appliance,
       );
 
       if (alreadySelected) {
         return {
           ...current,
           appliances: current.appliances.filter(
-            (item) => item.appliance !== appliance
+            (item) => item.appliance !== appliance,
           ),
         };
       }
@@ -419,8 +486,7 @@ export default function AssessmentPage() {
 
     setAnswers((current) => {
       const alreadySelected = current.appliances.some(
-        (item) =>
-          item.appliance.toLowerCase() === applianceName.toLowerCase()
+        (item) => item.appliance.toLowerCase() === applianceName.toLowerCase(),
       );
 
       if (alreadySelected) {
@@ -449,12 +515,12 @@ export default function AssessmentPage() {
   function updateAppliance(
     appliance: string,
     field: "age_band" | "usage" | "qty",
-    value: string | number
+    value: string | number,
   ) {
     setAnswers((current) => ({
       ...current,
       appliances: current.appliances.map((item) =>
-        item.appliance === appliance ? { ...item, [field]: value } : item
+        item.appliance === appliance ? { ...item, [field]: value } : item,
       ),
     }));
 
@@ -526,7 +592,7 @@ export default function AssessmentPage() {
     const selectedFiles = Array.from(files).slice(0, 3);
 
     const invalidFile = selectedFiles.find(
-      (file) => !["image/jpeg", "image/png", "image/jpg"].includes(file.type)
+      (file) => !["image/jpeg", "image/png", "image/jpg"].includes(file.type),
     );
 
     if (invalidFile) {
@@ -538,7 +604,7 @@ export default function AssessmentPage() {
 
     if (tooLarge) {
       setPhotoErrorMessage(
-        "Please keep each photo under 10 MB. Clear appliance label photos work best."
+        "Please keep each photo under 10 MB. Clear appliance label photos work best.",
       );
       return;
     }
@@ -549,14 +615,14 @@ export default function AssessmentPage() {
           name: file.name,
           mimeType: "image/jpeg",
           dataUrl: await compressImageToDataUrl(file),
-        }))
+        })),
       );
 
       setUploadedPhotos(convertedPhotos);
       clearAiReport();
     } catch {
       setPhotoErrorMessage(
-        "One or more photos could not be processed. Try using a clearer, smaller photo."
+        "One or more photos could not be processed. Try using a clearer, smaller photo.",
       );
     }
   }
@@ -586,8 +652,8 @@ export default function AssessmentPage() {
         return;
       }
 
-      setAiReportText(result.reportText);
-      setAiReport(result.report);
+      setAiReportText(toHomeownerCopy(result.reportText));
+      setAiReport(cleanAiReport(result.report));
       setGeneratingAi(false);
     } catch {
       setGeneratingAi(false);
@@ -672,8 +738,8 @@ export default function AssessmentPage() {
 
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
                 A practical home energy analyser for identifying likely energy
-                drains, reducing waste and improving household efficiency
-                across Electricity, Gas and Oil.
+                drains, reducing waste and improving household efficiency across
+                Electricity, Gas and Oil.
               </p>
 
               <p className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
@@ -825,7 +891,7 @@ export default function AssessmentPage() {
               />
 
               <ToggleField
-                label="Battery already installed"
+                label="Home battery storage already installed"
                 value={answers.has_battery}
                 onChange={(value) => updateAnswer("has_battery", value)}
               />
@@ -927,10 +993,15 @@ export default function AssessmentPage() {
 
                 <div className="rounded-2xl bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Battery view
+                    Home battery storage view
                   </p>
                   <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    {analysis.solarSuitability.battery_view}
+                    {toHomeownerCopy(analysis.solarSuitability.battery_view)}
+                  </p>
+                  <p className="mt-3 text-xs leading-5 text-slate-500">
+                    Home battery storage means a battery system for the house,
+                    usually used with solar PV to store spare electricity for
+                    later use.
                   </p>
                 </div>
               </div>
@@ -1045,9 +1116,7 @@ export default function AssessmentPage() {
                     label="Gas boiler age"
                     value={answers.gas_boiler_age}
                     options={AGE_BAND_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("gas_boiler_age", value)
-                    }
+                    onChange={(value) => updateAnswer("gas_boiler_age", value)}
                   />
 
                   <SelectField
@@ -1109,9 +1178,7 @@ export default function AssessmentPage() {
                     label="Oil boiler age"
                     value={answers.oil_boiler_age}
                     options={AGE_BAND_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("oil_boiler_age", value)
-                    }
+                    onChange={(value) => updateAnswer("oil_boiler_age", value)}
                   />
 
                   <SelectField
@@ -1129,8 +1196,8 @@ export default function AssessmentPage() {
 
           <SectionShell
             number="4"
-            title="Advanced home fabric details"
-            description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
+            title="Advanced home heat loss details"
+            description="Use simple ratings for how well the walls, roof, floors, windows and doors keep heat inside. Manual U-values can be added where known."
             accent="blue"
           >
             <div className="grid gap-5 md:grid-cols-2">
@@ -1160,9 +1227,7 @@ export default function AssessmentPage() {
                       value={answers.wall_u_manual}
                       min={0}
                       step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("wall_u_manual", value)
-                      }
+                      onChange={(value) => updateAnswer("wall_u_manual", value)}
                     />
                   </div>
                 )}
@@ -1226,9 +1291,7 @@ export default function AssessmentPage() {
                       value={answers.roof_u_manual}
                       min={0}
                       step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("roof_u_manual", value)
-                      }
+                      onChange={(value) => updateAnswer("roof_u_manual", value)}
                     />
                   </div>
                 )}
@@ -1243,7 +1306,7 @@ export default function AssessmentPage() {
             accent="black"
           >
             <div className="grid gap-5 md:grid-cols-2">
-              {Object.entries(APPLIANCE_LIBRARY).map(
+              {Object.entries(APPLIANCE_LIBRARY_WITH_HOMEOWNER_EXTRAS).map(
                 ([category, appliances]) => (
                   <div
                     key={category}
@@ -1254,7 +1317,7 @@ export default function AssessmentPage() {
                     <div className="mt-3 grid gap-2">
                       {appliances.map((appliance) => {
                         const checked = answers.appliances.some(
-                          (item) => item.appliance === appliance
+                          (item) => item.appliance === appliance,
                         );
 
                         return (
@@ -1276,7 +1339,7 @@ export default function AssessmentPage() {
                       })}
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
 
@@ -1384,7 +1447,7 @@ export default function AssessmentPage() {
 
               <PreviewCard
                 label="Main heat-loss area"
-                value={analysis.biggestLossArea}
+                value={toHomeownerCopy(analysis.biggestLossArea)}
                 colour="white"
               />
 
@@ -1401,7 +1464,9 @@ export default function AssessmentPage() {
                   key={label}
                   className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5"
                 >
-                  <p className="text-sm font-black text-slate-500">{label}</p>
+                  <p className="text-sm font-black text-slate-500">
+                    {toHomeownerCopy(label)}
+                  </p>
                   <p className="mt-1 text-2xl font-black text-[#17356f]">
                     {score}
                   </p>
@@ -1413,7 +1478,7 @@ export default function AssessmentPage() {
               <h3 className="font-black text-[#17356f]">Rule-based view</h3>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
                 {analysis.recommendations.slice(0, 6).map((item) => (
-                  <li key={item}>{item}</li>
+                  <li key={item}>{toHomeownerCopy(item)}</li>
                 ))}
               </ul>
             </div>
@@ -1422,7 +1487,7 @@ export default function AssessmentPage() {
           <SectionShell
             number="7"
             title="AI assessment"
-            description="Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
+            description="Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, home heat loss inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
             accent="blue"
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
@@ -1432,9 +1497,9 @@ export default function AssessmentPage() {
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Upload up to 3 appliance photos, rating plates, labels or
-                controls. The photos are compressed before analysis so they
-                work better on mobile connections. These photos are used for
-                this AI assessment only and are not stored permanently yet.
+                controls. The photos are compressed before analysis so they work
+                better on mobile connections. These photos are used for this AI
+                assessment only and are not stored permanently yet.
               </p>
 
               <input
@@ -1487,7 +1552,8 @@ export default function AssessmentPage() {
               <p className="mt-2 text-sm leading-6 text-slate-700">
                 This creates the detailed recommendations used in the final
                 report, including likely costs, savings, payback guidance and
-                next steps.
+                next steps. Behaviour changes are shown as no purchase needed,
+                rather than as a paid upgrade.
               </p>
 
               <button
