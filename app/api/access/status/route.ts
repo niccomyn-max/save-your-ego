@@ -1,10 +1,38 @@
-import { NextResponse } from "next/server";
-import { createClient as createAdminClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { connection, NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  await connection();
   try {
-    const supabase = await createClient();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
+      return NextResponse.json(
+        {
+          paidAccess: false,
+          error: "Server configuration missing",
+        },
+        { status: 500 }
+      );
+    }
+
+    const response = NextResponse.next();
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    });
 
     const {
       data: { user },
@@ -13,48 +41,35 @@ export async function GET() {
 
     if (userError || !user?.email) {
       return NextResponse.json({
-        loggedIn: false,
-        paid: false,
+        paidAccess: false,
+        authenticated: false,
       });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error("Missing Supabase environment variables for access check");
-
-      return NextResponse.json(
-        {
-          loggedIn: true,
-          paid: false,
-          error: "Server configuration error",
+    const adminSupabase = createSupabaseAdminClient(
+      supabaseUrl,
+      serviceRoleKey,
+      {
+        auth: {
+          persistSession: false,
         },
-        { status: 500 }
-      );
-    }
+      }
+    );
 
-    const admin = createAdminClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        persistSession: false,
-      },
-    });
-
-    const email = user.email.trim().toLowerCase();
-
-    const { data: paidUser, error: paidUserError } = await admin
+    const { data, error } = await adminSupabase
       .from("paid_users")
       .select("paid_access")
-      .eq("email", email)
+      .eq("email", user.email.toLowerCase())
+      .eq("paid_access", true)
       .maybeSingle();
 
-    if (paidUserError) {
-      console.error("Paid user lookup failed", paidUserError);
+    if (error) {
+      console.error("Paid access lookup error", error);
 
       return NextResponse.json(
         {
-          loggedIn: true,
-          paid: false,
+          paidAccess: false,
+          authenticated: true,
           error: "Paid access lookup failed",
         },
         { status: 500 }
@@ -62,17 +77,15 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      loggedIn: true,
-      email,
-      paid: Boolean(paidUser?.paid_access),
+      paidAccess: Boolean(data?.paid_access),
+      authenticated: true,
     });
   } catch (error) {
-    console.error("Access status error", error);
+    console.error("Access status route error", error);
 
     return NextResponse.json(
       {
-        loggedIn: false,
-        paid: false,
+        paidAccess: false,
         error: "Access status check failed",
       },
       { status: 500 }
