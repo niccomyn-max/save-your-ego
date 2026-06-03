@@ -362,16 +362,9 @@ export default function AssessmentPage() {
 
         const data = await response.json();
 
-        if (cancelled) {
-          return;
+        if (!cancelled) {
+          setHasPaidAccess(Boolean(data.paidAccess));
         }
-
-        if (!data.loggedIn) {
-          router.push("/auth/login");
-          return;
-        }
-
-        setHasPaidAccess(Boolean(data.paid));
       } catch (error) {
         console.error("Paid access check failed", error);
 
@@ -390,63 +383,7 @@ export default function AssessmentPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
-
-  if (checkingAccess) {
-    return (
-      <main className="min-h-screen bg-[#f7fbff] px-5 py-8">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-sm font-semibold text-slate-600">
-            Checking your Save Your EGO access...
-          </p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!hasPaidAccess) {
-    return (
-      <main className="min-h-screen bg-[#f7fbff] px-5 py-8">
-        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
-          <section className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fff6bf] text-3xl">
-              🔒
-            </div>
-
-            <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-[#17356f]">
-              Paid access required
-            </p>
-
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#17356f] sm:text-4xl">
-              Your Save Your EGO assessment is locked
-            </h1>
-
-            <p className="mt-4 text-sm leading-6 text-slate-700">
-              Complete payment to unlock your personalised home energy
-              assessment and report for electricity, gas and oil.
-            </p>
-
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <a
-                href="https://saveyourego.com"
-                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black"
-              >
-                Unlock My Report
-              </a>
-
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-full border border-[#dbe8f2] bg-white px-7 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
-              >
-                Back to dashboard
-              </button>
-            </div>
-          </section>
-        </div>
-      </main>
-    );
-  }
+  }, []);
 
   const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
   const countryDefaults =
@@ -750,6 +687,64 @@ export default function AssessmentPage() {
 
     router.push(`/report/${savedAssessment.id}`);
     router.refresh();
+  }
+
+  if (checkingAccess) {
+    return (
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-8 text-[#050505]">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <section className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
+            <p className="text-sm font-bold text-slate-600">
+              Checking your Save Your EGO access...
+            </p>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (!hasPaidAccess) {
+    return (
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-8 text-[#050505]">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <section className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fff6bf] text-3xl">
+              🔒
+            </div>
+
+            <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-[#17356f]">
+              Paid access required
+            </p>
+
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#17356f] sm:text-4xl">
+              Your Save Your EGO assessment is locked
+            </h1>
+
+            <p className="mt-4 text-sm leading-6 text-slate-700">
+              Complete payment to unlock your personalised home energy
+              assessment and report for electricity, gas and oil.
+            </p>
+
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+              <a
+                href="https://saveyourego.com"
+                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black"
+              >
+                Unlock My Report
+              </a>
+
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="rounded-full border border-[#dbe8f2] bg-white px-7 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
+              >
+                Back to dashboard
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   return (
