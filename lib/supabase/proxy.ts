@@ -40,10 +40,11 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   const isPublicRoute =
-    pathname === "/" ||
-    pathname.startsWith("/auth") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/login");
+  pathname === "/" ||
+  pathname.startsWith("/auth") ||
+  pathname.startsWith("/api") ||
+  pathname.startsWith("/login") ||
+  pathname.startsWith("/assessment");
 
   if (isPublicRoute) {
     return supabaseResponse;
