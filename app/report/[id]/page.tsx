@@ -103,6 +103,70 @@ function displayValue(value: unknown, fallback = "Unknown") {
   return String(value);
 }
 
+function shouldShowEstimatedCost(item: DetailedAction) {
+  const costText = item.estimated_cost_range?.trim();
+
+  if (!costText) {
+    return false;
+  }
+
+  const normalisedCost = costText.toLowerCase();
+
+  const looksFreeOrBehavioural =
+    normalisedCost.includes("no purchase") ||
+    normalisedCost.includes("no cost") ||
+    normalisedCost.includes("free") ||
+    normalisedCost.includes("behaviour") ||
+    normalisedCost.includes("behavior") ||
+    /^[$£€]?0(|\s|-|–)/.test(normalisedCost);
+
+  if (looksFreeOrBehavioural) {
+    return false;
+  }
+
+  const actionText = [
+    item.action,
+    item.why_it_matters,
+    item.suggested_next_step,
+    item.effort_level,
+    item.likely_payback,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const looksLikeBehaviourChange =
+    actionText.includes("behaviour") ||
+    actionText.includes("behavior") ||
+    actionText.includes("habit") ||
+    actionText.includes("routine") ||
+    actionText.includes("turn off") ||
+    actionText.includes("switch off") ||
+    actionText.includes("unplug") ||
+    actionText.includes("standby") ||
+    actionText.includes("thermostat") ||
+    actionText.includes("shorter shower") ||
+    actionText.includes("full load") ||
+    actionText.includes("lower temperature") ||
+    actionText.includes("wash at") ||
+    actionText.includes("air dry") ||
+    actionText.includes("reduce use") ||
+    actionText.includes("use less") ||
+    actionText.includes("schedule") ||
+    actionText.includes("timer");
+
+  const looksLikePurchaseOrUpgrade =
+    actionText.includes("install") ||
+    actionText.includes("replace") ||
+    actionText.includes("upgrade") ||
+    actionText.includes("buy") ||
+    actionText.includes("purchase") ||
+    actionText.includes("fit ") ||
+    actionText.includes("contractor");
+
+  return !(looksLikeBehaviourChange && !looksLikePurchaseOrUpgrade);
+}
+
 function TextSection({
   title,
   children,
@@ -339,11 +403,13 @@ function ActionPlanSection({
             )}
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              <DetailPill
-                label="Estimated cost"
-                value={item.estimated_cost_range}
-                colour="yellow"
-              />
+              {shouldShowEstimatedCost(item) && (
+                <DetailPill
+                  label="Estimated cost"
+                  value={item.estimated_cost_range}
+                  colour="yellow"
+                />
+              )}
 
               <DetailPill
                 label="Estimated saving"
