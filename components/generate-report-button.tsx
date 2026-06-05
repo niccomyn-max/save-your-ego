@@ -14,27 +14,66 @@ export function GenerateReportButton({
   const [errorMessage, setErrorMessage] = useState("");
 
   async function handleGenerateReport() {
+    if (loading) return;
+
     setLoading(true);
     setErrorMessage("");
 
-    const response = await fetch("/api/generate-report", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ assessmentId }),
-    });
+    try {
+      if (!assessmentId) {
+        setErrorMessage("Missing assessment ID. Please go back and start a new assessment.");
+        return;
+      }
 
-    const result = await response.json();
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => {
+        controller.abort();
+      }, 60000);
 
-    if (!response.ok) {
+      const response = await fetch("/api/generate-report", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ assessmentId }),
+        signal: controller.signal,
+      });
+
+      window.clearTimeout(timeout);
+
+      let result: { error?: string; reportId?: string; id?: string } = {};
+
+      try {
+        result = await response.json();
+      } catch {
+        result = {};
+      }
+
+      if (!response.ok) {
+        setErrorMessage(result.error || "Failed to generate report. Please try again.");
+        return;
+      }
+
+      const reportId = result.reportId || result.id;
+
+      if (reportId) {
+        router.push(`/report/${reportId}`);
+        return;
+      }
+
+      router.refresh();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setErrorMessage(
+          "The report took too long to generate. Please refresh the page and try again.",
+        );
+        return;
+      }
+
+      setErrorMessage("Something went wrong while generating the report. Please try again.");
+    } finally {
       setLoading(false);
-      setErrorMessage(result.error || "Failed to generate report.");
-      return;
     }
-
-    setLoading(false);
-    router.refresh();
   }
 
   return (
@@ -43,7 +82,7 @@ export function GenerateReportButton({
 
       <p className="mt-2 text-sm text-gray-600">
         Generate a personalised Save Your EGO report using the saved home
-        details, bills, fabric inputs, appliance estimates and rule-based
+        details, bills, heat-loss inputs, appliance estimates and rule-based
         analysis.
       </p>
 
