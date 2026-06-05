@@ -1,203 +1,294 @@
-"use client";
-
 import Image from "next/image";
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import {
-  AGE_BANDS,
-  APPLIANCE_LIBRARY,
-  BILLING_FREQUENCIES,
-  COUNTRY_DEFAULTS,
-  COUNTRY_OPTIONS,
-  EnergyAssessmentAnswers,
-  FABRIC_TYPES,
-  GLAZING_TYPES,
-  HEATING_SYSTEMS,
-  INSULATION_LEVELS,
-  PROPERTY_TYPES,
-  SOLAR_DAYTIME_USE,
-  SOLAR_EV_STATUS,
-  SOLAR_INTEREST,
-  SOLAR_ROOF_ORIENTATIONS,
-  SOLAR_ROOF_SHADING,
-  SOLAR_ROOF_SPACE,
-  USAGE_LEVELS,
-  analyseEnergyAssessment,
-} from "@/lib/assessment/energy-model";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
+import { connection } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import { GenerateReportButton } from "@/components/generate-report-button";
+import { PrintReportButton } from "@/components/print-report-button";
 
-const defaultAnswers: EnergyAssessmentAnswers = {
-  country: "US",
-  property_type: "Detached",
-  bedrooms: 3,
-  year_built: 1995,
-  floor_area: 140,
-  glazing: "Double glazing",
-  main_heating: "Heat pump",
-  energy_rating: "",
-  occupants: 4,
-  has_solar: false,
-  has_battery: false,
-
-  solar_roof_orientation: "Unknown / Don't know",
-  solar_roof_shading: "Unknown / Don't know",
-  solar_roof_space: "Unknown / Don't know",
-  solar_daytime_use: "Unknown / Don't know",
-  solar_ev_status: "No",
-  solar_interest: "Maybe",
-
-  notes: "",
-
-  bill_frequency: "Monthly",
-  avg_electricity_bill: 180,
-  unit_rate: 0.18,
-  standing_charge: 25,
-  annual_bill_override: 0,
-
-  uses_gas: false,
-  avg_gas_bill: 0,
-  gas_bill_frequency: "Monthly",
-  gas_unit_rate: 0.12,
-  annual_gas_spend: 0,
-  gas_boiler_age: "Unknown",
-  gas_heating_usage: "Medium",
-
-  uses_oil: false,
-  oil_litres_per_year: 0,
-  oil_price_per_litre: 1.1,
-  annual_oil_spend: 0,
-  oil_boiler_age: "Unknown",
-  oil_heating_usage: "Medium",
-
-  fabric_meta: {
-    "Wall type": "Unknown",
-    "Roof type": "Unknown",
-    "Floor type": "Unknown",
-    "Window frame type": "Unknown",
-  },
-  wall_rating: "Medium",
-  wall_u_manual: 0,
-  window_rating: "Medium",
-  window_u_manual: 0,
-  floor_rating: "Medium",
-  floor_u_manual: 0,
-  roof_rating: "Good",
-  roof_u_manual: 0,
-
-  appliances: [],
+type ReportPageProps = {
+  params: Promise<{
+    id: string;
+  }>;
 };
 
-const UNKNOWN_OPTION = "Unknown / Don't know";
+type JsonRecord = Record<string, any>;
 
-const INSULATION_LEVEL_OPTIONS = [
-  UNKNOWN_OPTION,
-  ...INSULATION_LEVELS.filter((option) => option !== UNKNOWN_OPTION),
-];
+type DetailedAction = {
+  action?: string;
+  why_it_matters?: string;
+  estimated_cost_range?: string;
+  estimated_annual_saving_range?: string;
+  effort_level?: string;
+  likely_payback?: string;
+  priority?: string;
+  suggested_next_step?: string;
+};
 
-const AGE_BAND_OPTIONS = [
-  "Unknown",
-  ...AGE_BANDS.filter((option) => option !== "Unknown"),
-];
-
-const USAGE_LEVEL_OPTIONS = [UNKNOWN_OPTION, ...USAGE_LEVELS];
-
-type AiAssessment = {
+type AiReport = {
   photo_summary?: string;
+  bottom_line?: string;
+  executive_summary?: string;
+  estimated_annual_energy_cost_profile?: string;
+  unusual_usage_warning?: string;
+  top_5_priorities?: string[];
+
   top_energy_drains?: string[];
   top_recommended_actions?: string[];
   quick_wins?: string[];
   bigger_upgrades?: string[];
   extra_insights?: string[];
-  bottom_line?: string;
+
+  priority_action_plan?: DetailedAction[];
+  low_cost_quick_wins?: DetailedAction[];
+  medium_cost_improvements?: DetailedAction[];
+  higher_cost_upgrades?: DetailedAction[];
+
+  electricity_specific_advice?: string[];
+  gas_specific_advice?: string[];
+  oil_specific_advice?: string[];
+  appliance_findings?: string[];
+  behaviour_changes?: string[];
+  contractor_questions?: string[];
+  what_to_check_next?: string[];
+  important_assumptions?: string[];
 };
 
-type UploadedPhoto = {
-  name: string;
-  mimeType: string;
-  dataUrl: string;
-};
-
-function cleanHomeownerLanguage(value: string) {
-  return value
-    .replace(/\bbattery view\b/gi, "home battery storage view")
-    .replace(/\bfabric profile\b/gi, "heat-loss profile")
-    .replace(/\bfabric upgrades\b/gi, "home heat loss improvements")
-    .replace(/\bfabric upgrade\b/gi, "home heat loss improvement")
-    .replace(/\bfabric measures\b/gi, "home heat loss measures")
-    .replace(/\bfabric inputs\b/gi, "home heat loss inputs")
-    .replace(/\bfabric weak point\b/gi, "main heat-loss weak point")
-    .replace(/\bfabric weakness\b/gi, "heat-loss weakness")
-    .replace(/\bfabric\b/gi, "home heat loss")
-    .replace(
-      /estimated cost:\s*(?:[$€£]?\s*0(?:\s*[-–]\s*[$€£]?\s*\d+)?|no cost|free)[^\n.]*/gi,
-      "No purchase needed",
-    )
-    .replace(
-      /cost:\s*(?:[$€£]?\s*0(?:\s*[-–]\s*[$€£]?\s*\d+)?|no cost|free)[^\n.]*/gi,
-      "No purchase needed",
-    );
+export default function ReportPage(props: ReportPageProps) {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto max-w-5xl px-6 py-10">
+          <p className="text-sm font-semibold text-slate-600">
+            Loading report...
+          </p>
+        </main>
+      }
+    >
+      <ReportContent {...props} />
+    </Suspense>
+  );
 }
 
-function cleanAiData<T>(value: T): T {
-  if (typeof value === "string") {
-    return cleanHomeownerLanguage(value) as T;
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((item) => cleanAiData(item)) as T;
-  }
-
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [key, cleanAiData(item)]),
-    ) as T;
-  }
-
-  return value;
-}
-
-function cleanAiReportText(reportText: string) {
+function safeParseReport(reportText?: string | null): AiReport | null {
   if (!reportText) {
-    return reportText;
+    return null;
   }
 
   try {
-    return JSON.stringify(cleanAiData(JSON.parse(reportText)));
+    return JSON.parse(reportText) as AiReport;
   } catch {
-    return cleanHomeownerLanguage(reportText);
+    return null;
   }
 }
 
-function AiList({ title, items }: { title: string; items?: string[] }) {
+function formatDate(value?: string | null) {
+  if (!value) {
+    return "Unknown";
+  }
+
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function displayValue(value: unknown, fallback = "Unknown") {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+
+  return String(value);
+}
+
+function TextSection({
+  title,
+  children,
+  accent = "blue",
+}: {
+  title: string;
+  children: React.ReactNode;
+  accent?: "yellow" | "blue" | "black" | "navy";
+}) {
+  const accentClass =
+    accent === "yellow"
+      ? "border-l-[#ffd600]"
+      : accent === "black"
+        ? "border-l-black"
+        : accent === "navy"
+          ? "border-l-[#17356f]"
+          : "border-l-[#59b9ec]";
+
+  return (
+    <section
+      className={`report-section rounded-3xl border border-[#dbe8f2] border-l-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
+    >
+      <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
+      <div className="mt-4 text-sm leading-7 text-slate-700">{children}</div>
+    </section>
+  );
+}
+
+function ReportList({
+  title,
+  items,
+  accent = "blue",
+}: {
+  title: string;
+  items?: string[];
+  accent?: "yellow" | "blue" | "black" | "navy";
+}) {
   if (!items || items.length === 0) {
     return null;
   }
 
   return (
-    <div className="rounded-2xl border border-[#dbe8f2] bg-white p-5 shadow-sm">
-      <h3 className="font-black text-[#17356f]">{title}</h3>
-      <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
-        {items.map((item) => (
-          <li key={item}>{cleanHomeownerLanguage(item)}</li>
+    <TextSection title={title} accent={accent}>
+      <ul className="list-disc space-y-2 pl-5">
+        {items.map((item, index) => (
+          <li key={`${title}-${index}-${item}`}>{item}</li>
         ))}
       </ul>
+    </TextSection>
+  );
+}
+
+function TopPrioritiesSection({ items }: { items?: string[] }) {
+  if (!items || items.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm print:break-inside-avoid">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
+        Customer action summary
+      </p>
+
+      <h2 className="mt-1 text-2xl font-black text-[#17356f]">
+        Top 5 priorities
+      </h2>
+
+      <div className="mt-5 grid gap-3">
+        {items.slice(0, 5).map((item, index) => (
+          <div
+            key={`priority-${index}-${item}`}
+            className="flex gap-4 rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
+          >
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ffd600] text-sm font-black text-black">
+              {index + 1}
+            </div>
+
+            <p className="text-sm font-semibold leading-6 text-slate-700">
+              {item}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function UsageWarningSection({ warning }: { warning?: string }) {
+  if (!warning) {
+    return null;
+  }
+
+  return (
+    <section className="report-section rounded-3xl border border-[#ffe76a] bg-[#fff6bf] p-6 shadow-sm print:break-inside-avoid">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
+        Usage check
+      </p>
+
+      <h2 className="mt-1 text-2xl font-black text-black">
+        Check unusually high usage
+      </h2>
+
+      <p className="mt-4 text-sm font-semibold leading-7 text-slate-800">
+        {warning}
+      </p>
+    </section>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  colour = "navy",
+}: {
+  label: string;
+  value: string;
+  colour?: "yellow" | "blue" | "navy" | "black" | "white";
+}) {
+  const colourClass =
+    colour === "yellow"
+      ? "bg-[#fff6bf] text-[#6b5200] border-[#ffe76a]"
+      : colour === "blue"
+        ? "bg-[#e9f6fe] text-[#17356f] border-[#bde8ff]"
+        : colour === "black"
+          ? "bg-slate-100 text-black border-slate-200"
+          : colour === "white"
+            ? "bg-white text-[#17356f] border-[#dbe8f2]"
+            : "bg-[#17356f] text-white border-[#17356f]";
+
+  return (
+    <div className={`rounded-2xl border p-4 ${colourClass}`}>
+      <p className="text-xs font-black uppercase tracking-wide opacity-70">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-black leading-tight">{value}</p>
     </div>
   );
 }
 
-function SectionShell({
-  number,
+function DetailPill({
+  label,
+  value,
+  colour = "blue",
+}: {
+  label: string;
+  value?: string;
+  colour?: "yellow" | "blue" | "black" | "navy";
+}) {
+  if (!value) {
+    return null;
+  }
+
+  const className =
+    colour === "yellow"
+      ? "bg-[#fff6bf] text-[#6b5200] border-[#ffe76a]"
+      : colour === "black"
+        ? "bg-slate-100 text-black border-slate-200"
+        : colour === "navy"
+          ? "bg-[#17356f] text-white border-[#17356f]"
+          : "bg-[#e9f6fe] text-[#17356f] border-[#bde8ff]";
+
+  return (
+    <div className={`rounded-2xl border p-3 ${className}`}>
+      <p className="text-[11px] font-black uppercase tracking-wide opacity-70">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-black leading-6">{value}</p>
+    </div>
+  );
+}
+
+function ActionPlanSection({
   title,
   description,
-  children,
+  actions,
   accent = "blue",
 }: {
-  number: string;
   title: string;
   description?: string;
-  children: React.ReactNode;
-  accent?: "yellow" | "blue" | "navy" | "black";
+  actions?: DetailedAction[];
+  accent?: "yellow" | "blue" | "black" | "navy";
 }) {
+  if (!actions || actions.length === 0) {
+    return null;
+  }
+
   const accentClass =
     accent === "yellow"
       ? "border-t-[#ffd600]"
@@ -209,560 +300,375 @@ function SectionShell({
 
   return (
     <section
-      className={`rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
+      className={`report-section rounded-3xl border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
-          {number}
-        </div>
+      <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
 
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#17356f]">
-            {title}
-          </h2>
+      {description && (
+        <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+      )}
 
-          {description && (
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              {description}
-            </p>
-          )}
-        </div>
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        {actions.map((item, index) => (
+          <article
+            key={`${title}-${index}-${item.action}`}
+            className="rounded-3xl border border-[#dbe8f2] bg-[#f7fbff] p-4 print:break-inside-avoid"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                  Action {index + 1}
+                </p>
+
+                <h3 className="mt-1 text-lg font-black leading-6 text-black">
+                  {displayValue(item.action, "Recommended action")}
+                </h3>
+              </div>
+
+              {item.priority && (
+                <span className="shrink-0 rounded-full bg-[#ffd600] px-3 py-1 text-[11px] font-black text-black">
+                  {item.priority}
+                </span>
+              )}
+            </div>
+
+            {item.why_it_matters && (
+              <p className="mt-3 text-sm leading-6 text-slate-700">
+                {item.why_it_matters}
+              </p>
+            )}
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <DetailPill
+                label="Estimated cost"
+                value={item.estimated_cost_range}
+                colour="yellow"
+              />
+
+              <DetailPill
+                label="Estimated saving"
+                value={item.estimated_annual_saving_range}
+                colour="blue"
+              />
+
+              <DetailPill
+                label="Effort"
+                value={item.effort_level}
+                colour="black"
+              />
+
+              <DetailPill
+                label="Payback"
+                value={item.likely_payback}
+                colour="navy"
+              />
+            </div>
+
+            {item.suggested_next_step && (
+              <div className="mt-3 rounded-2xl border border-[#dbe8f2] bg-white p-3">
+                <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">
+                  Suggested next step
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">
+                  {item.suggested_next_step}
+                </p>
+              </div>
+            )}
+          </article>
+        ))}
       </div>
-
-      <div className="mt-6">{children}</div>
     </section>
   );
 }
 
-function SelectField({
-  label,
-  value,
-  options,
-  onChange,
+function InputCard({
+  title,
+  colour,
+  children,
 }: {
-  label: string;
-  value: string;
-  options: readonly string[] | string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="grid gap-2 text-sm font-bold text-slate-700">
-      {label}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function NumberField({
-  label,
-  value,
-  min,
-  max,
-  step = 1,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min?: number;
-  max?: number;
-  step?: number;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <label className="grid gap-2 text-sm font-bold text-slate-700">
-      {label}
-      <input
-        type="number"
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        onFocus={(event) => event.target.select()}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
-      />
-    </label>
-  );
-}
-
-function TextField({
-  label,
-  value,
-  placeholder,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  placeholder?: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="grid gap-2 text-sm font-bold text-slate-700">
-      {label}
-      <input
-        type="text"
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
-      />
-    </label>
-  );
-}
-
-function ToggleField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: boolean;
-  onChange: (value: boolean) => void;
-}) {
-  return (
-    <label className="flex items-center gap-3 rounded-xl border border-[#dbe8f2] bg-[#f7fbff] p-4 text-sm font-bold text-slate-700 shadow-sm">
-      <input
-        type="checkbox"
-        checked={value}
-        onChange={(event) => onChange(event.target.checked)}
-        className="h-5 w-5 accent-[#17356f]"
-      />
-      {label}
-    </label>
-  );
-}
-
-function PreviewCard({
-  label,
-  value,
-  colour = "white",
-}: {
-  label: string;
-  value: string;
-  colour?: "white" | "yellow" | "blue" | "navy";
+  title: string;
+  colour: "yellow" | "blue" | "black";
+  children: React.ReactNode;
 }) {
   const className =
     colour === "yellow"
-      ? "border-[#ffe76a] bg-[#fff6bf] text-black"
+      ? "border-l-[#ffd600] bg-[#fffdf0]"
       : colour === "blue"
-        ? "border-[#bde8ff] bg-[#e9f6fe] text-[#17356f]"
-        : colour === "navy"
-          ? "border-[#17356f] bg-[#17356f] text-white"
-          : "border-[#dbe8f2] bg-white text-[#17356f]";
+        ? "border-l-[#59b9ec] bg-[#f1faff]"
+        : "border-l-black bg-slate-50";
 
   return (
-    <div className={`rounded-2xl border p-5 shadow-sm ${className}`}>
-      <p className="text-xs font-black uppercase tracking-wide opacity-70">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-black leading-tight">{value}</p>
+    <div
+      className={`rounded-2xl border border-[#dbe8f2] border-l-8 p-4 ${className}`}
+    >
+      <h3 className="font-black text-black">{title}</h3>
+      <div className="mt-2 text-sm leading-6 text-slate-700">{children}</div>
     </div>
   );
 }
 
-export default function AssessmentPage() {
-  const router = useRouter();
-  const supabase = createClient();
-
-  const [answers, setAnswers] =
-    useState<EnergyAssessmentAnswers>(defaultAnswers);
-  const [saving, setSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const [generatingAi, setGeneratingAi] = useState(false);
-  const [aiErrorMessage, setAiErrorMessage] = useState("");
-  const [aiReportText, setAiReportText] = useState("");
-  const [aiReport, setAiReport] = useState<AiAssessment | null>(null);
-
-  const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
-  const [photoErrorMessage, setPhotoErrorMessage] = useState("");
-  const [otherApplianceName, setOtherApplianceName] = useState("");
-
-  const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
-  const countryDefaults =
-    COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.US;
-
-  function clearAiReport() {
-    setAiReport(null);
-    setAiReportText("");
-    setAiErrorMessage("");
+function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
+  if (!solar) {
+    return null;
   }
 
-  function updateAnswer<K extends keyof EnergyAssessmentAnswers>(
-    key: K,
-    value: EnergyAssessmentAnswers[K],
-  ) {
-    setAnswers((current) => ({
-      ...current,
-      [key]: value,
-    }));
+  const installerQuestions = Array.isArray(solar.installer_questions)
+    ? solar.installer_questions
+    : [];
 
-    clearAiReport();
-  }
-
-  function updateFabricMeta(key: string, value: string) {
-    setAnswers((current) => ({
-      ...current,
-      fabric_meta: {
-        ...current.fabric_meta,
-        [key]: value,
-      },
-    }));
-
-    clearAiReport();
-  }
-
-  function toggleAppliance(category: string, appliance: string) {
-    setAnswers((current) => {
-      const alreadySelected = current.appliances.some(
-        (item) => item.appliance === appliance,
-      );
-
-      if (alreadySelected) {
-        return {
-          ...current,
-          appliances: current.appliances.filter(
-            (item) => item.appliance !== appliance,
-          ),
-        };
-      }
-
-      return {
-        ...current,
-        appliances: [
-          ...current.appliances,
-          {
-            appliance,
-            category,
-            age_band: "Mid-life (5-10 years)",
-            usage: "Medium",
-            qty: 1,
-          },
-        ],
-      };
-    });
-
-    clearAiReport();
-  }
-
-  function addOtherAppliance() {
-    const applianceName = otherApplianceName.trim();
-
-    if (!applianceName) {
-      return;
-    }
-
-    setAnswers((current) => {
-      const alreadySelected = current.appliances.some(
-        (item) => item.appliance.toLowerCase() === applianceName.toLowerCase(),
-      );
-
-      if (alreadySelected) {
-        return current;
-      }
-
-      return {
-        ...current,
-        appliances: [
-          ...current.appliances,
-          {
-            appliance: applianceName,
-            category: "Other",
-            age_band: "Unknown",
-            usage: "Medium",
-            qty: 1,
-          },
-        ],
-      };
-    });
-
-    setOtherApplianceName("");
-    clearAiReport();
-  }
-
-  function updateAppliance(
-    appliance: string,
-    field: "age_band" | "usage" | "qty",
-    value: string | number,
-  ) {
-    setAnswers((current) => ({
-      ...current,
-      appliances: current.appliances.map((item) =>
-        item.appliance === appliance ? { ...item, [field]: value } : item,
-      ),
-    }));
-
-    clearAiReport();
-  }
-
-  function compressImageToDataUrl(file: File) {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        const image = new window.Image();
-
-        image.onload = () => {
-          const maxWidth = 1200;
-          const maxHeight = 1200;
-
-          let { width, height } = image;
-
-          if (width > height && width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          } else if (height > maxHeight) {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
-          }
-
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-
-          const context = canvas.getContext("2d");
-
-          if (!context) {
-            reject(new Error("Could not compress image."));
-            return;
-          }
-
-          context.drawImage(image, 0, 0, width, height);
-
-          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.72);
-
-          resolve(compressedDataUrl);
-        };
-
-        image.onerror = () => reject(new Error("Could not load image."));
-
-        if (typeof reader.result === "string") {
-          image.src = reader.result;
-        } else {
-          reject(new Error("Could not read image file."));
-        }
-      };
-
-      reader.onerror = () => reject(new Error("Could not read image file."));
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function handlePhotoUpload(files: FileList | null) {
-    setPhotoErrorMessage("");
-
-    if (!files || files.length === 0) {
-      setUploadedPhotos([]);
-      clearAiReport();
-      return;
-    }
-
-    const selectedFiles = Array.from(files).slice(0, 3);
-
-    const invalidFile = selectedFiles.find(
-      (file) => !["image/jpeg", "image/png", "image/jpg"].includes(file.type),
-    );
-
-    if (invalidFile) {
-      setPhotoErrorMessage("Please upload JPG or PNG appliance photos only.");
-      return;
-    }
-
-    const tooLarge = selectedFiles.find((file) => file.size > 10_000_000);
-
-    if (tooLarge) {
-      setPhotoErrorMessage(
-        "Please keep each photo under 10 MB. Clear appliance label photos work best.",
-      );
-      return;
-    }
-
-    try {
-      const convertedPhotos = await Promise.all(
-        selectedFiles.map(async (file) => ({
-          name: file.name,
-          mimeType: "image/jpeg",
-          dataUrl: await compressImageToDataUrl(file),
-        })),
-      );
-
-      setUploadedPhotos(convertedPhotos);
-      clearAiReport();
-    } catch {
-      setPhotoErrorMessage(
-        "One or more photos could not be processed. Try using a clearer, smaller photo.",
-      );
-    }
-  }
-
-  async function handleGenerateAiAssessment() {
-    setGeneratingAi(true);
-    setAiErrorMessage("");
-
-    try {
-      const response = await fetch("/api/generate-assessment-ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          answers,
-          scores: analysis,
-          photos: uploadedPhotos,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setGeneratingAi(false);
-        setAiErrorMessage(result.error || "Failed to generate AI assessment.");
-        return;
-      }
-
-      const cleanedReport = cleanAiData(result.report) as AiAssessment;
-      const cleanedReportText = cleanAiReportText(result.reportText);
-
-      setAiReportText(cleanedReportText);
-      setAiReport(cleanedReport);
-      setGeneratingAi(false);
-    } catch {
-      setGeneratingAi(false);
-      setAiErrorMessage("Failed to generate AI assessment.");
-    }
-  }
-
-  async function handleSubmit() {
-    setSaving(true);
-    setErrorMessage("");
-
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
-      setSaving(false);
-      setErrorMessage("You need to be signed in to save an assessment.");
-      return;
-    }
-
-    const { data: savedAssessment, error } = await supabase
-      .from("assessments")
-      .insert({
-        user_id: user.id,
-        answers: {
-          ...answers,
-          uploaded_photo_count: uploadedPhotos.length,
-        },
-        scores: analysis,
-      })
-      .select("id")
-      .single();
-
-    if (error || !savedAssessment) {
-      setSaving(false);
-      setErrorMessage(error?.message || "Failed to save assessment.");
-      return;
-    }
-
-    if (aiReportText) {
-      const { error: reportError } = await supabase.from("reports").insert({
-        user_id: user.id,
-        assessment_id: savedAssessment.id,
-        report_text: cleanAiReportText(aiReportText),
-      });
-
-      if (reportError) {
-        setSaving(false);
-        setErrorMessage(reportError.message);
-        return;
-      }
-    }
-
-    router.push(`/report/${savedAssessment.id}`);
-    router.refresh();
-  }
+  const cautions = Array.isArray(solar.cautions) ? solar.cautions : [];
 
   return (
-    <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
+    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#ffd600] bg-white p-6 shadow-sm print:break-inside-avoid">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
+            Solar review
+          </p>
+
+          <h2 className="mt-1 text-2xl font-black text-[#17356f]">
+            Solar PV suitability
+          </h2>
+
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700">
+            {displayValue(solar.reason)}
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-[#ffd600] px-5 py-4 text-black">
+          <p className="text-xs font-black uppercase opacity-70">Suitability</p>
+          <p className="mt-1 text-2xl font-black">
+            {displayValue(solar.rating)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-5">
+          <p className="text-xs font-black uppercase tracking-wide text-[#6b5200]">
+            Suggested system size
+          </p>
+          <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
+            {displayValue(solar.suggested_system_size)}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
+          <p className="text-xs font-black uppercase tracking-wide text-[#17356f]/70">
+            Battery view
+          </p>
+          <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
+            {displayValue(solar.battery_view)}
+          </p>
+        </div>
+      </div>
+
+      {(installerQuestions.length > 0 || cautions.length > 0) && (
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {installerQuestions.length > 0 && (
+            <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
+              <h3 className="font-black text-[#17356f]">
+                Questions to ask a solar installer
+              </h3>
+
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+                {installerQuestions.slice(0, 5).map((item, index) => (
+                  <li key={`solar-question-${index}`}>{String(item)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {cautions.length > 0 && (
+            <div className="rounded-2xl border border-[#dbe8f2] bg-white p-5">
+              <h3 className="font-black text-[#17356f]">Solar cautions</h3>
+
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
+                {cautions.slice(0, 5).map((item, index) => (
+                  <li key={`solar-caution-${index}`}>{String(item)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+async function ReportContent({ params }: ReportPageProps) {
+  await connection();
+
+  const { id } = await params;
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  const { data: assessment, error } = await supabase
+    .from("assessments")
+    .select("id, answers, scores, created_at")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (error || !assessment) {
+    notFound();
+  }
+
+  const { data: report } = await supabase
+    .from("reports")
+    .select("id, report_text, created_at")
+    .eq("assessment_id", assessment.id)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const aiReport = safeParseReport(report?.report_text);
+
+  const answers = (assessment.answers ?? {}) as JsonRecord;
+  const scores = (assessment.scores ?? {}) as JsonRecord;
+
+  const usesGas = Boolean(answers.uses_gas);
+  const usesOil = Boolean(answers.uses_oil);
+  const solarSuitability = (scores.solarSuitability ?? null) as JsonRecord | null;
+
+  const hasDetailedReport =
+    Boolean(aiReport?.priority_action_plan?.length) ||
+    Boolean(aiReport?.low_cost_quick_wins?.length) ||
+    Boolean(aiReport?.medium_cost_improvements?.length) ||
+    Boolean(aiReport?.higher_cost_upgrades?.length);
+
+  return (
+    <main className="report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
+      <style>{`
+        @media print {
+          body {
+            background: white !important;
+          }
+
+          .report-page {
+            background: white !important;
+            padding: 0 !important;
+          }
+
+          .report-section,
+          .report-cover,
+          .report-disclaimer {
+            box-shadow: none !important;
+            page-break-inside: avoid;
+          }
+
+          .print-break-before {
+            page-break-before: always;
+          }
+        }
+      `}</style>
+
       <div className="mx-auto max-w-6xl">
-        <section className="overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="p-6 sm:p-8 lg:p-10">
+        <div className="mb-6 flex items-center justify-between gap-4 print:hidden">
+          <Link
+            href="/dashboard"
+            className="rounded-full border border-[#dbe8f2] bg-white px-4 py-2 text-sm font-bold text-[#17356f] shadow-sm"
+          >
+            Back to dashboard
+          </Link>
+
+          <PrintReportButton />
+        </div>
+
+        <section className="report-cover overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
+          <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="p-7 sm:p-10">
               <Image
                 src="/save-your-ego-logo.png"
                 alt="Save Your EGO"
-                width={300}
-                height={115}
+                width={310}
+                height={120}
                 priority
                 className="h-auto w-64"
               />
 
-              <div className="mt-7 inline-flex rounded-full bg-[#17356f] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
-                Home energy assessment
-              </div>
-
-              <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-black sm:text-5xl">
-                Build your Save Your EGO report
-              </h1>
-
-              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                A practical home energy analyser for identifying likely energy
-                drains, reducing waste and improving household efficiency across
-                Electricity, Gas and Oil.
-              </p>
-
-              <p className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
+              <p className="mt-8 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
                 Covering Electricity, Gas and Oil
               </p>
+
+              <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-[#050505] sm:text-5xl">
+                Home Energy Report
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
+                A practical Save Your EGO assessment covering household energy
+                use, likely waste areas, appliance insights, improvement costs,
+                savings potential and priority actions.
+              </p>
+
+              <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                <div className="rounded-2xl bg-[#f7fbff] p-4">
+                  <p className="font-bold text-slate-500">Assessment date</p>
+                  <p className="mt-1 font-black text-[#17356f]">
+                    {formatDate(assessment.created_at)}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-[#f7fbff] p-4">
+                  <p className="font-bold text-slate-500">Report type</p>
+                  <p className="mt-1 font-black text-[#17356f]">
+                    AI-assisted home energy assessment
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
-              <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
-                Assessment focus
+            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-7 text-white sm:p-10">
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-[#ffd600]">
+                Energy snapshot
               </p>
 
               <div className="mt-8 grid gap-4">
-                <div className="rounded-[1.5rem] bg-white/10 p-5 backdrop-blur">
-                  <p className="text-xs font-black uppercase tracking-wide text-white/60">
-                    Default market
+                <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
+                  <p className="text-xs font-bold uppercase text-white/60">
+                    Main heat-loss area
                   </p>
-                  <p className="mt-2 text-3xl font-black">US</p>
+                  <p className="mt-2 text-2xl font-black">
+                    {displayValue(scores.biggestLossArea)}
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
+                  <div className="rounded-3xl bg-[#ffd600] p-5 text-black">
                     <p className="text-xs font-black uppercase opacity-70">
-                      Sections
+                      Fabric
                     </p>
-                    <p className="mt-2 text-3xl font-black">7</p>
+                    <p className="mt-2 text-2xl font-black">
+                      {displayValue(scores.fabricBand)}
+                    </p>
                   </div>
 
-                  <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
+                  <div className="rounded-3xl bg-[#59b9ec] p-5 text-[#17356f]">
                     <p className="text-xs font-black uppercase opacity-70">
-                      Output
+                      Appliances
                     </p>
-                    <p className="mt-2 text-lg font-black">AI report</p>
+                    <p className="mt-2 text-2xl font-black">
+                      {Math.round(Number(scores.applianceKwh ?? 0))} kWh
+                    </p>
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] bg-white p-5 text-black">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                    Solar review
+                <div className="rounded-3xl bg-white p-5 text-black">
+                  <p className="text-xs font-bold uppercase text-slate-500">
+                    Fuel coverage
                   </p>
                   <p className="mt-2 text-xl font-black">
-                    Diagnostic, not default
+                    Electricity{usesGas ? ", Gas" : ""}
+                    {usesOil ? ", Oil" : ""}
                   </p>
                 </div>
               </div>
@@ -770,869 +676,314 @@ export default function AssessmentPage() {
           </div>
         </section>
 
-        <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-          This tool provides an indicative home energy assessment only. It is
-          not a substitute for a qualified energy assessment, electrician,
-          retrofit designer, heating engineer, structural professional, grant
-          advisor or building compliance expert.
-        </div>
-
-        <div className="mt-6 space-y-6">
-          <SectionShell
-            number="1"
-            title="Home details"
-            description="Start with the basic property details. If the customer does not know a technical answer, use the unknown option where available."
-            accent="navy"
-          >
-            <div className="grid gap-5 md:grid-cols-3">
-              <SelectField
-                label="Country"
-                value={answers.country}
-                options={COUNTRY_OPTIONS}
-                onChange={(value) => {
-                  const defaults =
-                    COUNTRY_DEFAULTS[value] ?? COUNTRY_DEFAULTS.US;
-
-                  setAnswers((current) => ({
-                    ...current,
-                    country: value,
-                    unit_rate: defaults.electricity_price,
-                  }));
-
-                  clearAiReport();
-                }}
-              />
-
-              <SelectField
-                label="Property type"
-                value={answers.property_type}
-                options={PROPERTY_TYPES}
-                onChange={(value) => updateAnswer("property_type", value)}
-              />
-
-              <NumberField
-                label="Number of bedrooms"
-                value={answers.bedrooms}
-                min={1}
-                max={12}
-                onChange={(value) => updateAnswer("bedrooms", value)}
-              />
-
-              <NumberField
-                label="Year built"
-                value={answers.year_built}
-                min={1800}
-                max={2030}
-                onChange={(value) => updateAnswer("year_built", value)}
-              />
-
-              <NumberField
-                label="Approx. floor area, m²"
-                value={answers.floor_area}
-                min={20}
-                max={1000}
-                onChange={(value) => updateAnswer("floor_area", value)}
-              />
-
-              <SelectField
-                label="Glazing type"
-                value={answers.glazing}
-                options={GLAZING_TYPES}
-                onChange={(value) => updateAnswer("glazing", value)}
-              />
-
-              <SelectField
-                label="Main heating system"
-                value={answers.main_heating}
-                options={HEATING_SYSTEMS}
-                onChange={(value) => updateAnswer("main_heating", value)}
-              />
-
-              <TextField
-                label="Energy use intensity if known"
-                value={answers.energy_rating}
-                placeholder="e.g. 227 kWh/m²/yr"
-                onChange={(value) => updateAnswer("energy_rating", value)}
-              />
-
-              <NumberField
-                label="Number of occupants"
-                value={answers.occupants}
-                min={1}
-                max={12}
-                onChange={(value) => updateAnswer("occupants", value)}
-              />
-            </div>
-
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <ToggleField
-                label="Solar PV already installed"
-                value={answers.has_solar}
-                onChange={(value) => updateAnswer("has_solar", value)}
-              />
-
-              <ToggleField
-                label="Battery already installed"
-                value={answers.has_battery}
-                onChange={(value) => updateAnswer("has_battery", value)}
-              />
-            </div>
-
-            <label className="mt-5 grid gap-2 text-sm font-bold text-slate-700">
-              Anything else worth knowing?
-              <textarea
-                value={answers.notes}
-                placeholder="Optional notes about the home, lifestyle, energy concerns or planned upgrades."
-                onChange={(event) => updateAnswer("notes", event.target.value)}
-                className="min-h-28 rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
-              />
-            </label>
-          </SectionShell>
-
-          <SectionShell
-            number="2"
-            title="Solar suitability"
-            description="Solar should not be recommended by default. These details help the app judge whether solar PV is a strong candidate, a possible option, or not the first priority."
-            accent="blue"
-          >
-            <div className="grid gap-5 md:grid-cols-3">
-              <SelectField
-                label="Roof orientation"
-                value={answers.solar_roof_orientation}
-                options={SOLAR_ROOF_ORIENTATIONS}
-                onChange={(value) =>
-                  updateAnswer("solar_roof_orientation", value)
-                }
-              />
-
-              <SelectField
-                label="Roof shading"
-                value={answers.solar_roof_shading}
-                options={SOLAR_ROOF_SHADING}
-                onChange={(value) => updateAnswer("solar_roof_shading", value)}
-              />
-
-              <SelectField
-                label="Available roof space"
-                value={answers.solar_roof_space}
-                options={SOLAR_ROOF_SPACE}
-                onChange={(value) => updateAnswer("solar_roof_space", value)}
-              />
-
-              <SelectField
-                label="Main daytime electricity use"
-                value={answers.solar_daytime_use}
-                options={SOLAR_DAYTIME_USE}
-                onChange={(value) => updateAnswer("solar_daytime_use", value)}
-              />
-
-              <SelectField
-                label="EV status"
-                value={answers.solar_ev_status}
-                options={SOLAR_EV_STATUS}
-                onChange={(value) => updateAnswer("solar_ev_status", value)}
-              />
-
-              <SelectField
-                label="Interested in solar?"
-                value={answers.solar_interest}
-                options={SOLAR_INTEREST}
-                onChange={(value) => updateAnswer("solar_interest", value)}
-              />
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#17356f]/70">
-                    Solar preview
-                  </p>
-
-                  <h3 className="mt-1 text-2xl font-black text-[#17356f]">
-                    {analysis.solarSuitability.rating}
-                  </h3>
-                </div>
-
-                <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-[#17356f]">
-                  Indicative only
-                </span>
-              </div>
-
-              <p className="mt-4 text-sm leading-7 text-slate-700">
-                {analysis.solarSuitability.reason}
-              </p>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Suggested system size
-                  </p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    {analysis.solarSuitability.suggested_system_size}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Battery view
-                  </p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    {analysis.solarSuitability.battery_view}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </SectionShell>
-
-          <SectionShell
-            number="3"
-            title="Electricity, Gas and Oil costs"
-            description="Save Your EGO means Electricity, Gas and Oil. Add what is known. Unknown values can be left at zero."
-            accent="yellow"
-          >
-            <div className="rounded-2xl border border-[#dbe8f2] bg-[#fffdf0] p-5">
-              <h3 className="text-lg font-black text-black">Electricity</h3>
-
-              <div className="mt-4 grid gap-5 md:grid-cols-3">
-                <SelectField
-                  label="Electricity billing frequency"
-                  value={answers.bill_frequency}
-                  options={BILLING_FREQUENCIES}
-                  onChange={(value) => updateAnswer("bill_frequency", value)}
-                />
-
-                <NumberField
-                  label={`Average electricity bill (${countryDefaults.currency})`}
-                  value={answers.avg_electricity_bill}
-                  min={0}
-                  step={10}
-                  onChange={(value) =>
-                    updateAnswer("avg_electricity_bill", value)
-                  }
-                />
-
-                <NumberField
-                  label={`Electricity unit rate (${countryDefaults.currency}/kWh)`}
-                  value={answers.unit_rate}
-                  min={0.05}
-                  max={2}
-                  step={0.01}
-                  onChange={(value) => updateAnswer("unit_rate", value)}
-                />
-
-                <NumberField
-                  label={`Standing charge per electricity bill (${countryDefaults.currency})`}
-                  value={answers.standing_charge}
-                  min={0}
-                  step={1}
-                  onChange={(value) => updateAnswer("standing_charge", value)}
-                />
-
-                <NumberField
-                  label={`Annual electricity spend if known (${countryDefaults.currency})`}
-                  value={answers.annual_bill_override}
-                  min={0}
-                  step={50}
-                  onChange={(value) =>
-                    updateAnswer("annual_bill_override", value)
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-[#f1faff] p-5">
-              <h3 className="text-lg font-black text-[#17356f]">Gas</h3>
-
-              <div className="mt-4">
-                <ToggleField
-                  label="Gas used in this home"
-                  value={answers.uses_gas}
-                  onChange={(value) => updateAnswer("uses_gas", value)}
-                />
-              </div>
-
-              {answers.uses_gas && (
-                <div className="mt-4 grid gap-5 md:grid-cols-3">
-                  <SelectField
-                    label="Gas billing frequency"
-                    value={answers.gas_bill_frequency}
-                    options={BILLING_FREQUENCIES}
-                    onChange={(value) =>
-                      updateAnswer("gas_bill_frequency", value)
-                    }
-                  />
-
-                  <NumberField
-                    label={`Average gas bill (${countryDefaults.currency})`}
-                    value={answers.avg_gas_bill}
-                    min={0}
-                    step={10}
-                    onChange={(value) => updateAnswer("avg_gas_bill", value)}
-                  />
-
-                  <NumberField
-                    label={`Gas unit rate if known (${countryDefaults.currency}/kWh)`}
-                    value={answers.gas_unit_rate}
-                    min={0}
-                    step={0.01}
-                    onChange={(value) => updateAnswer("gas_unit_rate", value)}
-                  />
-
-                  <NumberField
-                    label={`Annual gas spend if known (${countryDefaults.currency})`}
-                    value={answers.annual_gas_spend}
-                    min={0}
-                    step={50}
-                    onChange={(value) =>
-                      updateAnswer("annual_gas_spend", value)
-                    }
-                  />
-
-                  <SelectField
-                    label="Gas boiler age"
-                    value={answers.gas_boiler_age}
-                    options={AGE_BAND_OPTIONS}
-                    onChange={(value) => updateAnswer("gas_boiler_age", value)}
-                  />
-
-                  <SelectField
-                    label="Gas heating usage"
-                    value={answers.gas_heating_usage}
-                    options={USAGE_LEVEL_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("gas_heating_usage", value)
-                    }
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-slate-50 p-5">
-              <h3 className="text-lg font-black text-black">Oil</h3>
-
-              <div className="mt-4">
-                <ToggleField
-                  label="Oil used in this home"
-                  value={answers.uses_oil}
-                  onChange={(value) => updateAnswer("uses_oil", value)}
-                />
-              </div>
-
-              {answers.uses_oil && (
-                <div className="mt-4 grid gap-5 md:grid-cols-3">
-                  <NumberField
-                    label="Oil litres used per year if known"
-                    value={answers.oil_litres_per_year}
-                    min={0}
-                    step={50}
-                    onChange={(value) =>
-                      updateAnswer("oil_litres_per_year", value)
-                    }
-                  />
-
-                  <NumberField
-                    label={`Oil price per litre if known (${countryDefaults.currency})`}
-                    value={answers.oil_price_per_litre}
-                    min={0}
-                    step={0.01}
-                    onChange={(value) =>
-                      updateAnswer("oil_price_per_litre", value)
-                    }
-                  />
-
-                  <NumberField
-                    label={`Annual oil spend if known (${countryDefaults.currency})`}
-                    value={answers.annual_oil_spend}
-                    min={0}
-                    step={50}
-                    onChange={(value) =>
-                      updateAnswer("annual_oil_spend", value)
-                    }
-                  />
-
-                  <SelectField
-                    label="Oil boiler age"
-                    value={answers.oil_boiler_age}
-                    options={AGE_BAND_OPTIONS}
-                    onChange={(value) => updateAnswer("oil_boiler_age", value)}
-                  />
-
-                  <SelectField
-                    label="Oil heating usage"
-                    value={answers.oil_heating_usage}
-                    options={USAGE_LEVEL_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("oil_heating_usage", value)
-                    }
-                  />
-                </div>
-              )}
-            </div>
-          </SectionShell>
-
-          <SectionShell
-            number="4"
-            title="Advanced home heat loss details"
-            description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
-            accent="blue"
-          >
-            <div className="grid gap-5 md:grid-cols-2">
-              {Object.entries(FABRIC_TYPES).map(([label, options]) => (
-                <SelectField
-                  key={label}
-                  label={cleanHomeownerLanguage(label)}
-                  value={answers.fabric_meta[label] ?? "Unknown"}
-                  options={options}
-                  onChange={(value) => updateFabricMeta(label, value)}
-                />
-              ))}
-            </div>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Wall insulation level"
-                  value={answers.wall_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("wall_rating", value)}
-                />
-                {answers.wall_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Wall U-value, W/m²K"
-                      value={answers.wall_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) => updateAnswer("wall_u_manual", value)}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Window performance"
-                  value={answers.window_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("window_rating", value)}
-                />
-                {answers.window_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Window U-value, W/m²K"
-                      value={answers.window_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("window_u_manual", value)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Floor insulation level"
-                  value={answers.floor_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("floor_rating", value)}
-                />
-                {answers.floor_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Floor U-value, W/m²K"
-                      value={answers.floor_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("floor_u_manual", value)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Roof insulation level"
-                  value={answers.roof_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("roof_rating", value)}
-                />
-                {answers.roof_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Roof U-value, W/m²K"
-                      value={answers.roof_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) => updateAnswer("roof_u_manual", value)}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </SectionShell>
-
-          <SectionShell
-            number="5"
-            title="Appliances and usage"
-            description="Select the appliances in the home, or add another appliance if it is not listed."
-            accent="black"
-          >
-            <div className="grid gap-5 md:grid-cols-2">
-              {Object.entries(APPLIANCE_LIBRARY).map(
-                ([category, appliances]) => (
-                  <div
-                    key={category}
-                    className="rounded-2xl border border-[#dbe8f2] bg-white p-5 shadow-sm"
-                  >
-                    <h3 className="font-black text-[#17356f]">{category}</h3>
-
-                    <div className="mt-3 grid gap-2">
-                      {appliances.map((appliance) => {
-                        const checked = answers.appliances.some(
-                          (item) => item.appliance === appliance,
-                        );
-
-                        return (
-                          <label
-                            key={appliance}
-                            className="flex items-center gap-3 rounded-xl bg-[#f7fbff] px-3 py-2 text-sm font-semibold text-slate-700"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() =>
-                                toggleAppliance(category, appliance)
-                              }
-                              className="h-4 w-4 accent-[#17356f]"
-                            />
-                            {appliance}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ),
-              )}
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-              <h3 className="font-black text-[#17356f]">
-                Other appliance not listed
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Add anything unusual or specific, such as a heated towel rail,
-                pond pump, dehumidifier, workshop equipment, hot tub, second
-                freezer or home office setup.
-              </p>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
-                <input
-                  type="text"
-                  value={otherApplianceName}
-                  placeholder="e.g. Heated towel rail"
-                  onChange={(event) =>
-                    setOtherApplianceName(event.target.value)
-                  }
-                  className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 text-sm shadow-sm outline-none transition focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
-                />
-
-                <button
-                  type="button"
-                  onClick={addOtherAppliance}
-                  className="rounded-xl bg-[#17356f] px-5 py-3 text-sm font-black text-white transition hover:bg-black"
-                >
-                  Add appliance
-                </button>
-              </div>
-            </div>
-
-            {answers.appliances.length > 0 && (
-              <div className="mt-6 space-y-4">
-                <h3 className="text-xl font-black text-[#17356f]">
-                  Selected appliances
-                </h3>
-
-                {answers.appliances.map((item) => (
-                  <div
-                    key={item.appliance}
-                    className="grid gap-4 rounded-2xl border border-[#dbe8f2] bg-white p-5 shadow-sm md:grid-cols-4"
-                  >
-                    <div>
-                      <p className="font-black text-black">{item.appliance}</p>
-                      <p className="text-sm font-semibold text-slate-500">
-                        {item.category}
-                      </p>
-                    </div>
-
-                    <SelectField
-                      label="Age"
-                      value={item.age_band}
-                      options={AGE_BAND_OPTIONS}
-                      onChange={(value) =>
-                        updateAppliance(item.appliance, "age_band", value)
-                      }
-                    />
-
-                    <SelectField
-                      label="Usage"
-                      value={item.usage}
-                      options={USAGE_LEVEL_OPTIONS}
-                      onChange={(value) =>
-                        updateAppliance(item.appliance, "usage", value)
-                      }
-                    />
-
-                    <NumberField
-                      label="Quantity"
-                      value={item.qty}
-                      min={1}
-                      max={10}
-                      onChange={(value) =>
-                        updateAppliance(item.appliance, "qty", value)
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionShell>
-
-          <SectionShell
-            number="6"
-            title="Assessment preview"
-            description="This is the rule-based assessment view before the AI report is generated."
-            accent="yellow"
-          >
-            <div className="grid gap-4 md:grid-cols-4">
-              <PreviewCard
-                label="Bill-based annual electricity use"
-                value={`${analysis.estimatedBillKwh.toFixed(0)} kWh`}
-                colour="yellow"
-              />
-
-              <PreviewCard
-                label="Appliance estimate"
-                value={`${analysis.applianceKwh.toFixed(0)} kWh/yr`}
-                colour="blue"
-              />
-
-              <PreviewCard
-                label="Main heat-loss area"
-                value={cleanHomeownerLanguage(analysis.biggestLossArea)}
-                colour="white"
-              />
-
-              <PreviewCard
-                label="Solar suitability"
-                value={analysis.solarSuitability.rating}
-                colour="navy"
-              />
-            </div>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              {Object.entries(analysis.quickScores).map(([label, score]) => (
+        <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-black text-[#17356f]">
+            Energy snapshot
+          </h2>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-4">
+            <MetricCard
+              label="Electricity estimate"
+              value={`${Math.round(Number(scores.estimatedBillKwh ?? 0))} kWh`}
+              colour="yellow"
+            />
+
+            <MetricCard
+              label="Appliance use"
+              value={`${Math.round(Number(scores.applianceKwh ?? 0))} kWh`}
+              colour="blue"
+            />
+
+            <MetricCard
+              label="Heat-loss area"
+              value={displayValue(scores.biggestLossArea)}
+              colour="navy"
+            />
+
+            <MetricCard
+              label="Fabric profile"
+              value={displayValue(scores.fabricBand)}
+              colour="black"
+            />
+          </div>
+
+          {scores.quickScores && (
+            <div className="mt-5 grid gap-4 md:grid-cols-3">
+              {Object.entries(scores.quickScores).map(([label, score]) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5"
+                  className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
                 >
-                  <p className="text-sm font-black text-slate-500">{label}</p>
-                  <p className="mt-1 text-2xl font-black text-[#17356f]">
-                    {score}
+                  <p className="text-sm font-bold text-slate-500">{label}</p>
+                  <p className="mt-2 text-2xl font-black text-[#17356f]">
+                    {String(score)}
                   </p>
                 </div>
               ))}
             </div>
+          )}
+        </section>
 
-            <div className="mt-6 rounded-2xl border border-[#dbe8f2] bg-white p-5">
-              <h3 className="font-black text-[#17356f]">Rule-based view</h3>
-              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
-                {analysis.recommendations.slice(0, 6).map((item) => (
-                  <li key={item}>{cleanHomeownerLanguage(item)}</li>
-                ))}
-              </ul>
-            </div>
-          </SectionShell>
+        <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-black text-[#17356f]">
+            Electricity, Gas and Oil inputs
+          </h2>
 
-          <SectionShell
-            number="7"
-            title="AI assessment"
-            description="Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, home heat loss inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
-            accent="blue"
-          >
-            <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-              <h3 className="font-black text-[#17356f]">
-                Optional appliance photos
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Upload up to 3 appliance photos, rating plates, labels or
-                controls. The photos are compressed before analysis so they work
-                better on mobile connections. These photos are used for this AI
-                assessment only and are not stored permanently yet.
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <InputCard title="Electricity" colour="yellow">
+              <p>
+                Average bill:{" "}
+                {displayValue(answers.avg_electricity_bill, "0")}
               </p>
+              <p>Unit rate: {displayValue(answers.unit_rate)}</p>
+              <p>
+                Annual spend:{" "}
+                {answers.annual_bill_override
+                  ? answers.annual_bill_override
+                  : "Estimated from bill"}
+              </p>
+            </InputCard>
 
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/jpg"
-                multiple
-                onChange={(event) => handlePhotoUpload(event.target.files)}
-                className="mt-4 block w-full rounded-xl border border-[#dbe8f2] bg-white p-3 text-sm"
-              />
+            <InputCard title="Gas" colour="blue">
+              <p>Used in home: {usesGas ? "Yes" : "No"}</p>
+              {usesGas && (
+                <>
+                  <p>
+                    Average bill: {displayValue(answers.avg_gas_bill, "0")}
+                  </p>
+                  <p>Boiler age: {displayValue(answers.gas_boiler_age)}</p>
+                </>
+              )}
+            </InputCard>
 
-              {photoErrorMessage && (
-                <p className="mt-3 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-                  {photoErrorMessage}
+            <InputCard title="Oil" colour="black">
+              <p>Used in home: {usesOil ? "Yes" : "No"}</p>
+              {usesOil && (
+                <>
+                  <p>
+                    Litres/year:{" "}
+                    {displayValue(answers.oil_litres_per_year, "0")}
+                  </p>
+                  <p>Boiler age: {displayValue(answers.oil_boiler_age)}</p>
+                </>
+              )}
+            </InputCard>
+          </div>
+        </section>
+
+        {aiReport ? (
+          <div className="mt-6 space-y-5">
+            {aiReport.bottom_line && (
+              <section className="report-section rounded-3xl border border-[#dbe8f2] bg-[#fff6bf] p-6 shadow-sm print:break-inside-avoid">
+                <h2 className="text-2xl font-black text-black">
+                  Bottom line
+                </h2>
+                <p className="mt-3 text-base leading-7 text-slate-800">
+                  {aiReport.bottom_line}
                 </p>
-              )}
-
-              {uploadedPhotos.length > 0 && (
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  {uploadedPhotos.map((photo) => (
-                    <div
-                      key={photo.name}
-                      className="rounded-xl border border-[#dbe8f2] bg-white p-3"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.dataUrl}
-                        alt={photo.name}
-                        className="h-36 w-full rounded-lg object-cover"
-                      />
-                      <p className="mt-2 truncate text-xs text-slate-600">
-                        {photo.name}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {aiErrorMessage && (
-              <p className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-                {aiErrorMessage}
-              </p>
+              </section>
             )}
 
-            <div className="mt-5 rounded-3xl border border-[#ffd600] bg-[#fff6bf] p-5">
-              <h3 className="text-xl font-black text-black">
-                Step 1: Generate the AI assessment
-              </h3>
+            {aiReport.executive_summary && (
+              <TextSection title="Executive summary" accent="navy">
+                <p>{aiReport.executive_summary}</p>
+              </TextSection>
+            )}
 
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                This creates the detailed recommendations used in the final
-                report, including likely costs, savings, payback guidance and
-                next steps.
-              </p>
-
-              <button
-                type="button"
-                disabled={generatingAi}
-                onClick={handleGenerateAiAssessment}
-                className="mt-4 rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+            {aiReport.estimated_annual_energy_cost_profile && (
+              <TextSection
+                title="Estimated annual energy cost profile"
+                accent="yellow"
               >
-                {generatingAi
-                  ? "Generating AI assessment..."
-                  : aiReportText
-                    ? "Regenerate AI assessment"
-                    : "Generate AI assessment"}
-              </button>
-            </div>
+                <p>{aiReport.estimated_annual_energy_cost_profile}</p>
+              </TextSection>
+            )}
 
-            {aiReport && (
-              <div className="mt-6 space-y-5">
-                <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-5">
-                  <h3 className="font-black text-black">Bottom line</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-800">
-                    {cleanHomeownerLanguage(aiReport.bottom_line ?? "")}
-                  </p>
+            <UsageWarningSection warning={aiReport.unusual_usage_warning} />
+
+            <TopPrioritiesSection items={aiReport.top_5_priorities} />
+
+            <SolarPVSection solar={solarSuitability} />
+
+            {aiReport.photo_summary && (
+              <TextSection title="Photo notes" accent="blue">
+                <p>{aiReport.photo_summary}</p>
+              </TextSection>
+            )}
+
+            <ReportList
+              title="Top likely energy drains"
+              items={aiReport.top_energy_drains}
+              accent="yellow"
+            />
+
+            <ReportList
+              title="Top recommended actions"
+              items={aiReport.top_recommended_actions}
+              accent="blue"
+            />
+
+            <ActionPlanSection
+              title="Priority action plan"
+              description="These are the most useful actions to consider first, with indicative cost, saving, effort and payback guidance."
+              actions={aiReport.priority_action_plan}
+              accent="navy"
+            />
+
+            <ActionPlanSection
+              title="Low-cost quick wins"
+              description="Lower-cost actions that are usually easier to test before committing to larger upgrades."
+              actions={aiReport.low_cost_quick_wins}
+              accent="yellow"
+            />
+
+            <ActionPlanSection
+              title="Medium-cost improvements"
+              description="Moderate improvements that may need products, trades or more planning, but can still be practical."
+              actions={aiReport.medium_cost_improvements}
+              accent="blue"
+            />
+
+            <ActionPlanSection
+              title="Higher-cost upgrades"
+              description="Larger upgrades that may improve comfort and efficiency but should usually be checked with a qualified professional."
+              actions={aiReport.higher_cost_upgrades}
+              accent="black"
+            />
+
+            {hasDetailedReport ? (
+              <>
+                <div className="grid gap-5 lg:grid-cols-3">
+                  <ReportList
+                    title="Electricity-specific advice"
+                    items={aiReport.electricity_specific_advice}
+                    accent="yellow"
+                  />
+
+                  <ReportList
+                    title="Gas-specific advice"
+                    items={aiReport.gas_specific_advice}
+                    accent="blue"
+                  />
+
+                  <ReportList
+                    title="Oil-specific advice"
+                    items={aiReport.oil_specific_advice}
+                    accent="black"
+                  />
                 </div>
 
-                {aiReport.photo_summary && (
-                  <div className="rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
-                    <h3 className="font-black text-[#17356f]">Photo notes</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-800">
-                      {cleanHomeownerLanguage(aiReport.photo_summary)}
-                    </p>
-                  </div>
-                )}
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <ReportList
+                    title="Appliance findings"
+                    items={aiReport.appliance_findings}
+                    accent="blue"
+                  />
 
-                <AiList
-                  title="Top 3 likely energy drains"
-                  items={aiReport.top_energy_drains}
+                  <ReportList
+                    title="Behaviour changes"
+                    items={aiReport.behaviour_changes}
+                    accent="yellow"
+                  />
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <ReportList
+                    title="Questions to ask a contractor"
+                    items={aiReport.contractor_questions}
+                    accent="navy"
+                  />
+
+                  <ReportList
+                    title="What to check next"
+                    items={aiReport.what_to_check_next}
+                    accent="blue"
+                  />
+                </div>
+
+                <ReportList
+                  title="Important assumptions"
+                  items={aiReport.important_assumptions}
+                  accent="black"
                 />
+              </>
+            ) : (
+              <>
+                <ReportList title="Quick wins" items={aiReport.quick_wins} />
 
-                <AiList
-                  title="Top 3 recommended actions"
-                  items={aiReport.top_recommended_actions}
-                />
-
-                <AiList title="Quick wins" items={aiReport.quick_wins} />
-
-                <AiList
+                <ReportList
                   title="Bigger upgrades"
                   items={aiReport.bigger_upgrades}
+                  accent="black"
                 />
 
-                <AiList
+                <ReportList
                   title="Extra insights"
                   items={aiReport.extra_insights}
+                  accent="blue"
                 />
-              </div>
+              </>
             )}
-          </SectionShell>
-        </div>
+          </div>
+        ) : (
+          <section className="mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
+            <h2 className="text-2xl font-black text-[#17356f]">
+              Generate AI report
+            </h2>
 
-        {errorMessage && (
-          <p className="mt-6 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-            {errorMessage}
-          </p>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Generate the customer-facing Save Your EGO report to add the AI
+              assessment, action plan and practical recommendations.
+            </p>
+
+            <div className="mt-5">
+              <GenerateReportButton assessmentId={assessment.id} />
+            </div>
+          </section>
         )}
 
-        <section className="mt-8 rounded-[1.75rem] border border-[#ffd600] bg-[#fff6bf] p-6 shadow-lg shadow-[#17356f]/10">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <section className="report-disclaimer mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 text-sm leading-6 text-slate-600 shadow-sm print:break-inside-avoid">
+          <h2 className="font-black text-[#17356f]">Important note</h2>
+          <p className="mt-2">
+            This Save Your EGO report provides indicative home energy guidance
+            only. It is not a substitute for a qualified energy assessment,
+            electrician, retrofit designer, heating engineer, gas technician,
+            oil heating specialist, structural professional, grant advisor or
+            building compliance expert. Estimated costs, estimated savings and
+            payback figures should be treated as broad guidance, not guarantees.
+          </p>
+        </section>
+
+        <footer className="mt-6 rounded-3xl bg-[#17356f] p-6 text-white print:break-inside-avoid">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
-                Final step
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black text-black">
-                Ready to view the customer report?
-              </h2>
-
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                Generate the AI assessment first for the strongest report, then
-                save the assessment to open the full Save Your EGO results page.
+              <p className="text-xl font-black">Save Your EGO</p>
+              <p className="mt-1 text-sm font-semibold text-white/70">
+                Electricity. Gas. Oil.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-full border border-[#dbe8f2] bg-white px-6 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
-              >
-                Back to dashboard
-              </button>
-
-              <button
-                type="button"
-                disabled={saving}
-                onClick={handleSubmit}
-                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving
-                  ? "Saving..."
-                  : aiReportText
-                    ? "Save AI report and view results"
-                    : "Save assessment and view report"}
-              </button>
-            </div>
+            <p className="text-sm font-semibold text-white/70">
+              Report generated{" "}
+              {formatDate(report?.created_at ?? assessment.created_at)}
+            </p>
           </div>
+        </footer>
+
+        <section className="mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
+          <h2 className="text-xl font-black text-[#17356f]">
+            Saved assessment data
+          </h2>
+
+          <details className="mt-4">
+            <summary className="cursor-pointer text-sm font-bold">
+              Show raw saved answers
+            </summary>
+
+            <pre className="mt-4 overflow-auto rounded-2xl bg-slate-50 p-4 text-xs">
+              {JSON.stringify(assessment.answers, null, 2)}
+            </pre>
+          </details>
         </section>
       </div>
     </main>

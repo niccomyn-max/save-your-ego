@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -116,41 +116,6 @@ type UploadedPhoto = {
   mimeType: string;
   dataUrl: string;
 };
-
-function cleanHomeownerText(value: string) {
-  return value
-    .replace(/\bbuilding fabric\b/gi, "home heat loss")
-    .replace(/\bfabric profile\b/gi, "heat-loss profile")
-    .replace(/\bfabric input(s)?\b/gi, "home heat loss input$1")
-    .replace(/\bfabric detail(s)?\b/gi, "home heat loss detail$1")
-    .replace(/\bfabric upgrade(s)?\b/gi, "home heat loss improvement$1")
-    .replace(/\bfabric weak point(s)?\b/gi, "home heat loss weak point$1")
-    .replace(/\bfabric weakness(es)?\b/gi, "home heat loss weakness$1")
-    .replace(/\bfabric\b/gi, "home heat loss")
-    .replace(/\bbattery view\b/gi, "home battery storage view")
-    .replace(/\bsolar battery\b/gi, "solar battery storage")
-    .replace(/\bbattery storage\b/gi, "home battery storage");
-}
-
-function cleanAiReportForHomeowners(report: AiAssessment | null): AiAssessment | null {
-  if (!report) return report;
-
-  return {
-    photo_summary: report.photo_summary
-      ? cleanHomeownerText(report.photo_summary)
-      : report.photo_summary,
-    top_energy_drains: report.top_energy_drains?.map(cleanHomeownerText),
-    top_recommended_actions:
-      report.top_recommended_actions?.map(cleanHomeownerText),
-    quick_wins: report.quick_wins?.map(cleanHomeownerText),
-    bigger_upgrades: report.bigger_upgrades?.map(cleanHomeownerText),
-    extra_insights: report.extra_insights?.map(cleanHomeownerText),
-    bottom_line: report.bottom_line
-      ? cleanHomeownerText(report.bottom_line)
-      : report.bottom_line,
-  };
-}
-
 
 function AiList({
   title,
@@ -377,6 +342,48 @@ export default function AssessmentPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
   const [photoErrorMessage, setPhotoErrorMessage] = useState("");
   const [otherApplianceName, setOtherApplianceName] = useState("");
+
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [hasPaidAccess, setHasPaidAccess] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkPaidAccess() {
+      try {
+        const response = await fetch("/api/access/status", {
+          method: "GET",
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error("Could not check paid access");
+        }
+
+        const data = await response.json();
+
+        if (!cancelled) {
+          setHasPaidAccess(Boolean(data.paidAccess));
+        }
+      } catch (error) {
+        console.error("Paid access check failed", error);
+
+        if (!cancelled) {
+          setHasPaidAccess(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingAccess(false);
+        }
+      }
+    }
+
+    checkPaidAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
   const countryDefaults =
@@ -621,8 +628,8 @@ export default function AssessmentPage() {
         return;
       }
 
-      setAiReportText(cleanHomeownerText(result.reportText || ""));
-      setAiReport(cleanAiReportForHomeowners(result.report));
+      setAiReportText(result.reportText);
+      setAiReport(result.report);
       setGeneratingAi(false);
     } catch {
       setGeneratingAi(false);
@@ -680,6 +687,64 @@ export default function AssessmentPage() {
 
     router.push(`/report/${savedAssessment.id}`);
     router.refresh();
+  }
+
+  if (checkingAccess) {
+    return (
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-8 text-[#050505]">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <section className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
+            <p className="text-sm font-bold text-slate-600">
+              Checking your Save Your EGO access...
+            </p>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (!hasPaidAccess) {
+    return (
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-8 text-[#050505]">
+        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
+          <section className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fff6bf] text-3xl">
+              🔒
+            </div>
+
+            <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-[#17356f]">
+              Paid access required
+            </p>
+
+            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#17356f] sm:text-4xl">
+              Your Save Your EGO assessment is locked
+            </h1>
+
+            <p className="mt-4 text-sm leading-6 text-slate-700">
+              Complete payment to unlock your personalised home energy
+              assessment and report for electricity, gas and oil.
+            </p>
+
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+              <a
+                href="https://saveyourego.com"
+                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black"
+              >
+                Unlock My Report
+              </a>
+
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="rounded-full border border-[#dbe8f2] bg-white px-7 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
+              >
+                Back to dashboard
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -1164,8 +1229,8 @@ export default function AssessmentPage() {
 
           <SectionShell
             number="4"
-            title="Advanced home heat loss details"
-            description="Optional details about walls, roof, floors and windows. Keep this simple with Poor, Medium, Good or Unknown."
+            title="Advanced home fabric details"
+            description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
             accent="blue"
           >
             <div className="grid gap-5 md:grid-cols-2">
@@ -1436,7 +1501,7 @@ export default function AssessmentPage() {
                   key={label}
                   className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5"
                 >
-                  <p className="text-sm font-black text-slate-500">{cleanHomeownerText(label)}</p>
+                  <p className="text-sm font-black text-slate-500">{label}</p>
                   <p className="mt-1 text-2xl font-black text-[#17356f]">
                     {score}
                   </p>
@@ -1457,7 +1522,7 @@ export default function AssessmentPage() {
           <SectionShell
             number="7"
             title="AI assessment"
-            description="Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, home heat loss inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
+            description="Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
             accent="blue"
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
