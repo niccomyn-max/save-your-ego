@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -343,48 +343,6 @@ export default function AssessmentPage() {
   const [photoErrorMessage, setPhotoErrorMessage] = useState("");
   const [otherApplianceName, setOtherApplianceName] = useState("");
 
-  const [checkingAccess, setCheckingAccess] = useState(true);
-  const [hasPaidAccess, setHasPaidAccess] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function checkPaidAccess() {
-      try {
-        const response = await fetch("/api/access/status", {
-          method: "GET",
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          throw new Error("Could not check paid access");
-        }
-
-        const data = await response.json();
-
-        if (!cancelled) {
-          setHasPaidAccess(Boolean(data.paidAccess));
-        }
-      } catch (error) {
-        console.error("Paid access check failed", error);
-
-        if (!cancelled) {
-          setHasPaidAccess(false);
-        }
-      } finally {
-        if (!cancelled) {
-          setCheckingAccess(false);
-        }
-      }
-    }
-
-    checkPaidAccess();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
   const countryDefaults =
     COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.US;
@@ -637,114 +595,85 @@ export default function AssessmentPage() {
     }
   }
 
+  function resetAssessmentDraft() {
+    setAnswers({
+      ...defaultAnswers,
+      fabric_meta: {
+        ...defaultAnswers.fabric_meta,
+      },
+      appliances: [],
+    });
+    setUploadedPhotos([]);
+    setPhotoErrorMessage("");
+    setOtherApplianceName("");
+    setAiReportText("");
+    setAiReport(null);
+    setAiErrorMessage("");
+    setGeneratingAi(false);
+  }
+
   async function handleSubmit() {
+    if (saving) return;
+
     setSaving(true);
     setErrorMessage("");
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      setSaving(false);
-      setErrorMessage("You need to be signed in to save an assessment.");
-      return;
-    }
-
-    const { data: savedAssessment, error } = await supabase
-      .from("assessments")
-      .insert({
-        user_id: user.id,
-        answers: {
-          ...answers,
-          uploaded_photo_count: uploadedPhotos.length,
-        },
-        scores: analysis,
-      })
-      .select("id")
-      .single();
-
-    if (error || !savedAssessment) {
-      setSaving(false);
-      setErrorMessage(error?.message || "Failed to save assessment.");
-      return;
-    }
-
-    if (aiReportText) {
-      const { error: reportError } = await supabase.from("reports").insert({
-        user_id: user.id,
-        assessment_id: savedAssessment.id,
-        report_text: aiReportText,
-      });
-
-      if (reportError) {
-        setSaving(false);
-        setErrorMessage(reportError.message);
+      if (userError || !user) {
+        setErrorMessage("You need to be signed in to save an assessment.");
         return;
       }
+
+      const { data: savedAssessment, error } = await supabase
+        .from("assessments")
+        .insert({
+          user_id: user.id,
+          answers: {
+            ...answers,
+            uploaded_photo_count: uploadedPhotos.length,
+          },
+          scores: analysis,
+        })
+        .select("id")
+        .single();
+
+      if (error || !savedAssessment) {
+        setErrorMessage(error?.message || "Failed to save assessment.");
+        return;
+      }
+
+      if (aiReportText) {
+        const { error: reportError } = await supabase.from("reports").insert({
+          user_id: user.id,
+          assessment_id: savedAssessment.id,
+          report_text: aiReportText,
+        });
+
+        if (reportError) {
+          setErrorMessage(reportError.message);
+          return;
+        }
+      }
+
+      const reportPath = `/report/${savedAssessment.id}`;
+
+      resetAssessmentDraft();
+      setSaving(false);
+
+      router.push(reportPath);
+      router.refresh();
+    } catch {
+      setErrorMessage(
+        "Something went wrong while saving the assessment. Please refresh the page and try again."
+      );
+    } finally {
+      setSaving(false);
     }
-
-    router.push(`/report/${savedAssessment.id}`);
-    router.refresh();
-  }
-
-  if (checkingAccess) {
-    return (
-      <main className="min-h-screen bg-[#f7fbff] px-5 py-8 text-[#050505]">
-        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
-          <section className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
-            <p className="text-sm font-bold text-slate-600">
-              Checking your Save Your EGO access...
-            </p>
-          </section>
-        </div>
-      </main>
-    );
-  }
-
-  if (!hasPaidAccess) {
-    return (
-      <main className="min-h-screen bg-[#f7fbff] px-5 py-8 text-[#050505]">
-        <div className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center">
-          <section className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#fff6bf] text-3xl">
-              🔒
-            </div>
-
-            <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-[#17356f]">
-              Paid access required
-            </p>
-
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-[#17356f] sm:text-4xl">
-              Your Save Your EGO assessment is locked
-            </h1>
-
-            <p className="mt-4 text-sm leading-6 text-slate-700">
-              Complete payment to unlock your personalised home energy
-              assessment and report for electricity, gas and oil.
-            </p>
-
-            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-              <a
-                href="https://saveyourego.com"
-                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black"
-              >
-                Unlock My Report
-              </a>
-
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-full border border-[#dbe8f2] bg-white px-7 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
-              >
-                Back to dashboard
-              </button>
-            </div>
-          </section>
-        </div>
-      </main>
-    );
   }
 
   return (
