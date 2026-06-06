@@ -144,6 +144,8 @@ export const APPLIANCE_LIBRARY: Record<string, string[]> = {
     "Microwave",
     "Kettle",
     "Toaster",
+    "Air fryer",
+    "Coffee machine",
   ],
   "Hot water and heating": [
     "Immersion heater",
@@ -151,6 +153,8 @@ export const APPLIANCE_LIBRARY: Record<string, string[]> = {
     "Portable electric heater",
     "Heated towel rail",
     "Dehumidifier",
+    "Air conditioning",
+    "Sauna",
   ],
   "Entertainment and office": [
     "Main TV",
@@ -160,7 +164,17 @@ export const APPLIANCE_LIBRARY: Record<string, string[]> = {
     "Gaming console",
     "Router / network gear",
   ],
-  "Transport and specialist": ["EV charger", "Hot tub", "Aquarium"],
+  "Personal care and fitness": [
+    "Hair straighteners",
+    "Clothes iron",
+    "Treadmill",
+  ],
+  "Transport and specialist": [
+    "EV charger",
+    "Hot tub",
+    "Aquarium",
+    "Swimming pool filter / pump",
+  ],
 };
 
 export const APPLIANCE_PROFILES: Record<
