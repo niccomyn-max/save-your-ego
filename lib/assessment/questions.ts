@@ -37,7 +37,7 @@ export const saveYourEgoQuestions: AssessmentQuestion[] = [
   {
     id: "high_use_appliances",
     section: "electricity",
-    text: "How often are high-use appliances such as tumble dryers, ovens, immersion heaters or electric showers used?",
+    text: "How often are high-use appliances such as tumble dryers, ovens, immersion heaters, electric showers, air fryers, hair straighteners or irons used?",
     options: standardOptions,
   },
   {
