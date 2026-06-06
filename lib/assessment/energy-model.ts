@@ -147,7 +147,7 @@ export const APPLIANCE_LIBRARY: Record<string, string[]> = {
     "Air fryer",
     "Coffee machine",
   ],
-  "Hot water and heating": [
+  "Hot water, heating and cooling": [
     "Immersion heater",
     "Electric shower",
     "Portable electric heater",
