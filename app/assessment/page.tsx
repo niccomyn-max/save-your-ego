@@ -764,7 +764,7 @@ export default function AssessmentPage() {
 
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
               <a
-                href="https://saveyourego.com"
+                href="https://www.saveyourego.com/"
                 className="rounded-full bg-[#17356f] px-8 py-4 text-base font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:opacity-90"
               >
                 Unlock My Report
