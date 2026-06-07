@@ -126,10 +126,8 @@ function DashboardStat({
       </p>
       <p className="mt-2 text-2xl font-black leading-tight">{value}</p>
     </div>
-    
   );
 }
-
 
 function AssessmentCard({ assessment }: { assessment: Assessment }) {
   const answers = assessment.answers ?? {};
@@ -266,7 +264,9 @@ async function DashboardContent() {
   ).length;
 
   return (
-    <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[#f7fbff] px-5 py-24 text-[#050505] sm:px-8 lg:px-10">
+      <AccountBar email={user.email ?? ""} />
+
       <div className="mx-auto max-w-6xl">
         <section className="overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
@@ -388,7 +388,7 @@ async function DashboardContent() {
           </section>
         )}
 
-        {!assessmentList || assessmentList.length === 0 ? (
+        {assessmentList.length === 0 ? (
           <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-[#dbe8f2] bg-white shadow-sm">
             <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
               <div className="bg-gradient-to-br from-[#fff6bf] to-[#e9f6fe] p-6 sm:p-8">

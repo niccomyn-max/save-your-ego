@@ -1,4 +1,3 @@
-import { AccountBar } from "@/components/account-bar";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -34,9 +33,7 @@ export default function RootLayout({
   enableSystem
   disableTransitionOnChange
 >
-  <div className="mx-auto max-w-6xl px-5 pt-5">
-    <AccountBar />
-  </div>
+  
 
   {children}
 </ThemeProvider>
