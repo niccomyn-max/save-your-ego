@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { AccountSettings } from "@/components/account-settings";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -34,8 +36,11 @@ export default function RootLayout({
   disableTransitionOnChange
 >
   
+  <Suspense fallback={null}>
+  <AccountSettings />
+</Suspense>
 
-  {children}
+{children}
 </ThemeProvider>
       </body>
     </html>

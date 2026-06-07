@@ -1,4 +1,3 @@
-import { AccountBar } from "@/components/account-bar";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -265,7 +264,6 @@ async function DashboardContent() {
 
   return (
     <main className="min-h-screen bg-[#f7fbff] px-5 py-24 text-[#050505] sm:px-8 lg:px-10">
-      <AccountBar email={user.email ?? ""} />
 
       <div className="mx-auto max-w-6xl">
         <section className="overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
