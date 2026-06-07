@@ -1,3 +1,4 @@
+import { AccountBar } from "@/components/account-bar";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -125,8 +126,10 @@ function DashboardStat({
       </p>
       <p className="mt-2 text-2xl font-black leading-tight">{value}</p>
     </div>
+    
   );
 }
+
 
 function AssessmentCard({ assessment }: { assessment: Assessment }) {
   const answers = assessment.answers ?? {};
