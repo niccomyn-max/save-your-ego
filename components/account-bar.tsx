@@ -57,14 +57,24 @@ export function AccountBar() {
           <span className="font-black text-[#17356f]">{email}</span>
         </p>
 
-        <button
-          type="button"
-          onClick={handleSignOut}
-          disabled={signingOut}
-          className="rounded-full border border-[#17356f] px-4 py-2 text-sm font-black text-[#17356f] transition hover:bg-[#17356f] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {signingOut ? "Signing out..." : "Sign out"}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+  <button
+    type="button"
+    onClick={() => router.push("/auth/forgot-password")}
+    className="rounded-full border border-[#17356f] px-4 py-2 text-sm font-black text-[#17356f] transition hover:bg-[#17356f] hover:text-white"
+  >
+    Change password
+  </button>
+
+  <button
+    type="button"
+    onClick={handleSignOut}
+    disabled={signingOut}
+    className="rounded-full border border-[#17356f] px-4 py-2 text-sm font-black text-[#17356f] transition hover:bg-[#17356f] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    {signingOut ? "Signing out..." : "Sign out"}
+  </button>
+</div>
       </div>
     </div>
   );
