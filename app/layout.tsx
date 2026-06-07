@@ -1,3 +1,4 @@
+import { AccountBar } from "@/components/account-bar";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
@@ -28,13 +29,17 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+  attribute="class"
+  defaultTheme="system"
+  enableSystem
+  disableTransitionOnChange
+>
+  <div className="mx-auto max-w-6xl px-5 pt-5">
+    <AccountBar />
+  </div>
+
+  {children}
+</ThemeProvider>
       </body>
     </html>
   );
