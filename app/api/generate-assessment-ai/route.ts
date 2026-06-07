@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 
 const actionSchema = {
   type: "object",
@@ -226,6 +227,36 @@ type UploadedPhoto = {
   dataUrl: string;
 };
 
+async function checkPaidAccess(email: string) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("AI assessment paid access check missing Supabase env vars.");
+    return false;
+  }
+
+  const adminSupabase = createSupabaseAdminClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+    },
+  });
+
+  const { data, error } = await adminSupabase
+    .from("paid_users")
+    .select("paid_access")
+    .eq("email", email.toLowerCase().trim())
+    .eq("paid_access", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("AI assessment paid access lookup error:", error);
+    return false;
+  }
+
+  return Boolean(data?.paid_access);
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -235,10 +266,22 @@ export async function POST(request: Request) {
       error: userError,
     } = await supabase.auth.getUser();
 
-    if (userError || !user) {
+    if (userError || !user?.email) {
       return NextResponse.json(
         { error: "You must be signed in to generate an AI assessment." },
         { status: 401 }
+      );
+    }
+
+    const hasPaidAccess = await checkPaidAccess(user.email);
+
+    if (!hasPaidAccess) {
+      return NextResponse.json(
+        {
+          error:
+            "Paid access is required to generate a Save Your EGO assessment.",
+        },
+        { status: 403 }
       );
     }
 

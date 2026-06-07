@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -329,6 +329,42 @@ export default function AssessmentPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [hasPaidAccess, setHasPaidAccess] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkPaidAccess() {
+      try {
+        const response = await fetch("/api/access/status", {
+          cache: "no-store",
+        });
+
+        const data: { paidAccess?: boolean; authenticated?: boolean } =
+          await response.json();
+
+        if (!cancelled) {
+          setHasPaidAccess(Boolean(data.paidAccess));
+        }
+      } catch {
+        if (!cancelled) {
+          setHasPaidAccess(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setCheckingAccess(false);
+        }
+      }
+    }
+
+    checkPaidAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [answers, setAnswers] =
     useState<EnergyAssessmentAnswers>(defaultAnswers);
   const [saving, setSaving] = useState(false);
@@ -562,6 +598,11 @@ export default function AssessmentPage() {
   }
 
   async function handleGenerateAiAssessment() {
+    if (!hasPaidAccess) {
+      setAiErrorMessage("Paid access is required to generate an AI assessment.");
+      return;
+    }
+
     setGeneratingAi(true);
     setAiErrorMessage("");
 
@@ -614,6 +655,11 @@ export default function AssessmentPage() {
 
   async function handleSubmit() {
     if (saving) return;
+
+    if (!hasPaidAccess) {
+      setErrorMessage("Paid access is required to save and view a report.");
+      return;
+    }
 
     setSaving(true);
     setErrorMessage("");
@@ -674,6 +720,68 @@ export default function AssessmentPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (checkingAccess) {
+    return (
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
+        <div className="mx-auto flex min-h-[70vh] max-w-4xl items-center justify-center">
+          <div className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
+              Checking access
+            </p>
+            <h1 className="mt-4 text-3xl font-black text-black">
+              Loading your Save Your EGO assessment...
+            </h1>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!hasPaidAccess) {
+    return (
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
+        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
+          <section className="w-full rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10 sm:p-12">
+            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#fff2a8] text-4xl">
+              🔒
+            </div>
+
+            <p className="mt-8 text-sm font-black uppercase tracking-[0.22em] text-[#17356f]">
+              Paid access required
+            </p>
+
+            <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-black tracking-tight text-[#17356f] sm:text-5xl">
+              Your Save Your EGO assessment is locked
+            </h1>
+
+            <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-700 sm:text-lg">
+              Complete payment to unlock your personalised home energy assessment
+              and report for electricity, gas and oil. If you have already paid,
+              make sure you are signed in with the same email address used at checkout.
+            </p>
+
+            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+              <a
+                href="https://saveyourego.com"
+                className="rounded-full bg-[#17356f] px-8 py-4 text-base font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:opacity-90"
+              >
+                Unlock My Report
+              </a>
+
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard")}
+                className="rounded-full border border-[#dbe8f2] bg-white px-8 py-4 text-base font-black text-[#17356f] shadow-sm transition hover:bg-slate-50"
+              >
+                Back to dashboard
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
   }
 
   return (
