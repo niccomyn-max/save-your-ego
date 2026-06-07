@@ -66,7 +66,7 @@ async function HomeContent() {
                 </Link>
 
                 <Link
-                  href="/auth/sign-up"
+                  href="https://www.saveyourego.com/"
                   className="rounded-full bg-[#17356f] px-5 py-2.5 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black"
                 >
                   Start
