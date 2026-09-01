@@ -13,7 +13,7 @@ type ReportPageProps = {
   }>;
 };
 
-type JsonRecord = Record<string, any>;
+type JsonRecord = Record<string, unknown>;
 
 type DetailedAction = {
   action?: string;
@@ -478,6 +478,19 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
     return null;
   }
 
+  const rawRating = displayValue(solar.rating);
+
+  if (rawRating === "Not applicable") {
+    return null;
+  }
+
+  const needsMoreInformation =
+    rawRating === "Unknown" || rawRating === "Needs more information";
+
+  const customerRating = needsMoreInformation
+    ? "Needs more information"
+    : rawRating;
+
   const installerQuestions = Array.isArray(solar.installer_questions)
     ? solar.installer_questions
     : [];
@@ -504,7 +517,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
         <div className="rounded-2xl bg-[#ffd600] px-5 py-4 text-black">
           <p className="text-xs font-black uppercase opacity-70">Suitability</p>
           <p className="mt-1 text-2xl font-black">
-            {displayValue(solar.rating)}
+            {customerRating}
           </p>
         </div>
       </div>
@@ -515,7 +528,9 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
             Suggested system size
           </p>
           <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
-            {displayValue(solar.suggested_system_size)}
+            {needsMoreInformation
+  ? "Not estimated until roof orientation, shading and usable roof area are confirmed."
+  : displayValue(solar.suggested_system_size)}
           </p>
         </div>
 
@@ -602,9 +617,22 @@ async function ReportContent({ params }: ReportPageProps) {
   const answers = (assessment.answers ?? {}) as JsonRecord;
   const scores = (assessment.scores ?? {}) as JsonRecord;
 
+  const quickScores =
+  typeof scores.quickScores === "object" &&
+  scores.quickScores !== null &&
+  !Array.isArray(scores.quickScores)
+    ? (scores.quickScores as JsonRecord)
+    : null;
+
   const usesGas = Boolean(answers.uses_gas);
-  const usesOil = Boolean(answers.uses_oil);
-  const solarSuitability = (scores.solarSuitability ?? null) as JsonRecord | null;
+const usesOil = Boolean(answers.uses_oil);
+
+const isApartment =
+  String(answers.property_type ?? "").toLowerCase() === "apartment";
+
+const solarSuitability = isApartment
+  ? null
+  : ((scores.solarSuitability ?? null) as JsonRecord | null);
 
   const hasDetailedReport =
     Boolean(aiReport?.priority_action_plan?.length) ||
@@ -773,9 +801,9 @@ async function ReportContent({ params }: ReportPageProps) {
             />
           </div>
 
-          {scores.quickScores && (
+          {quickScores && (
             <div className="mt-5 grid gap-4 md:grid-cols-3">
-              {Object.entries(scores.quickScores).map(([label, score]) => (
+              {Object.entries(quickScores).map(([label, score]) => (
                 <div
                   key={label}
                   className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
@@ -805,7 +833,7 @@ async function ReportContent({ params }: ReportPageProps) {
               <p>
                 Annual spend:{" "}
                 {answers.annual_bill_override
-                  ? answers.annual_bill_override
+                  ? displayValue(answers.annual_bill_override)
                   : "Estimated from bill"}
               </p>
             </InputCard>
@@ -1036,21 +1064,7 @@ async function ReportContent({ params }: ReportPageProps) {
           </div>
         </footer>
 
-        <section className="mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
-          <h2 className="text-xl font-black text-[#17356f]">
-            Saved assessment data
-          </h2>
-
-          <details className="mt-4">
-            <summary className="cursor-pointer text-sm font-bold">
-              Show raw saved answers
-            </summary>
-
-            <pre className="mt-4 overflow-auto rounded-2xl bg-slate-50 p-4 text-xs">
-              {JSON.stringify(assessment.answers, null, 2)}
-            </pre>
-          </details>
-        </section>
+        
       </div>
     </main>
   );

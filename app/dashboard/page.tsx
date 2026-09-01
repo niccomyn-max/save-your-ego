@@ -7,8 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 
 type Assessment = {
   id: string;
-  answers: Record<string, any> | null;
-  scores: Record<string, any> | null;
+  answers: Record<string, unknown> | null;
+  scores: Record<string, unknown> | null;
   created_at: string;
 };
 
@@ -86,7 +86,7 @@ function getSavingPotential(assessment: Assessment) {
   };
 }
 
-function getFuelCoverage(answers: Record<string, any> | null) {
+function getFuelCoverage(answers: Record<string, unknown> | null) {
   const fuel = ["Electricity"];
 
   if (answers?.uses_gas) {
@@ -258,9 +258,7 @@ async function DashboardContent() {
   const assessmentList = (assessments ?? []) as Assessment[];
   const latestAssessment = assessmentList[0];
 
-  const highPotentialCount = assessmentList.filter((assessment) =>
-    getSavingPotential(assessment).label.includes("High")
-  ).length;
+  
 
   return (
     <main className="min-h-screen bg-[#f7fbff] px-5 py-24 text-[#050505] sm:px-8 lg:px-10">
@@ -325,17 +323,9 @@ async function DashboardContent() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4">
                   <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
-                    <p className="text-xs font-black uppercase opacity-70">
-                      High potential
-                    </p>
-                    <p className="mt-2 text-3xl font-black">
-                      {highPotentialCount}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
+                      
                     <p className="text-xs font-black uppercase opacity-70">
                       Latest
                     </p>
@@ -361,18 +351,14 @@ async function DashboardContent() {
         </section>
 
         {assessmentList.length > 0 && (
-          <section className="mt-6 grid gap-4 sm:grid-cols-3">
+          <section className="mt-6 grid gap-4 sm:grid-cols-2">
             <DashboardStat
               label="Total reports"
               value={assessmentList.length}
               colour="white"
             />
 
-            <DashboardStat
-              label="High saving potential"
-              value={highPotentialCount}
-              colour="yellow"
-            />
+            
 
             <DashboardStat
               label="Latest assessment"

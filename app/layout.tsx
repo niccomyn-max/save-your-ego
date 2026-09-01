@@ -1,15 +1,12 @@
 import { Suspense } from "react";
-import { AccountSettings } from "@/components/account-settings";
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { AccountSettings } from "@/components/account-settings";
 import "./globals.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
-export const metadata = {
+export const metadata: Metadata = {
+  metadataBase: new URL("https://www.saveyourego.com"),
   title: "Save Your EGO",
   description:
     "Save Your EGO helps households assess Electricity, Gas and Oil use and generate practical home energy reports.",
@@ -30,18 +27,17 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
         <ThemeProvider
-  attribute="class"
-  defaultTheme="system"
-  enableSystem
-  disableTransitionOnChange
->
-  
-  <Suspense fallback={null}>
-  <AccountSettings />
-</Suspense>
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Suspense fallback={null}>
+            <AccountSettings />
+          </Suspense>
 
-{children}
-</ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

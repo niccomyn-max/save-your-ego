@@ -315,7 +315,12 @@ export type ApplianceRow = {
 };
 
 export type SolarSuitability = {
-  rating: "Strong" | "Possible" | "Not first priority" | "Unknown";
+    rating:
+    | "Strong"
+    | "Possible"
+    | "Not first priority"
+    | "Needs more information"
+    | "Not applicable";
   suggested_system_size: string;
   battery_view: string;
   reason: string;
@@ -536,6 +541,7 @@ export function calculateScores(input: {
 }
 
 export function calculateSolarSuitability(input: {
+  propertyType: string;
   annualElectricityKwh: number;
   hasSolar: boolean;
   hasBattery: boolean;
@@ -548,6 +554,22 @@ export function calculateSolarSuitability(input: {
   hasHeatPump: boolean;
   hasEvAppliance: boolean;
 }): SolarSuitability {
+    if (input.propertyType === "Apartment") {
+    return {
+      rating: "Not applicable",
+      suggested_system_size:
+        "Rooftop solar is not sized for an individual apartment assessment.",
+      battery_view: input.hasBattery
+        ? "A battery is already installed. Its value should be reviewed separately from rooftop solar."
+        : "Battery storage is not assessed here as part of rooftop solar for an individual apartment.",
+      reason:
+        "Rooftop solar is not assessed for individual apartments because roof access, ownership and installation decisions are normally building-level matters.",
+      installer_questions: [],
+      cautions: [
+        "Any apartment-building solar opportunity should be considered at building, management-company or owners-association level where applicable.",
+      ],
+    };
+  }
   if (input.hasSolar) {
     return {
       rating: "Not first priority",
@@ -630,7 +652,7 @@ export function calculateSolarSuitability(input: {
     score -= 2;
   }
 
-  const hasUnknowns =
+    const hasUnknowns =
     !input.roofOrientation ||
     input.roofOrientation === UNKNOWN_OPTION ||
     !input.roofShading ||
@@ -638,26 +660,61 @@ export function calculateSolarSuitability(input: {
     !input.roofSpace ||
     input.roofSpace === UNKNOWN_OPTION;
 
+  if (hasUnknowns) {
+    return {
+      rating: "Needs more information",
+      suggested_system_size:
+        "Not estimated until roof orientation, shading and usable roof area are known.",
+      battery_view: input.hasBattery
+        ? "A battery is already installed, so its settings and tariff alignment can be reviewed separately."
+        : "Battery value cannot be judged reliably until the solar opportunity and household usage pattern are clearer.",
+      reason:
+        "There is not enough roof information to give a useful solar suitability rating yet. Check orientation, shading and usable roof area first.",
+      installer_questions: [
+        "What usable roof area is available after allowing for shading, setbacks and roof obstructions?",
+        "What are the roof orientation and pitch?",
+        "What annual generation would the exact roof layout be expected to produce?",
+      ],
+      cautions: [
+        "Do not size or price a solar PV system from electricity use alone.",
+        "Roof condition, structure, shading, electrical capacity, export limits and local rules should be checked before making a decision.",
+      ],
+    };
+  }
+
   let rating: SolarSuitability["rating"] = "Possible";
 
-  if (score >= 7) {
+  const hasMajorRoofConstraint =
+    input.roofOrientation === "North-facing" ||
+    input.roofShading === "Heavy shading";
+
+  if (hasMajorRoofConstraint || score <= 1) {
+    rating = "Not first priority";
+  } else if (score >= 7) {
     rating = "Strong";
-  } else if (score <= 1) {
-    rating = hasUnknowns ? "Unknown" : "Not first priority";
-  } else if (hasUnknowns) {
-    rating = "Unknown";
   }
 
-  let suggestedSize = "A 3-5 kW system may be worth reviewing.";
+  let suggestedSize =
+  "No system size is suggested at this stage because the current roof or priority factors do not support sizing solar yet.";
+
+if (rating === "Strong" || rating === "Possible") {
+  suggestedSize =
+    "An installer sizing review around 3-5 kW may be worth exploring as a starting point.";
+
   if (input.annualElectricityKwh >= 12000) {
-    suggestedSize = "An 8-12 kW+ system may be worth reviewing if roof space, inverter limits and local rules allow.";
+    suggestedSize =
+      "An installer may review a larger system, potentially around 8-12 kW+, but only if usable roof area, inverter limits, export rules and local conditions support it.";
   } else if (input.annualElectricityKwh >= 8000) {
-    suggestedSize = "A 6-9 kW system may be worth reviewing, especially if there is an EV, heat pump or strong daytime use.";
+    suggestedSize =
+      "An installer may review roughly 6-9 kW, particularly where EV, heat-pump or daytime demand is substantial and the roof can support it.";
   } else if (input.annualElectricityKwh >= 5000) {
-    suggestedSize = "A 4-7 kW system may be worth reviewing, depending on roof layout and daytime usage.";
+    suggestedSize =
+      "An installer may review roughly 4-7 kW, subject to the exact roof layout, local solar resource and daytime electricity use.";
   } else if (input.annualElectricityKwh < 3000) {
-    suggestedSize = "A smaller 2-4 kW system may be more appropriate unless future electricity use is expected to rise.";
+    suggestedSize =
+      "A smaller system, roughly 2-4 kW, may be worth reviewing unless future electricity demand is expected to rise.";
   }
+}
 
   const batteryView =
     input.daytimeUse === "High"
@@ -671,13 +728,11 @@ export function calculateSolarSuitability(input: {
       ? "A battery is already installed, so the priority is checking settings, charge/discharge timing and tariff alignment."
       : batteryView,
     reason:
-      rating === "Strong"
-        ? "The electricity use, likely demand profile and roof details suggest solar PV could be a strong candidate for review."
-        : rating === "Not first priority"
-          ? "Solar PV does not appear to be the first priority from the current inputs. Reducing demand or resolving roof constraints may matter more first."
-          : rating === "Unknown"
-            ? "Solar PV cannot be assessed confidently because key roof details are unknown. Orientation, shading and usable roof area should be checked first."
-            : "Solar PV may be worth reviewing, but the value depends on roof orientation, shading, usable roof area, tariffs and daytime electricity use.",
+  rating === "Strong"
+    ? "The electricity use, likely demand profile and roof details suggest solar PV could be a strong candidate for review."
+    : rating === "Not first priority"
+      ? "Solar PV does not appear to be the first priority from the current inputs. Reducing demand or resolving roof constraints may matter more first."
+      : "Solar PV may be worth reviewing, but the value depends on roof orientation, shading, usable roof area, tariffs and daytime electricity use.",
     installer_questions: [
       "What system size fits the usable roof area after allowing for shading, setbacks and roof obstructions?",
       "What is the estimated annual generation based on the exact roof orientation and pitch?",
@@ -806,6 +861,7 @@ export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
   });
 
   const solarSuitability = calculateSolarSuitability({
+    propertyType: answers.property_type,
     annualElectricityKwh: estimatedBillKwh,
     hasSolar: answers.has_solar,
     hasBattery: answers.has_battery,

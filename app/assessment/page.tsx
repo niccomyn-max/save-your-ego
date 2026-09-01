@@ -383,7 +383,8 @@ export default function AssessmentPage() {
   const countryDefaults =
     COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.US;
 
-  function clearAiReport() {
+  const isApartment = answers.property_type === "Apartment";
+    function clearAiReport() {
     setAiReport(null);
     setAiReportText("");
     setAiErrorMessage("");
@@ -824,19 +825,16 @@ export default function AssessmentPage() {
               </p>
 
               <div className="mt-8 grid gap-4">
-                <div className="rounded-[1.5rem] bg-white/10 p-5 backdrop-blur">
-                  <p className="text-xs font-black uppercase tracking-wide text-white/60">
-                    Default market
-                  </p>
-                  <p className="mt-2 text-3xl font-black">US</p>
-                </div>
+                
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
                     <p className="text-xs font-black uppercase opacity-70">
                       Sections
                     </p>
-                    <p className="mt-2 text-3xl font-black">7</p>
+                    <p className="mt-2 text-3xl font-black">
+  {isApartment ? "6" : "7"}
+</p>
                   </div>
 
                   <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
@@ -847,14 +845,16 @@ export default function AssessmentPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] bg-white p-5 text-black">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                    Solar review
-                  </p>
-                  <p className="mt-2 text-xl font-black">
-                    Diagnostic, not default
-                  </p>
-                </div>
+                {!isApartment && (
+  <div className="rounded-[1.5rem] bg-white p-5 text-black">
+    <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+      Solar review
+    </p>
+    <p className="mt-2 text-xl font-black">
+      Diagnostic, not default
+    </p>
+  </div>
+)}
               </div>
             </div>
           </div>
@@ -894,11 +894,29 @@ export default function AssessmentPage() {
               />
 
               <SelectField
-                label="Property type"
-                value={answers.property_type}
-                options={PROPERTY_TYPES}
-                onChange={(value) => updateAnswer("property_type", value)}
-              />
+  label="Property type"
+  value={answers.property_type}
+  options={PROPERTY_TYPES}
+  onChange={(value) => {
+    setAnswers((current) => ({
+      ...current,
+      property_type: value,
+      ...(value === "Apartment"
+        ? {
+            has_solar: false,
+            solar_roof_orientation: UNKNOWN_OPTION,
+            solar_roof_shading: UNKNOWN_OPTION,
+            solar_roof_space: UNKNOWN_OPTION,
+            solar_daytime_use: UNKNOWN_OPTION,
+            solar_ev_status: "No",
+            solar_interest: "No",
+          }
+        : {}),
+    }));
+
+    clearAiReport();
+  }}
+/>
 
               <NumberField
                 label="Number of bedrooms"
@@ -954,19 +972,25 @@ export default function AssessmentPage() {
               />
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              <ToggleField
-                label="Solar PV already installed"
-                value={answers.has_solar}
-                onChange={(value) => updateAnswer("has_solar", value)}
-              />
+            <div
+  className={`mt-5 grid gap-3 ${
+    isApartment ? "md:grid-cols-1" : "md:grid-cols-2"
+  }`}
+>
+  {!isApartment && (
+    <ToggleField
+      label="Solar PV already installed"
+      value={answers.has_solar}
+      onChange={(value) => updateAnswer("has_solar", value)}
+    />
+  )}
 
-              <ToggleField
-                label="Battery already installed"
-                value={answers.has_battery}
-                onChange={(value) => updateAnswer("has_battery", value)}
-              />
-            </div>
+  <ToggleField
+    label="Battery already installed"
+    value={answers.has_battery}
+    onChange={(value) => updateAnswer("has_battery", value)}
+  />
+</div>
 
             <label className="mt-5 grid gap-2 text-sm font-bold text-slate-700">
               Anything else worth knowing?
@@ -979,9 +1003,10 @@ export default function AssessmentPage() {
             </label>
           </SectionShell>
 
-          <SectionShell
-            number="2"
-            title="Solar suitability"
+          {!isApartment && (
+  <SectionShell
+    number="2"
+    title="Solar suitability"
             description="Solar should not be recommended by default. These details help the app judge whether solar PV is a strong candidate, a possible option, or not the first priority."
             accent="blue"
           >
@@ -1073,9 +1098,10 @@ export default function AssessmentPage() {
               </div>
             </div>
           </SectionShell>
+          )}
 
           <SectionShell
-            number="3"
+            number={isApartment ? "2" : "3"}
             title="Electricity, Gas and Oil costs"
             description="Save Your EGO means Electricity, Gas and Oil. Add what is known. Unknown values can be left at zero."
             accent="yellow"
@@ -1265,7 +1291,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
-            number="4"
+            number={isApartment ? "3" : "4"}
             title="Advanced home fabric details"
             description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
             accent="blue"
@@ -1374,7 +1400,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
-            number="5"
+            number={isApartment ? "4" : "5"}
             title="Appliances and usage"
             description="Select the appliances in the home, or add another appliance if it is not listed."
             accent="black"
@@ -1501,17 +1527,23 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
-            number="6"
+            number={isApartment ? "5" : "6"}
             title="Assessment preview"
             description="This is the rule-based assessment view before the AI report is generated."
             accent="yellow"
           >
-            <div className="grid gap-4 md:grid-cols-4">
-              <PreviewCard
-                label="Bill-based annual electricity use"
-                value={`${analysis.estimatedBillKwh.toFixed(0)} kWh`}
-                colour="yellow"
-              />
+            <div
+  className={`grid gap-4 ${
+    isApartment ? "md:grid-cols-3" : "md:grid-cols-4"
+  }`}
+>
+              {!isApartment && (
+  <PreviewCard
+    label="Solar suitability"
+    value={analysis.solarSuitability.rating}
+    colour="navy"
+  />
+)}
 
               <PreviewCard
                 label="Appliance estimate"
@@ -1557,9 +1589,13 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
-            number="7"
+            number={isApartment ? "6" : "7"}
             title="AI assessment"
-            description="Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
+            description={
+  isApartment
+    ? "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, optional photos and rule-based findings."
+    : "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
+}
             accent="blue"
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">

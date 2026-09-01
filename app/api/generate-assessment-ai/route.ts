@@ -347,7 +347,10 @@ Usage warning rules:
 - If nothing appears unusual, unusual_usage_warning should say no major usage warning is triggered, while still noting that bill and appliance inputs are indicative.
 
 Solar repetition rules:
-- The app has a dedicated Solar PV suitability section outside this AI text.
+- The app has a dedicated Solar PV suitability section outside this AI text for applicable property types.
+- If property_type is "Apartment", do not recommend rooftop solar PV, do not suggest a solar system size, and do not include solar in top priorities, action plans, quick wins, bigger upgrades, extra insights, contractor questions or what_to_check_next. Rooftop solar for an apartment is normally a building-level ownership and roof-access matter, not an individual-home recommendation.
+- If the rule-based solar rating is "Needs more information", do not invent a system size or present solar as a purchase recommendation. At most, say that roof orientation, shading and usable roof area need to be confirmed first if solar is otherwise relevant.
+- Do not override the rule-based solar suitability with guesses based only on country or electricity use.
 - Do not repeat solar heavily across every section.
 - Solar may appear in top priorities or action plans only if it is genuinely one of the strongest opportunities.
 - Do not put solar in more than one of these detailed sections unless clearly justified: priority_action_plan, medium_cost_improvements, higher_cost_upgrades.
@@ -481,42 +484,46 @@ ${JSON.stringify(scores, null, 2)}
 `;
 
     const content: Array<
-      | { type: "input_text"; text: string }
-      | { type: "input_image"; image_url: string }
-    > = [
-      {
-        type: "input_text",
-        text: prompt,
-      },
-    ];
-
-    if (photos.length > 0) {
-      content.push({
-        type: "input_text",
-        text: `The user uploaded ${photos.length} appliance photo(s). Analyse them only as supporting evidence.`,
-      });
-
-      photos.forEach((photo, index) => {
-        content.push({
-          type: "input_text",
-          text: `Photo ${index + 1}: ${
-            photo.name || "Uploaded appliance photo"
-          }`,
-        });
-
-        content.push({
-          type: "input_image",
-          image_url: photo.dataUrl,
-        });
-      });
+  | { type: "input_text"; text: string }
+  | {
+      type: "input_image";
+      image_url: string;
+      detail: "auto";
     }
+> = [
+  {
+    type: "input_text",
+    text: prompt,
+  },
+];
 
+if (photos.length > 0) {
+  content.push({
+    type: "input_text",
+    text: `The user uploaded ${photos.length} appliance photo(s). Analyse them only as supporting evidence.`,
+  });
+
+  photos.forEach((photo, index) => {
+    content.push({
+      type: "input_text",
+      text: `Photo ${index + 1}: ${
+        photo.name || "Uploaded appliance photo"
+      }`,
+    });
+
+    content.push({
+      type: "input_image",
+      image_url: photo.dataUrl,
+      detail: "auto",
+    });
+  });
+}
     const response = await client.responses.create({
       model: process.env.AI_MODEL || "gpt-5.4-mini",
       input: [
         {
           role: "user" as const,
-          content: content as any,
+          content,
         },
       ],
       text: {

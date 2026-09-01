@@ -165,6 +165,9 @@ Prioritisation rules:
 - Keep every item short and practical.
 - Do not repeat the same point across multiple sections.
 - Respect existing strengths such as solar, battery or strong fabric performance where present.
+- If property_type is "Apartment", do not recommend rooftop solar PV and do not suggest a solar system size. Treat any rooftop solar opportunity as a building-level ownership and roof-access matter rather than an individual-home recommendation.
+- If the rule-based solar rating is "Needs more information", do not invent a system size or present solar as a purchase recommendation.
+- Do not override the rule-based solar suitability with guesses based only on electricity use.
 - Consider electricity, heating fuel, hot water, cooking, EV charging, appliances and broader household energy use.
 
 Safety and scope:
