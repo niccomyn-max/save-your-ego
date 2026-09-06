@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -14,15 +15,25 @@ export default function Page() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">
-                Thank you for signing up!
+                Your account is ready
               </CardTitle>
-              <CardDescription>Check your email to confirm</CardDescription>
+              <CardDescription>
+                You can now sign in to Save Your EGO
+              </CardDescription>
             </CardHeader>
+
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                You&apos;ve successfully signed up. Please check your email to
-                confirm your account before signing in.
+                You&apos;ve successfully created your account. Please sign in
+                using the same email address and password you just registered.
               </p>
+
+              <Link
+                href="/auth/login"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+              >
+                Log in to Save Your EGO
+              </Link>
             </CardContent>
           </Card>
         </div>
