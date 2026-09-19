@@ -4,11 +4,19 @@ import { PrintReportButton } from "@/components/print-report-button";
 
 type JsonRecord = Record<string, unknown>;
 
+type PhotoEvidenceFinding = {
+  photo_number?: number;
+  finding?: string;
+  confidence?: "High" | "Medium";
+};
+
 type NarrativeReport = {
   bottom_line?: string;
   home_energy_snapshot?: string;
   fuel_specific_findings?: string[];
   solar_battery_ev_findings?: string[];
+  photo_evidence?: PhotoEvidenceFinding[];
+  photo_evidence_limitations?: string;
   positive_findings?: string[];
   what_to_check_next?: string[];
   assumptions_and_limits?: string[];
@@ -83,6 +91,29 @@ function cleanStrings(value: unknown): string[] {
   return value
     .map((item) => String(item ?? "").trim())
     .filter(Boolean);
+}
+
+function cleanPhotoEvidence(value: unknown): PhotoEvidenceFinding[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => asRecord(item))
+    .map((item) => ({
+      photo_number:
+        typeof item.photo_number === "number" ? item.photo_number : undefined,
+      finding:
+        typeof item.finding === "string" ? item.finding.trim() : undefined,
+      confidence:
+        item.confidence === "High" || item.confidence === "Medium"
+          ? item.confidence
+          : undefined,
+    }))
+    .filter(
+      (item) =>
+        typeof item.photo_number === "number" &&
+        Boolean(item.finding) &&
+        Boolean(item.confidence)
+    );
 }
 
 function mergeAssumptions(
@@ -253,8 +284,7 @@ function TopPrioritiesSummary({
 }: {
   items: Recommendation[];
 }) {
-  const visibleItems = cleanStrings(items);
-  if (visibleItems.length === 0) return null;
+  if (items.length === 0) return null;
 
   return (
     <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm">
@@ -334,7 +364,8 @@ function TextList({
   title: string;
   items: string[];
 }) {
-  if (items.length === 0) return null;
+  const visibleItems = cleanStrings(items);
+  if (visibleItems.length === 0) return null;
 
   return (
     <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
@@ -344,6 +375,68 @@ function TextList({
           <li key={`${title}-${index}`}>{item}</li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function PhotoEvidenceSection({
+  photoCount,
+  findings,
+  limitations,
+}: {
+  photoCount: number;
+  findings: PhotoEvidenceFinding[];
+  limitations: string;
+}) {
+  if (photoCount <= 0) return null;
+
+  return (
+    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#59b9ec] bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-black text-[#17356f]">Photo Evidence</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Uploaded photos are reviewed by AI as supporting evidence. They can
+            confirm readable details, but they do not override your answers or
+            create recommendations on their own.
+          </p>
+        </div>
+        <span className="rounded-full bg-[#e9f6fe] px-4 py-2 text-xs font-black text-[#17356f]">
+          Photos reviewed by AI: {photoCount}
+        </span>
+      </div>
+
+      {findings.length > 0 ? (
+        <div className="mt-5 grid gap-3">
+          {findings.map((item, index) => (
+            <div
+              key={`photo-evidence-${item.photo_number}-${index}`}
+              className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-[#17356f] px-3 py-1 text-[11px] font-black text-white">
+                  Photo {item.photo_number}
+                </span>
+                <span className="rounded-full bg-[#ffd600] px-3 py-1 text-[11px] font-black text-black">
+                  {item.confidence} confidence
+                </span>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-700">
+                {item.finding}
+              </p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4 text-sm leading-6 text-slate-700">
+          {limitations ||
+            "The uploaded photos were reviewed, but they did not provide reliable additional evidence beyond the assessment answers."}
+        </div>
+      )}
+
+      {findings.length > 0 && limitations && (
+        <p className="mt-4 text-xs leading-5 text-slate-500">{limitations}</p>
+      )}
     </section>
   );
 }
@@ -400,6 +493,15 @@ export function USAReport({
   const solarBatteryEvFindings = cleanStrings(
     narrative?.solar_battery_ev_findings
   );
+  const photoCount =
+    typeof answers.uploaded_photo_count === "number"
+      ? Math.max(0, Math.min(5, Math.round(answers.uploaded_photo_count)))
+      : 0;
+  const photoEvidence = cleanPhotoEvidence(narrative?.photo_evidence);
+  const photoEvidenceLimitations =
+    typeof narrative?.photo_evidence_limitations === "string"
+      ? narrative.photo_evidence_limitations.trim()
+      : "";
   const solarRelevant =
     solarBatteryEvFindings.length > 0 ||
     recommendations.some((item) =>
@@ -549,6 +651,12 @@ export function USAReport({
             description="Larger upgrades only appear when the available evidence supports keeping them on the table."
             items={considerLater}
             accent="navy"
+          />
+
+          <PhotoEvidenceSection
+            photoCount={photoCount}
+            findings={photoEvidence}
+            limitations={photoEvidenceLimitations}
           />
 
           <TextList
