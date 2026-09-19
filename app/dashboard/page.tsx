@@ -86,16 +86,25 @@ function getSavingPotential(assessment: Assessment) {
   };
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 function getFuelCoverage(answers: Record<string, unknown> | null) {
+  if (answers?.assessment_version === "usa-v1") {
+    const bills = asRecord(answers.bills_behaviour);
+    const sources = Array.isArray(bills.energy_sources)
+      ? bills.energy_sources.map(String)
+      : [];
+    return sources.length > 0 ? sources.join(", ") : "Electricity";
+  }
+
   const fuel = ["Electricity"];
 
-  if (answers?.uses_gas) {
-    fuel.push("Gas");
-  }
-
-  if (answers?.uses_oil) {
-    fuel.push("Oil");
-  }
+  if (answers?.uses_gas) fuel.push("Gas");
+  if (answers?.uses_oil) fuel.push("Oil");
 
   return fuel.join(", ");
 }
@@ -133,15 +142,33 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
   const scores = assessment.scores ?? {};
   const savingPotential = getSavingPotential(assessment);
 
-  const propertyType = displayValue(answers.property_type, "Home");
-  const bedrooms = displayValue(answers.bedrooms, "N/A");
-  const mainHeating = displayValue(answers.main_heating_system, "Not provided");
+  const isUSA = answers.assessment_version === "usa-v1";
+  const home = isUSA ? asRecord(answers.home) : {};
+  const hvac = isUSA ? asRecord(answers.hvac) : {};
+
+  const propertyType = isUSA
+    ? displayValue(home.home_type, "Home")
+    : displayValue(answers.property_type, "Home");
+  const bedrooms = isUSA
+    ? displayValue(home.home_size_band, "N/A")
+    : displayValue(answers.bedrooms, "N/A");
+  const mainHeating = isUSA
+    ? displayValue(hvac.main_heating, "Not provided")
+    : displayValue(answers.main_heating_system ?? answers.main_heating, "Not provided");
   const fuelCoverage = getFuelCoverage(answers);
 
-  const heatLossArea = displayValue(scores.biggestLossArea, "Not calculated");
-  const fabricBand = displayValue(scores.fabricBand, "Not calculated");
-  const electricityKwh = Math.round(Number(scores.estimatedBillKwh ?? 0));
-  const applianceKwh = Math.round(Number(scores.applianceKwh ?? 0));
+  const heatLossArea = isUSA
+    ? displayValue(scores.climate_context, "ZIP climate pending")
+    : displayValue(scores.biggestLossArea, "Not calculated");
+  const fabricBand = isUSA
+    ? `${Array.isArray(scores.recommendations) ? scores.recommendations.length : 0} priorities`
+    : displayValue(scores.fabricBand, "Not calculated");
+  const electricityKwh = isUSA
+    ? 0
+    : Math.round(Number(scores.estimatedBillKwh ?? 0));
+  const applianceKwh = isUSA
+    ? 0
+    : Math.round(Number(scores.applianceKwh ?? 0));
 
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-[#dbe8f2] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#17356f]/10">
@@ -181,32 +208,32 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
       <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
         <div className="rounded-2xl bg-[#fff6bf] p-4">
           <p className="text-xs font-black uppercase tracking-wide text-[#6b5200]">
-            Electricity
+            {isUSA ? "Version" : "Electricity"}
           </p>
           <p className="mt-2 text-xl font-black text-black">
-            {electricityKwh > 0 ? `${electricityKwh} kWh` : "Not estimated"}
+            {isUSA ? "USA v1" : electricityKwh > 0 ? `${electricityKwh} kWh` : "Not estimated"}
           </p>
         </div>
 
         <div className="rounded-2xl bg-[#e9f6fe] p-4">
           <p className="text-xs font-black uppercase tracking-wide text-[#17356f]/70">
-            Appliances
+            {isUSA ? "Climate" : "Appliances"}
           </p>
           <p className="mt-2 text-xl font-black text-[#17356f]">
-            {applianceKwh > 0 ? `${applianceKwh} kWh` : "0 kWh"}
+            {isUSA ? displayValue(scores.climate_context, "Pending") : applianceKwh > 0 ? `${applianceKwh} kWh` : "0 kWh"}
           </p>
         </div>
 
         <div className="rounded-2xl bg-slate-100 p-4">
           <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-            Main heat-loss area
+            {isUSA ? "Home context" : "Main heat-loss area"}
           </p>
           <p className="mt-2 text-xl font-black text-black">{heatLossArea}</p>
         </div>
 
         <div className="rounded-2xl bg-[#17356f] p-4 text-white">
           <p className="text-xs font-black uppercase tracking-wide text-white/60">
-            Fabric profile
+            {isUSA ? "Report priorities" : "Fabric profile"}
           </p>
           <p className="mt-2 text-xl font-black">{fabricBand}</p>
         </div>
@@ -214,7 +241,7 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
 
       <div className="grid gap-3 border-t border-[#dbe8f2] bg-[#fbfdff] p-5 text-sm sm:grid-cols-3 sm:p-6">
         <div>
-          <p className="font-black text-slate-400">Bedrooms</p>
+          <p className="font-black text-slate-400">{isUSA ? "Home size" : "Bedrooms"}</p>
           <p className="mt-1 font-bold text-[#17356f]">{bedrooms}</p>
         </div>
 
