@@ -1417,8 +1417,9 @@ export function analyseUSAssessment(
   const savingsCandidates = selected
     .filter(
       (item) =>
-        item.savings?.annual_cost_savings.min !== null &&
-        item.savings?.annual_cost_savings.max !== null
+        item.savings !== null &&
+        item.savings.annual_cost_savings.min !== null &&
+        item.savings.annual_cost_savings.max !== null
     )
     .map((item) => ({
       id: item.id,
