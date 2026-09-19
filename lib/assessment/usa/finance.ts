@@ -43,10 +43,7 @@ export function calculateSimplePaybackBand(input: {
   annualSavings: USMoneyRange | null;
   isNoCostAction?: boolean;
 }): USPaybackBand {
-  if (
-    input.isNoCostAction ||
-    (input.cost.min === 0 && input.cost.max === 0)
-  ) {
+  if (input.isNoCostAction) {
     return "Immediate";
   }
 
