@@ -77,6 +77,45 @@ function asRecommendations(value: unknown): Recommendation[] {
   return Array.isArray(value) ? (value as Recommendation[]) : [];
 }
 
+function cleanStrings(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => String(item ?? "").trim())
+    .filter(Boolean);
+}
+
+function mergeAssumptions(
+  deterministic: string[],
+  narrative: string[]
+) {
+  const result = [...deterministic];
+
+  for (const item of narrative) {
+    const lower = item.toLowerCase();
+
+    const duplicatesDeterministicRule =
+      lower.includes("climate weighting") ||
+      lower.includes("equipment age") ||
+      lower.includes("standalone replacement") ||
+      lower.includes("no-cost action") ||
+      lower.includes("immediate payback") ||
+      lower.includes("payback is not invented") ||
+      lower.includes("savings are not calculated");
+
+    if (!duplicatesDeterministicRule) result.push(item);
+  }
+
+  return result.filter(
+    (value, index, all) =>
+      all.findIndex(
+        (candidate) =>
+          candidate.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() ===
+          value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+      ) === index
+  );
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "long",
@@ -209,6 +248,48 @@ function RecommendationCard({
   );
 }
 
+function TopPrioritiesSummary({
+  items,
+}: {
+  items: Recommendation[];
+}) {
+  const visibleItems = cleanStrings(items);
+  if (visibleItems.length === 0) return null;
+
+  return (
+    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm">
+      <h2 className="text-2xl font-black text-[#17356f]">Top Priorities</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        Your highest-priority actions and checks. Full details appear once in the
+        relevant section below.
+      </p>
+      <ol className="mt-5 grid gap-3">
+        {items.map((item, index) => (
+          <li
+            key={item.id}
+            className="flex items-start gap-4 rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
+              {index + 1}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-black text-black">{item.title}</h3>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#17356f] ring-1 ring-[#dbe8f2]">
+                  {item.group}
+                </span>
+              </div>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                {item.summary}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function RecommendationGroup({
   title,
   description,
@@ -259,7 +340,7 @@ function TextList({
     <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
       <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
-        {items.map((item, index) => (
+        {visibleItems.map((item, index) => (
           <li key={`${title}-${index}`}>{item}</li>
         ))}
       </ul>
@@ -304,21 +385,23 @@ export function USAReport({
 
   const home = asRecord(answers.home);
   const bills = asRecord(answers.bills_behaviour);
+  const narrativePositive = cleanStrings(narrative?.positive_findings);
+  const deterministicPositive = cleanStrings(scores.positive_findings);
   const positiveFindings =
-    narrative?.positive_findings?.length
-      ? narrative.positive_findings
-      : Array.isArray(scores.positive_findings)
-        ? (scores.positive_findings as string[])
-        : [];
-  const assumptions = [
-    ...(narrative?.assumptions_and_limits ?? []),
-    ...(Array.isArray(scores.assumptions)
-      ? (scores.assumptions as string[])
-      : []),
-  ].filter((value, index, all) => all.indexOf(value) === index);
+    narrativePositive.length > 0 ? narrativePositive : deterministicPositive;
 
+  const deterministicAssumptions = cleanStrings(scores.assumptions);
+  const narrativeAssumptions = cleanStrings(narrative?.assumptions_and_limits);
+  const assumptions = mergeAssumptions(
+    deterministicAssumptions,
+    narrativeAssumptions
+  );
+
+  const solarBatteryEvFindings = cleanStrings(
+    narrative?.solar_battery_ev_findings
+  );
   const solarRelevant =
-    (narrative?.solar_battery_ev_findings?.length ?? 0) > 0 ||
+    solarBatteryEvFindings.length > 0 ||
     recommendations.some((item) =>
       ["Solar", "EV", "Battery"].includes(item.end_use_category)
     );
@@ -438,12 +521,7 @@ export function USAReport({
             </div>
           </section>
 
-          <RecommendationGroup
-            title="Top Priorities"
-            description="The actions and checks most worth your attention now, ordered by likely impact, confidence, cost advantage and relevance to your answers."
-            items={topPriorities}
-            accent="navy"
-          />
+          <TopPrioritiesSummary items={topPriorities} />
 
           <RecommendationGroup
             title="$0 Quick Wins"
@@ -475,13 +553,13 @@ export function USAReport({
 
           <TextList
             title="Fuel-Specific Findings"
-            items={narrative?.fuel_specific_findings ?? []}
+            items={cleanStrings(narrative?.fuel_specific_findings)}
           />
 
           {solarRelevant && (
             <TextList
               title="Solar / Battery / EV"
-              items={narrative?.solar_battery_ev_findings ?? []}
+              items={solarBatteryEvFindings}
             />
           )}
 
@@ -489,7 +567,7 @@ export function USAReport({
 
           <TextList
             title="What to Check Next"
-            items={narrative?.what_to_check_next ?? []}
+            items={cleanStrings(narrative?.what_to_check_next)}
           />
 
           <TextList title="Assumptions & Limits" items={assumptions.slice(0, 8)} />
