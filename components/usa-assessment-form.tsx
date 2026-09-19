@@ -420,15 +420,17 @@ export default function USAssessmentForm() {
 
   const analysis = useMemo(() => analyseUSAssessment(answers), [answers]);
 
+  type USSectionKey = Exclude<keyof USAssessmentAnswers, "assessment_version">;
+
   function updateSection(
-    section: keyof USAssessmentAnswers,
+    section: USSectionKey,
     field: string,
     value: unknown
   ) {
     setAnswers((current) => ({
       ...current,
       [section]: {
-        ...(current[section] as Record<string, unknown>),
+        ...(current[section] as unknown as Record<string, unknown>),
         [field]: value,
       },
     }));
