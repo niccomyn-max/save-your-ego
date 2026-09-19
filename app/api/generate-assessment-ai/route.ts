@@ -164,6 +164,7 @@ You must explain the validated result without inventing new financial values or 
 Rules:
 - Use US terminology, dollars, Fahrenheit and square feet where applicable.
 - Do not invent energy prices, equipment prices, savings, payback, system sizes or incentives.
+- Do not describe a bill, energy use, spending level or home as high/low/efficient/inefficient unless VALIDATED ANALYSIS explicitly contains a benchmark supporting that comparison. If no benchmark is supplied, describe the absolute value only.
 - Do not override recommendation groups, confidence, costs or payback.
 - Do not recommend an expensive upgrade that is not present in VALIDATED ANALYSIS.
 - Equipment age is context only, never proof that replacement is needed.
