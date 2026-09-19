@@ -35,6 +35,12 @@ type NarrativeReport = {
   home_energy_snapshot?: string;
   fuel_specific_findings?: string[];
   solar_battery_ev_findings?: string[];
+  photo_evidence?: Array<{
+    photo_number?: number;
+    finding?: string;
+    confidence?: "High" | "Medium";
+  }>;
+  photo_evidence_limitations?: string;
   positive_findings?: string[];
   what_to_check_next?: string[];
   assumptions_and_limits?: string[];
@@ -1484,11 +1490,13 @@ export default function USAssessmentForm() {
 
               <div className="rounded-2xl border border-dashed border-[#59b9ec] bg-[#f7fbff] p-5">
                 <h3 className="font-black text-[#17356f]">
-                  Optional appliance photos
+                  Optional AI photo review
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Upload up to 5 photos of appliance labels or equipment. Photos
-                  are supporting evidence only and will not override your answers.
+                  Upload up to 5 photos of appliance labels or equipment. When
+                  you generate the report, AI will review each image for clearly
+                  readable energy-related evidence. It will not guess from an
+                  unclear photo or override your answers.
                 </p>
                 <input
                   type="file"
@@ -2255,7 +2263,9 @@ export default function USAssessmentForm() {
               disabled={saving}
               className="rounded-full bg-[#ffd600] px-8 py-4 text-base font-black text-black shadow-lg transition hover:bg-[#ffea5c] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {saving ? "Building report..." : "Generate My Report"}
+              {saving
+                ? "AI is reviewing your assessment..."
+                : "Generate My AI-Assisted Report"}
             </button>
           </div>
         </section>
