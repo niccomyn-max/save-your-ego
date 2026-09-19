@@ -23,4 +23,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      - run: npm install --no-save tsx
+      - run: npx tsx scripts/run-usa-regression.ts
       - run: npm run build
