@@ -104,9 +104,11 @@ function cleanPhotoEvidence(value: unknown): PhotoEvidenceFinding[] {
       finding:
         typeof item.finding === "string" ? item.finding.trim() : undefined,
       confidence:
-        item.confidence === "High" || item.confidence === "Medium"
-          ? item.confidence
-          : undefined,
+        item.confidence === "High"
+          ? ("High" as const)
+          : item.confidence === "Medium"
+            ? ("Medium" as const)
+            : undefined,
     }))
     .filter(
       (item) =>
