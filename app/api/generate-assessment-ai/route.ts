@@ -2,221 +2,51 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-
-const actionSchema = {
-  type: "object",
-  properties: {
-    action: {
-      type: "string",
-    },
-    why_it_matters: {
-      type: "string",
-    },
-    estimated_cost_range: {
-      type: "string",
-    },
-    estimated_annual_saving_range: {
-      type: "string",
-    },
-    effort_level: {
-      type: "string",
-    },
-    likely_payback: {
-      type: "string",
-    },
-    priority: {
-      type: "string",
-    },
-    suggested_next_step: {
-      type: "string",
-    },
-  },
-  required: [
-    "action",
-    "why_it_matters",
-    "estimated_cost_range",
-    "estimated_annual_saving_range",
-    "effort_level",
-    "likely_payback",
-    "priority",
-    "suggested_next_step",
-  ],
-  additionalProperties: false,
-};
+import { analyseUSAssessment } from "@/lib/assessment/usa/engine";
+import {
+  US_ASSESSMENT_VERSION,
+  USAssessmentAnswers,
+} from "@/lib/assessment/usa/schema";
 
 const reportSchema = {
   type: "object",
   properties: {
-    photo_summary: {
-      type: "string",
-    },
-
-    bottom_line: {
-      type: "string",
-    },
-
-    executive_summary: {
-      type: "string",
-    },
-
-    estimated_annual_energy_cost_profile: {
-      type: "string",
-    },
-
-    unusual_usage_warning: {
-      type: "string",
-    },
-
-    top_5_priorities: {
+    bottom_line: { type: "string" },
+    home_energy_snapshot: { type: "string" },
+    fuel_specific_findings: {
       type: "array",
       items: { type: "string" },
-      minItems: 5,
-      maxItems: 5,
+      maxItems: 6,
     },
-
-    top_energy_drains: {
+    solar_battery_ev_findings: {
       type: "array",
       items: { type: "string" },
-      minItems: 3,
-      maxItems: 3,
-    },
-
-    top_recommended_actions: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
-      maxItems: 3,
-    },
-
-    quick_wins: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
-      maxItems: 3,
-    },
-
-    bigger_upgrades: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
-      maxItems: 3,
-    },
-
-    extra_insights: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
       maxItems: 4,
     },
-
-    priority_action_plan: {
+    positive_findings: {
       type: "array",
-      items: actionSchema,
-      minItems: 4,
+      items: { type: "string" },
       maxItems: 5,
     },
-
-    low_cost_quick_wins: {
-      type: "array",
-      items: actionSchema,
-      minItems: 3,
-      maxItems: 3,
-    },
-
-    medium_cost_improvements: {
-      type: "array",
-      items: actionSchema,
-      minItems: 2,
-      maxItems: 3,
-    },
-
-    higher_cost_upgrades: {
-      type: "array",
-      items: actionSchema,
-      minItems: 2,
-      maxItems: 3,
-    },
-
-    electricity_specific_advice: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
-      maxItems: 5,
-    },
-
-    gas_specific_advice: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 2,
-      maxItems: 4,
-    },
-
-    oil_specific_advice: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 2,
-      maxItems: 4,
-    },
-
-    appliance_findings: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
-      maxItems: 5,
-    },
-
-    behaviour_changes: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
-      maxItems: 5,
-    },
-
-    contractor_questions: {
-      type: "array",
-      items: { type: "string" },
-      minItems: 3,
-      maxItems: 5,
-    },
-
     what_to_check_next: {
       type: "array",
       items: { type: "string" },
-      minItems: 3,
       maxItems: 5,
     },
-
-    important_assumptions: {
+    assumptions_and_limits: {
       type: "array",
       items: { type: "string" },
-      minItems: 3,
-      maxItems: 5,
+      maxItems: 6,
     },
   },
   required: [
-    "photo_summary",
     "bottom_line",
-    "executive_summary",
-    "estimated_annual_energy_cost_profile",
-    "unusual_usage_warning",
-    "top_5_priorities",
-    "top_energy_drains",
-    "top_recommended_actions",
-    "quick_wins",
-    "bigger_upgrades",
-    "extra_insights",
-    "priority_action_plan",
-    "low_cost_quick_wins",
-    "medium_cost_improvements",
-    "higher_cost_upgrades",
-    "electricity_specific_advice",
-    "gas_specific_advice",
-    "oil_specific_advice",
-    "appliance_findings",
-    "behaviour_changes",
-    "contractor_questions",
+    "home_energy_snapshot",
+    "fuel_specific_findings",
+    "solar_battery_ev_findings",
+    "positive_findings",
     "what_to_check_next",
-    "important_assumptions",
+    "assumptions_and_limits",
   ],
   additionalProperties: false,
 };
@@ -232,14 +62,12 @@ async function checkPaidAccess(email: string) {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error("AI assessment paid access check missing Supabase env vars.");
+    console.error("USA AI assessment access check missing Supabase env vars.");
     return false;
   }
 
   const adminSupabase = createSupabaseAdminClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-    },
+    auth: { persistSession: false },
   });
 
   const { data, error } = await adminSupabase
@@ -250,11 +78,28 @@ async function checkPaidAccess(email: string) {
     .maybeSingle();
 
   if (error) {
-    console.error("AI assessment paid access lookup error:", error);
+    console.error("USA AI assessment paid access lookup error:", error);
     return false;
   }
 
   return Boolean(data?.paid_access);
+}
+
+function isUSAssessmentAnswers(value: unknown): value is USAssessmentAnswers {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<USAssessmentAnswers>;
+
+  return (
+    candidate.assessment_version === US_ASSESSMENT_VERSION &&
+    Boolean(candidate.home) &&
+    Boolean(candidate.hvac) &&
+    Boolean(candidate.water_heating) &&
+    Boolean(candidate.appliances) &&
+    Boolean(candidate.outdoor) &&
+    Boolean(candidate.solar_battery_ev) &&
+    Boolean(candidate.bills_behaviour)
+  );
 }
 
 export async function POST(request: Request) {
@@ -273,33 +118,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const hasPaidAccess = await checkPaidAccess(user.email);
-
-    if (!hasPaidAccess) {
+    if (!(await checkPaidAccess(user.email))) {
       return NextResponse.json(
-        {
-          error:
-            "Paid access is required to generate a Save Your EGO assessment.",
-        },
+        { error: "Paid access is required to generate a Save Your EGO assessment." },
         { status: 403 }
       );
     }
 
     const body = await request.json();
-
     const answers = body.answers;
-    const scores = body.scores;
     const photos = Array.isArray(body.photos)
       ? (body.photos as UploadedPhoto[]).slice(0, 5)
       : [];
 
-    if (!answers || !scores) {
+    if (!isUSAssessmentAnswers(answers)) {
       return NextResponse.json(
-        { error: "Missing assessment answers or scores." },
+        { error: "Missing or invalid USA assessment answers." },
         { status: 400 }
       );
     }
 
+    const analysis = analyseUSAssessment(answers);
     const apiKey = process.env.OPENAI_API_KEY;
 
     if (!apiKey) {
@@ -309,227 +148,85 @@ export async function POST(request: Request) {
       );
     }
 
-    const client = new OpenAI({
-      apiKey,
-    });
+    const client = new OpenAI({ apiKey });
 
     const prompt = `
-You are a practical home energy advisor helping an ordinary homeowner.
+You are the explanatory writing layer for Save Your EGO USA.
 
-Save Your EGO means Save Your Electricity, Gas and Oil.
+Core product principle:
+Investigate why energy is being wasted before recommending that the homeowner buy something.
+Fix the $20 problem before the $20,000 solution.
 
-Return a JSON object only.
-Do not include markdown.
-Do not include extra commentary.
-Do not ask a question.
-Do not invite the user to continue.
+You are NOT the calculation engine.
+The application has already calculated, classified, ranked and suppressed recommendations.
+You must explain the validated result without inventing new financial values or new upgrade recommendations.
 
-Main objective:
-Create a useful, customer-facing home energy report that feels valuable enough to pay for. The report must explain likely issues, estimated costs, estimated savings, effort levels, payback guidance and practical next steps.
+Rules:
+- Use US terminology, dollars, Fahrenheit and square feet where applicable.
+- Do not invent energy prices, equipment prices, savings, payback, system sizes or incentives.
+- Do not override recommendation groups, confidence, costs or payback.
+- Do not recommend an expensive upgrade that is not present in VALIDATED ANALYSIS.
+- Equipment age is context only, never proof that replacement is needed.
+- Do not recommend buying an energy monitor as a diagnostic step.
+- Do not recommend rooftop solar for an apartment, condo/HOA case without private roof authority, or where the validated analysis suppressed it.
+- If roof information is insufficient, do not invent a solar system size.
+- Separate bill savings from comfort, resilience, reliability and maintenance benefits.
+- Do not repeat the same advice across sections.
+- If evidence is insufficient, say so.
+- Photos can support evidence but cannot override the validated analysis or create a recommendation.
+- Do not infer unreadable specifications or inefficiency from appearance alone.
+- Keep the report concise and actionable.
 
-Important:
-- The figures must be indicative ranges, not guarantees.
-- Use the user's country, currency and energy context where available.
-- If the country is US, use dollars.
-- If the country is Ireland or EU, use euros.
-- If the country is UK, use pounds.
-- If currency is unclear, write the ranges in a currency-neutral way.
-- Use ordinary homeowner language.
-- Be specific to the answers and calculated scores.
-- Do not repeat the same idea across multiple sections unless it genuinely belongs there.
-- Do not make the report feel thin.
-- Do not overstate certainty.
+Customer-facing recommendation groups in VALIDATED ANALYSIS:
+- Do Now
+- Low-Cost Fixes
+- Investigate Next
+- Consider Later
 
-Usage warning rules:
-- If estimated annual electricity use is above 12,000 kWh, unusual_usage_warning must clearly say this is unusually high and should be checked.
-- If estimated annual electricity use is above 20,000 kWh, unusual_usage_warning must strongly flag this as very high and likely driven by EV charging, hot tub, electric heating, hot water, incorrect bill frequency, annual bill override, tariff assumptions or missing/incorrect inputs.
-- If appliance estimate is above 8,000 kWh/year, unusual_usage_warning must flag this as a high appliance load and recommend checking major loads.
-- If nothing appears unusual, unusual_usage_warning should say no major usage warning is triggered, while still noting that bill and appliance inputs are indicative.
+For "what_to_check_next", prefer the validated investigation items and simple household checks.
+For positive findings, use the supplied positive findings and do not manufacture praise.
+For assumptions and limits, use the supplied assumptions plus material missing-input limitations.
+For solar/battery/EV, return an empty array when those topics are not materially relevant.
 
-Solar repetition rules:
-- The app has a dedicated Solar PV suitability section outside this AI text for applicable property types.
-- If property_type is "Apartment", do not recommend rooftop solar PV, do not suggest a solar system size, and do not include solar in top priorities, action plans, quick wins, bigger upgrades, extra insights, contractor questions or what_to_check_next. Rooftop solar for an apartment is normally a building-level ownership and roof-access matter, not an individual-home recommendation.
-- If the rule-based solar rating is "Needs more information", do not invent a system size or present solar as a purchase recommendation. At most, say that roof orientation, shading and usable roof area need to be confirmed first if solar is otherwise relevant.
-- Do not override the rule-based solar suitability with guesses based only on country or electricity use.
-- Do not repeat solar heavily across every section.
-- Solar may appear in top priorities or action plans only if it is genuinely one of the strongest opportunities.
-- Do not put solar in more than one of these detailed sections unless clearly justified: priority_action_plan, medium_cost_improvements, higher_cost_upgrades.
-- If solar appears as a higher-cost upgrade, do not also make it a medium-cost improvement.
-- Battery advice should only appear if the inputs make it useful, and it should be cautious.
-
-Prioritisation rules:
-- Prioritise recommendations that match the actual inputs, not generic advice.
-- If insulation and glazing are already good, do not push fabric upgrades unless clearly justified.
-- If a heat pump is already present, do not treat heating replacement as a priority.
-- Use appliance estimates and bill anchor to judge what is most likely driving use.
-- If appliance photos reveal useful details, use them only as supporting evidence.
-- Do not invent exact model numbers, ratings, ages or faults if they are unclear from photos.
-- Focus on the most likely savings first.
-- Respect existing strengths such as solar, battery or strong fabric performance where present.
-- Consider electricity, heating fuel, hot water, cooking, EV charging, appliances and broader household energy use.
-- If gas is not used, gas_specific_advice should say that gas does not appear to be used and no gas-specific action is currently needed.
-- If oil is not used, oil_specific_advice should say that oil does not appear to be used and no oil-specific action is currently needed.
-- If gas or oil is used, include fuel-specific efficiency checks, control improvements and professional servicing guidance.
-
-Cost and saving rules:
-- Use broad, realistic ranges.
-- Do not promise exact savings.
-- Do not include made-up grant amounts.
-- Do not recommend a specific contractor, brand or product.
-- For low-cost actions, give ranges such as "$0-$100", "$20-$250" or "low/no cost" where suitable.
-- For medium-cost actions, use ranges such as "$100-$1,000" where suitable.
-- For larger upgrades, use broader ranges such as "$1,000-$8,000+" or "$8,000-$30,000+" where suitable.
-- Payback should be phrased as indicative, such as "often within one heating season", "typically 1-3 years", "varies widely", or "usually longer-term comfort and efficiency value".
-- If the saving depends heavily on usage, tariffs, climate or behaviour, say so.
-
-Photo analysis rules:
-- If no useful appliance photos are provided, set photo_summary to "No appliance photos analysed."
-- If photos are provided, briefly describe what they appear to show.
-- Use cautious wording such as appears, may, likely or should be checked.
-- Do not diagnose electrical, gas, mould, damp, wiring or safety issues from images as fact.
-- Do not provide unsafe repair instructions.
-
-Safety and scope:
-- Give practical home energy guidance only.
-- Do not provide electrical, gas, structural, legal, grant, medical or financial advice as a final professional recommendation.
-- Do not give step-by-step instructions for unsafe electrical, gas, heating or structural work.
-- Recommend a qualified professional where safety, compliance, invasive retrofit work, grants or regulated works are involved.
-- Do not guarantee exact savings, exact payback periods or exact energy reductions.
-- Use words like likely, may, appears, indicative and should be checked where uncertainty exists.
-
-Write the report in this structure:
-
-1. photo_summary:
-One short paragraph.
-
-2. bottom_line:
-Exactly one strong sentence explaining the biggest likely opportunity.
-
-3. executive_summary:
-One practical paragraph, 3 to 5 sentences, summarising the whole home energy picture.
-
-4. estimated_annual_energy_cost_profile:
-One paragraph explaining what the inputs suggest about annual energy use and cost pressure.
-
-5. unusual_usage_warning:
-One short paragraph. Flag very high or unusual usage where relevant. If no warning is triggered, say so.
-
-6. top_5_priorities:
-Exactly 5 short priorities in order of importance. These should be clear customer actions or checks.
-
-7. top_energy_drains:
-Exactly 3 short items. These should identify likely causes, not actions.
-
-8. top_recommended_actions:
-Exactly 3 short items. These should be action headlines only.
-
-9. quick_wins:
-Exactly 3 short items. These should be genuinely low/no cost and should not duplicate the top recommended actions word-for-word.
-
-10. bigger_upgrades:
-Exactly 3 short items. These should be larger or more involved improvements.
-
-11. extra_insights:
-3 to 4 short items that add context without repeating the same points.
-
-12. priority_action_plan:
-4 to 5 detailed actions. Each action must include:
-- action
-- why_it_matters
-- estimated_cost_range
-- estimated_annual_saving_range
-- effort_level
-- likely_payback
-- priority
-- suggested_next_step
-
-13. low_cost_quick_wins:
-Exactly 3 detailed low-cost action objects with the same fields.
-
-14. medium_cost_improvements:
-2 to 3 detailed medium-cost action objects with the same fields.
-
-15. higher_cost_upgrades:
-2 to 3 detailed higher-cost action objects with the same fields.
-
-16. electricity_specific_advice:
-3 to 5 specific items.
-
-17. gas_specific_advice:
-2 to 4 specific items.
-
-18. oil_specific_advice:
-2 to 4 specific items.
-
-19. appliance_findings:
-3 to 5 specific items based on selected appliances, usage and photos where available.
-
-20. behaviour_changes:
-3 to 5 specific behaviour changes.
-
-21. contractor_questions:
-3 to 5 questions the homeowner could ask a contractor or assessor.
-
-22. what_to_check_next:
-3 to 5 specific checks the homeowner can do next.
-
-23. important_assumptions:
-3 to 5 assumptions or caveats used in the analysis.
-
-Assessment answers:
+ASSESSMENT ANSWERS:
 ${JSON.stringify(answers, null, 2)}
 
-Calculated scores and analysis:
-${JSON.stringify(scores, null, 2)}
+VALIDATED ANALYSIS:
+${JSON.stringify(analysis, null, 2)}
 `;
 
     const content: Array<
-  | { type: "input_text"; text: string }
-  | {
-      type: "input_image";
-      image_url: string;
-      detail: "auto";
+      | { type: "input_text"; text: string }
+      | { type: "input_image"; image_url: string; detail: "auto" }
+    > = [{ type: "input_text", text: prompt }];
+
+    if (photos.length > 0) {
+      content.push({
+        type: "input_text",
+        text:
+          "The following appliance photos are supporting evidence only. Do not create new recommendations from appearance alone.",
+      });
+
+      photos.forEach((photo, index) => {
+        content.push({
+          type: "input_text",
+          text: `Photo ${index + 1}: ${photo.name || "Uploaded appliance photo"}`,
+        });
+        content.push({
+          type: "input_image",
+          image_url: photo.dataUrl,
+          detail: "auto",
+        });
+      });
     }
-> = [
-  {
-    type: "input_text",
-    text: prompt,
-  },
-];
 
-if (photos.length > 0) {
-  content.push({
-    type: "input_text",
-    text: `The user uploaded ${photos.length} appliance photo(s). Analyse them only as supporting evidence.`,
-  });
-
-  photos.forEach((photo, index) => {
-    content.push({
-      type: "input_text",
-      text: `Photo ${index + 1}: ${
-        photo.name || "Uploaded appliance photo"
-      }`,
-    });
-
-    content.push({
-      type: "input_image",
-      image_url: photo.dataUrl,
-      detail: "auto",
-    });
-  });
-}
     const response = await client.responses.create({
       model: process.env.AI_MODEL || "gpt-5.4-mini",
-      input: [
-        {
-          role: "user" as const,
-          content,
-        },
-      ],
+      input: [{ role: "user" as const, content }],
       text: {
         format: {
           type: "json_schema",
-          name: "save_your_ego_detailed_report",
+          name: "save_your_ego_usa_report_narrative",
           schema: reportSchema,
           strict: true,
         },
@@ -539,12 +236,13 @@ if (photos.length > 0) {
     return NextResponse.json({
       reportText: response.output_text,
       report: JSON.parse(response.output_text),
+      analysis,
     });
   } catch (error) {
-    console.error("Generate assessment AI error:", error);
+    console.error("Generate USA assessment AI error:", error);
 
     return NextResponse.json(
-      { error: "Failed to generate AI assessment." },
+      { error: "Failed to generate USA assessment." },
       { status: 500 }
     );
   }
