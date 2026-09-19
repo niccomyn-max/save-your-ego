@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { GenerateReportButton } from "@/components/generate-report-button";
 import { PrintReportButton } from "@/components/print-report-button";
+import { USAReport } from "@/components/usa-report";
 
 type ReportPageProps = {
   params: Promise<{
@@ -616,6 +617,18 @@ async function ReportContent({ params }: ReportPageProps) {
 
   const answers = (assessment.answers ?? {}) as JsonRecord;
   const scores = (assessment.scores ?? {}) as JsonRecord;
+
+  if (answers.assessment_version === "usa-v1") {
+    return (
+      <USAReport
+        assessmentId={assessment.id}
+        createdAt={assessment.created_at}
+        answers={answers}
+        scores={scores}
+        reportText={report?.report_text}
+      />
+    );
+  }
 
   const quickScores =
   typeof scores.quickScores === "object" &&
