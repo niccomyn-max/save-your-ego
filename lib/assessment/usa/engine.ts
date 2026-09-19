@@ -800,6 +800,80 @@ function candidateRules(
   }
 
   if (
+    climate === "Hot-Humid" &&
+    answers.appliances.other_continuous_loads.includes("Dehumidifiers")
+  ) {
+    items.push(
+      makeCandidate({
+        id: "investigate-humidity-load",
+        title: "Investigate why dehumidification is needed before adding more equipment",
+        summary:
+          "In a hot-humid climate, persistent dehumidifier use can be a meaningful load and may point to moisture entry, HVAC runtime or humidity-control issues.",
+        group: "Investigate Next",
+        type: "Investigation",
+        end_use_category: "Humidity",
+        confidence: "Medium",
+        estimated_impact: 3,
+        cost: USD_ZERO_COST,
+        savings: null,
+        savings_evidence_level: "Insufficient",
+        overlap_group: "cooling-humidity",
+        control_relevance: "Owner controlled",
+        directly_addresses_stated_problem:
+          answers.bills_behaviour.bills_highest === "Summer",
+        trigger_answer_ids: [
+          "appliances.other_continuous_loads",
+          "hidden_context.climate_context",
+        ],
+        why_this_appeared: [
+          "A dehumidifier is used regularly.",
+          "Your ZIP maps to a Hot-Humid climate where humidity control can materially affect cooling-related energy use.",
+        ],
+        benefits: {
+          bill_savings: true,
+          comfort: true,
+          resilience: false,
+          reliability: false,
+          maintenance: true,
+        },
+      })
+    );
+  }
+
+  if (
+    answers.outdoor.outdoor_lighting_control === "Dusk-to-dawn"
+  ) {
+    items.push(
+      noCostCandidate({
+        id: "review-all-night-outdoor-lighting",
+        title: "Review all-night outdoor-lighting runtime",
+        summary:
+          "If lighting does not need to run continuously overnight, use existing controls or a shorter schedule before replacing fixtures.",
+        group: "Do Now",
+        end_use_category: "Outdoor lighting",
+        confidence: "High",
+        estimated_impact: 1,
+        savings: null,
+        savings_evidence_level: "Indicative",
+        overlap_group: null,
+        control_relevance: "Occupant controlled",
+        directly_addresses_stated_problem: false,
+        trigger_answer_ids: ["outdoor.outdoor_lighting_control"],
+        why_this_appeared: [
+          "Outdoor lighting is controlled dusk-to-dawn.",
+        ],
+        benefits: {
+          bill_savings: true,
+          comfort: false,
+          resilience: false,
+          reliability: false,
+          maintenance: false,
+        },
+      })
+    );
+  }
+
+  if (
     answers.outdoor.swimming_pool &&
     answers.outdoor.pool_pump_runtime !== "N/A" &&
     ["8-12", ">12 hours/day"].includes(answers.outdoor.pool_pump_runtime)
