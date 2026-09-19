@@ -1120,8 +1120,9 @@ function candidateRules(
   if (
     answers.hvac.system_age_band === "20+ years" &&
     severeHvacSymptoms &&
-    !answers.hvac.blocked_supply_or_return_vents &&
-    answers.hvac.filter_frequency !== "Rarely"
+    answers.hvac.blocked_supply_or_return_vents === "No" &&
+    answers.hvac.filter_frequency !== "Rarely" &&
+    answers.hvac.filter_frequency !== "Not sure"
   ) {
     items.push(
       makeCandidate({
