@@ -1,115 +1,26 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { createDefaultUSAssessmentAnswers } from "@/lib/assessment/usa/defaults";
 import {
-  AGE_BANDS,
-  APPLIANCE_LIBRARY,
-  BILLING_FREQUENCIES,
-  COUNTRY_DEFAULTS,
-  COUNTRY_OPTIONS,
-  EnergyAssessmentAnswers,
-  FABRIC_TYPES,
-  GLAZING_TYPES,
-  HEATING_SYSTEMS,
-  INSULATION_LEVELS,
-  PROPERTY_TYPES,
-  SOLAR_DAYTIME_USE,
-  SOLAR_EV_STATUS,
-  SOLAR_INTEREST,
-  SOLAR_ROOF_ORIENTATIONS,
-  SOLAR_ROOF_SHADING,
-  SOLAR_ROOF_SPACE,
-  USAGE_LEVELS,
-  analyseEnergyAssessment,
-} from "@/lib/assessment/energy-model";
-
-const defaultAnswers: EnergyAssessmentAnswers = {
-  country: "US",
-  property_type: "Detached",
-  bedrooms: 3,
-  year_built: 1995,
-  floor_area: 140,
-  glazing: "Double glazing",
-  main_heating: "Heat pump",
-  energy_rating: "",
-  occupants: 4,
-  has_solar: false,
-  has_battery: false,
-
-  solar_roof_orientation: "Unknown / Don't know",
-  solar_roof_shading: "Unknown / Don't know",
-  solar_roof_space: "Unknown / Don't know",
-  solar_daytime_use: "Unknown / Don't know",
-  solar_ev_status: "No",
-  solar_interest: "Maybe",
-
-  notes: "",
-
-  bill_frequency: "Monthly",
-  avg_electricity_bill: 180,
-  unit_rate: 0.18,
-  standing_charge: 25,
-  annual_bill_override: 0,
-
-  uses_gas: false,
-  avg_gas_bill: 0,
-  gas_bill_frequency: "Monthly",
-  gas_unit_rate: 0.12,
-  annual_gas_spend: 0,
-  gas_boiler_age: "Unknown",
-  gas_heating_usage: "Medium",
-
-  uses_oil: false,
-  oil_litres_per_year: 0,
-  oil_price_per_litre: 1.1,
-  annual_oil_spend: 0,
-  oil_boiler_age: "Unknown",
-  oil_heating_usage: "Medium",
-
-  fabric_meta: {
-    "Wall type": "Unknown",
-    "Roof type": "Unknown",
-    "Floor type": "Unknown",
-    "Window frame type": "Unknown",
-  },
-  wall_rating: "Medium",
-  wall_u_manual: 0,
-  window_rating: "Medium",
-  window_u_manual: 0,
-  floor_rating: "Medium",
-  floor_u_manual: 0,
-  roof_rating: "Good",
-  roof_u_manual: 0,
-
-  appliances: [],
-};
-
-const UNKNOWN_OPTION = "Unknown / Don't know";
-
-const INSULATION_LEVEL_OPTIONS = [
-  UNKNOWN_OPTION,
-  ...INSULATION_LEVELS.filter((option) => option !== UNKNOWN_OPTION),
-];
-
-const AGE_BAND_OPTIONS = [
-  "Unknown",
-  ...AGE_BANDS.filter((option) => option !== "Unknown"),
-];
-
-const USAGE_LEVEL_OPTIONS = [UNKNOWN_OPTION, ...USAGE_LEVELS];
-
-type AiAssessment = {
-  photo_summary?: string;
-  top_energy_drains?: string[];
-  top_recommended_actions?: string[];
-  quick_wins?: string[];
-  bigger_upgrades?: string[];
-  extra_insights?: string[];
-  bottom_line?: string;
-};
+  USAssessmentAnswers,
+  US_BUILD_YEAR_BANDS,
+  US_COOLING_TYPES,
+  US_ENERGY_SOURCES,
+  US_FOUNDATION_TYPES,
+  US_GARAGE_TYPES,
+  US_HEATING_TYPES,
+  US_HOME_SIZE_BANDS,
+  US_HOME_TYPES,
+  US_OCCUPANT_BANDS,
+  US_SYSTEM_AGE_BANDS,
+  US_WATER_HEATING_TYPES,
+  US_WINDOW_AGE_BANDS,
+  US_WINDOW_TYPES,
+} from "@/lib/assessment/usa/schema";
 
 type UploadedPhoto = {
   name: string;
@@ -117,73 +28,153 @@ type UploadedPhoto = {
   dataUrl: string;
 };
 
-function AiList({
-  title,
-  items,
-}: {
-  title: string;
-  items?: string[];
-}) {
-  if (!items || items.length === 0) {
-    return null;
-  }
+type USNarrativeReport = {
+  bottom_line?: string;
+  home_energy_snapshot?: string;
+  fuel_specific_findings?: string[];
+  solar_battery_ev_findings?: string[];
+  positive_findings?: string[];
+  what_to_check_next?: string[];
+  assumptions_and_limits?: string[];
+};
 
-  return (
-    <div className="rounded-2xl border border-[#dbe8f2] bg-white p-5 shadow-sm">
-      <h3 className="font-black text-[#17356f]">{title}</h3>
-      <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+const WINDOW_DOOR_ISSUES = [
+  "Drafts",
+  "Visible gaps/worn seals",
+  "Condensation",
+  "Hot sun-facing rooms",
+  "Cold areas near windows",
+  "None",
+  "Not sure",
+];
 
-function SectionShell({
+const HOT_COLD_LOCATIONS = [
+  "Bedroom",
+  "Upstairs",
+  "Room over garage",
+  "Basement",
+  "Addition",
+  "Sun-facing room",
+  "Other",
+];
+
+const HVAC_SYMPTOMS = [
+  "Hot rooms",
+  "Cold rooms",
+  "Weak airflow",
+  "Long runtimes",
+  "Short cycling",
+  "High summer bills",
+  "High winter bills",
+  "None",
+  "Not sure",
+];
+
+const EXTRA_COLD_STORAGE = [
+  "Refrigerator",
+  "Freezer",
+  "Both",
+  "No",
+  "Not sure",
+];
+
+const OTHER_COLD_STORAGE = [
+  "Chest freezer",
+  "Wine cooler",
+  "Beverage fridge",
+  "Ice maker",
+  "Mini fridge",
+  "None",
+];
+
+const COOKING_EQUIPMENT = [
+  "Electric range",
+  "Gas range",
+  "Induction",
+  "Wall oven",
+  "Toaster oven",
+  "Air fryer",
+  "Microwave",
+  "Mixed",
+];
+
+const COMPUTING_LOADS = [
+  "Gaming PC",
+  "Multiple consoles",
+  "Large TV/home theater",
+  "Multiple monitors",
+  "Home server/NAS",
+  "None",
+];
+
+const CONTINUOUS_LOADS = [
+  "Space heaters",
+  "Dehumidifiers",
+  "Humidifiers",
+  "Air purifiers",
+  "Aquarium equipment",
+  "Heated bedding",
+  "None",
+];
+
+const GARAGE_EQUIPMENT = [
+  "Refrigerator",
+  "Freezer",
+  "EV charger",
+  "Workshop equipment",
+  "Water heater",
+  "Laundry",
+  "HVAC",
+  "None",
+];
+
+const UNUSUAL_LOADS = [
+  "Heated driveway",
+  "Roof/gutter heat cables",
+  "Outdoor electric heaters",
+  "Heated garage",
+  "Detached workshop",
+  "Large fountain/water feature",
+  "None",
+];
+
+const BILL_CHANGE_REASONS = [
+  "New appliance",
+  "HVAC",
+  "EV",
+  "Pool/spa",
+  "More people",
+  "Work from home",
+  "Addition",
+  "Utility rates",
+  "Nothing obvious",
+  "Other",
+];
+
+function Section({
   number,
   title,
   description,
   children,
-  accent = "blue",
 }: {
   number: string;
   title: string;
-  description?: string;
+  description: string;
   children: React.ReactNode;
-  accent?: "yellow" | "blue" | "navy" | "black";
 }) {
-  const accentClass =
-    accent === "yellow"
-      ? "border-t-[#ffd600]"
-      : accent === "black"
-        ? "border-t-black"
-        : accent === "navy"
-          ? "border-t-[#17356f]"
-          : "border-t-[#59b9ec]";
-
   return (
-    <section
-      className={`rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
-    >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
+    <section className="rounded-[1.75rem] border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-5 shadow-sm sm:p-7">
+      <div className="flex gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
           {number}
         </div>
-
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#17356f]">
-            {title}
-          </h2>
-
-          {description && (
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              {description}
-            </p>
-          )}
+          <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+            {description}
+          </p>
         </div>
       </div>
-
       <div className="mt-6">{children}</div>
     </section>
   );
@@ -206,7 +197,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
+        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none focus:border-[#59b9ec]"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -221,30 +212,34 @@ function SelectField({
 function NumberField({
   label,
   value,
+  onChange,
   min,
   max,
   step = 1,
-  onChange,
+  placeholder,
 }: {
   label: string;
-  value: number;
+  value: number | null;
+  onChange: (value: number | null) => void;
   min?: number;
   max?: number;
   step?: number;
-  onChange: (value: number) => void;
+  placeholder?: string;
 }) {
   return (
     <label className="grid gap-2 text-sm font-bold text-slate-700">
       {label}
       <input
         type="number"
-        value={value}
+        value={value ?? ""}
         min={min}
         max={max}
         step={step}
-        onFocus={(event) => event.target.select()}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
+        placeholder={placeholder}
+        onChange={(event) =>
+          onChange(event.target.value === "" ? null : Number(event.target.value))
+        }
+        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none focus:border-[#59b9ec]"
       />
     </label>
   );
@@ -253,23 +248,26 @@ function NumberField({
 function TextField({
   label,
   value,
-  placeholder,
   onChange,
+  placeholder,
+  required,
 }: {
   label: string;
   value: string;
-  placeholder?: string;
   onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
 }) {
   return (
     <label className="grid gap-2 text-sm font-bold text-slate-700">
       {label}
       <input
         type="text"
+        required={required}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
+        className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none focus:border-[#59b9ec]"
       />
     </label>
   );
@@ -285,7 +283,7 @@ function ToggleField({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-xl border border-[#dbe8f2] bg-[#f7fbff] p-4 text-sm font-bold text-slate-700 shadow-sm">
+    <label className="flex items-center gap-3 rounded-xl border border-[#dbe8f2] bg-[#f7fbff] p-4 text-sm font-bold text-slate-700">
       <input
         type="checkbox"
         checked={value}
@@ -297,31 +295,58 @@ function ToggleField({
   );
 }
 
-function PreviewCard({
+function MultiCheck({
   label,
   value,
-  colour = "white",
+  options,
+  onChange,
 }: {
   label: string;
-  value: string;
-  colour?: "white" | "yellow" | "blue" | "navy";
+  value: string[];
+  options: string[];
+  onChange: (value: string[]) => void;
 }) {
-  const className =
-    colour === "yellow"
-      ? "border-[#ffe76a] bg-[#fff6bf] text-black"
-      : colour === "blue"
-        ? "border-[#bde8ff] bg-[#e9f6fe] text-[#17356f]"
-        : colour === "navy"
-          ? "border-[#17356f] bg-[#17356f] text-white"
-          : "border-[#dbe8f2] bg-white text-[#17356f]";
+  function toggle(option: string) {
+    const exclusive = option === "None" || option === "No" || option === "Not sure";
+    if (value.includes(option)) {
+      onChange(value.filter((item) => item !== option));
+      return;
+    }
+    if (exclusive) {
+      onChange([option]);
+      return;
+    }
+    onChange(
+      [...value.filter((item) => !["None", "No", "Not sure"].includes(item)), option]
+    );
+  }
 
   return (
-    <div className={`rounded-2xl border p-5 shadow-sm ${className}`}>
-      <p className="text-xs font-black uppercase tracking-wide opacity-70">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-black leading-tight">{value}</p>
-    </div>
+    <fieldset className="rounded-2xl border border-[#dbe8f2] bg-[#fbfdff] p-4">
+      <legend className="px-1 text-sm font-black text-slate-700">{label}</legend>
+      <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {options.map((option) => (
+          <label
+            key={option}
+            className="flex items-center gap-2 rounded-xl border border-[#dbe8f2] bg-white px-3 py-2 text-sm text-slate-700"
+          >
+            <input
+              type="checkbox"
+              checked={value.includes(option)}
+              onChange={() => toggle(option)}
+              className="accent-[#17356f]"
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function subsection(title: string) {
+  return (
+    <h3 className="mt-2 text-lg font-black text-black first:mt-0">{title}</h3>
   );
 }
 
@@ -329,176 +354,73 @@ export default function AssessmentPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [answers, setAnswers] = useState<USAssessmentAnswers>(() =>
+    createDefaultUSAssessmentAnswers()
+  );
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [hasPaidAccess, setHasPaidAccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function checkPaidAccess() {
+    async function checkAccess() {
       try {
-        const response = await fetch("/api/access/status", {
-          cache: "no-store",
-        });
-
-        const data: { paidAccess?: boolean; authenticated?: boolean } =
-          await response.json();
-
-        if (!cancelled) {
-          setHasPaidAccess(Boolean(data.paidAccess));
-        }
+        const response = await fetch("/api/access/status", { cache: "no-store" });
+        const data = (await response.json()) as { paidAccess?: boolean };
+        if (!cancelled) setHasPaidAccess(Boolean(data.paidAccess));
       } catch {
-        if (!cancelled) {
-          setHasPaidAccess(false);
-        }
+        if (!cancelled) setHasPaidAccess(false);
       } finally {
-        if (!cancelled) {
-          setCheckingAccess(false);
-        }
+        if (!cancelled) setCheckingAccess(false);
       }
     }
 
-    checkPaidAccess();
-
+    checkAccess();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const [answers, setAnswers] =
-    useState<EnergyAssessmentAnswers>(defaultAnswers);
-  const [saving, setSaving] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const [generatingAi, setGeneratingAi] = useState(false);
-  const [aiErrorMessage, setAiErrorMessage] = useState("");
-  const [aiReportText, setAiReportText] = useState("");
-  const [aiReport, setAiReport] = useState<AiAssessment | null>(null);
-
-  const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
-  const [photoErrorMessage, setPhotoErrorMessage] = useState("");
-  const [otherApplianceName, setOtherApplianceName] = useState("");
-
-  const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
-  const countryDefaults =
-    COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.US;
-
-  const isApartment = answers.property_type === "Apartment";
-    function clearAiReport() {
-    setAiReport(null);
-    setAiReportText("");
-    setAiErrorMessage("");
-  }
-
-  function updateAnswer<K extends keyof EnergyAssessmentAnswers>(
-    key: K,
-    value: EnergyAssessmentAnswers[K]
+  function updateSection(
+    section: keyof USAssessmentAnswers,
+    key: string,
+    value: unknown
   ) {
     setAnswers((current) => ({
       ...current,
-      [key]: value,
-    }));
-
-    clearAiReport();
-  }
-
-  function updateFabricMeta(key: string, value: string) {
-    setAnswers((current) => ({
-      ...current,
-      fabric_meta: {
-        ...current.fabric_meta,
+      [section]: {
+        ...(current[section] as Record<string, unknown>),
         [key]: value,
       },
     }));
-
-    clearAiReport();
   }
 
-  function toggleAppliance(category: string, appliance: string) {
-    setAnswers((current) => {
-      const alreadySelected = current.appliances.some(
-        (item) => item.appliance === appliance
-      );
-
-      if (alreadySelected) {
-        return {
-          ...current,
-          appliances: current.appliances.filter(
-            (item) => item.appliance !== appliance
-          ),
-        };
-      }
-
-      return {
-        ...current,
-        appliances: [
-          ...current.appliances,
-          {
-            appliance,
-            category,
-            age_band: "Mid-life (5-10 years)",
-            usage: "Medium",
-            qty: 1,
-          },
-        ],
-      };
-    });
-
-    clearAiReport();
+  function updateHome(key: string, value: unknown) {
+    updateSection("home", key, value);
+  }
+  function updateHvac(key: string, value: unknown) {
+    updateSection("hvac", key, value);
+  }
+  function updateWater(key: string, value: unknown) {
+    updateSection("water_heating", key, value);
+  }
+  function updateAppliances(key: string, value: unknown) {
+    updateSection("appliances", key, value);
+  }
+  function updateOutdoor(key: string, value: unknown) {
+    updateSection("outdoor", key, value);
+  }
+  function updateSolar(key: string, value: unknown) {
+    updateSection("solar_battery_ev", key, value);
+  }
+  function updateBills(key: string, value: unknown) {
+    updateSection("bills_behaviour", key, value);
   }
 
-  function addOtherAppliance() {
-    const applianceName = otherApplianceName.trim();
-
-    if (!applianceName) {
-      return;
-    }
-
-    setAnswers((current) => {
-      const alreadySelected = current.appliances.some(
-        (item) =>
-          item.appliance.toLowerCase() === applianceName.toLowerCase()
-      );
-
-      if (alreadySelected) {
-        return current;
-      }
-
-      return {
-        ...current,
-        appliances: [
-          ...current.appliances,
-          {
-            appliance: applianceName,
-            category: "Other",
-            age_band: "Unknown",
-            usage: "Medium",
-            qty: 1,
-          },
-        ],
-      };
-    });
-
-    setOtherApplianceName("");
-    clearAiReport();
-  }
-
-  function updateAppliance(
-    appliance: string,
-    field: "age_band" | "usage" | "qty",
-    value: string | number
-  ) {
-    setAnswers((current) => ({
-      ...current,
-      appliances: current.appliances.map((item) =>
-        item.appliance === appliance ? { ...item, [field]: value } : item
-      ),
-    }));
-
-    clearAiReport();
-  }
-
-  function compressImageToDataUrl(file: File) {
+  async function compressImage(file: File) {
     return new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
 
@@ -506,156 +428,71 @@ export default function AssessmentPage() {
         const image = new window.Image();
 
         image.onload = () => {
-          const maxWidth = 1200;
-          const maxHeight = 1200;
+          const max = 1200;
+          let width = image.width;
+          let height = image.height;
 
-          let { width, height } = image;
-
-          if (width > height && width > maxWidth) {
-            height = Math.round((height * maxWidth) / width);
-            width = maxWidth;
-          } else if (height > maxHeight) {
-            width = Math.round((width * maxHeight) / height);
-            height = maxHeight;
+          if (width > max || height > max) {
+            const scale = Math.min(max / width, max / height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
           }
 
           const canvas = document.createElement("canvas");
           canvas.width = width;
           canvas.height = height;
-
           const context = canvas.getContext("2d");
 
           if (!context) {
-            reject(new Error("Could not compress image."));
+            reject(new Error("Unable to process image"));
             return;
           }
 
           context.drawImage(image, 0, 0, width, height);
-
-          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.72);
-
-          resolve(compressedDataUrl);
+          resolve(canvas.toDataURL("image/jpeg", 0.78));
         };
 
-        image.onerror = () => reject(new Error("Could not load image."));
-
-        if (typeof reader.result === "string") {
-          image.src = reader.result;
-        } else {
-          reject(new Error("Could not read image file."));
-        }
+        image.onerror = () => reject(new Error("Unable to read image"));
+        image.src = String(reader.result);
       };
 
-      reader.onerror = () => reject(new Error("Could not read image file."));
+      reader.onerror = () => reject(new Error("Unable to read file"));
       reader.readAsDataURL(file);
     });
   }
 
-  async function handlePhotoUpload(files: FileList | null) {
-    setPhotoErrorMessage("");
+  async function handlePhotos(files: FileList | null) {
+    if (!files) return;
 
-    if (!files || files.length === 0) {
-      setUploadedPhotos([]);
-      clearAiReport();
-      return;
-    }
+    const selected = Array.from(files)
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, 5);
 
-    const selectedFiles = Array.from(files).slice(0, 3);
+    const converted: UploadedPhoto[] = [];
 
-    const invalidFile = selectedFiles.find(
-      (file) => !["image/jpeg", "image/png", "image/jpg"].includes(file.type)
-    );
-
-    if (invalidFile) {
-      setPhotoErrorMessage("Please upload JPG or PNG appliance photos only.");
-      return;
-    }
-
-    const tooLarge = selectedFiles.find((file) => file.size > 10_000_000);
-
-    if (tooLarge) {
-      setPhotoErrorMessage(
-        "Please keep each photo under 10 MB. Clear appliance label photos work best."
-      );
-      return;
-    }
-
-    try {
-      const convertedPhotos = await Promise.all(
-        selectedFiles.map(async (file) => ({
+    for (const file of selected) {
+      try {
+        converted.push({
           name: file.name,
           mimeType: "image/jpeg",
-          dataUrl: await compressImageToDataUrl(file),
-        }))
-      );
-
-      setUploadedPhotos(convertedPhotos);
-      clearAiReport();
-    } catch {
-      setPhotoErrorMessage(
-        "One or more photos could not be processed. Try using a clearer, smaller photo."
-      );
-    }
-  }
-
-  async function handleGenerateAiAssessment() {
-    if (!hasPaidAccess) {
-      setAiErrorMessage("Paid access is required to generate an AI assessment.");
-      return;
-    }
-
-    setGeneratingAi(true);
-    setAiErrorMessage("");
-
-    try {
-      const response = await fetch("/api/generate-assessment-ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          answers,
-          scores: analysis,
-          photos: uploadedPhotos,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        setGeneratingAi(false);
-        setAiErrorMessage(result.error || "Failed to generate AI assessment.");
-        return;
+          dataUrl: await compressImage(file),
+        });
+      } catch {
+        // Ignore unreadable optional photos.
       }
-
-      setAiReportText(result.reportText);
-      setAiReport(result.report);
-      setGeneratingAi(false);
-    } catch {
-      setGeneratingAi(false);
-      setAiErrorMessage("Failed to generate AI assessment.");
     }
-  }
 
-  function resetAssessmentDraft() {
-    setAnswers({
-      ...defaultAnswers,
-      fabric_meta: {
-        ...defaultAnswers.fabric_meta,
-      },
-      appliances: [],
-    });
-    setUploadedPhotos([]);
-    setPhotoErrorMessage("");
-    setOtherApplianceName("");
-    setAiReportText("");
-    setAiReport(null);
-    setAiErrorMessage("");
-    setGeneratingAi(false);
+    setUploadedPhotos(converted);
   }
 
   async function handleSubmit() {
     if (saving) return;
+
+    const zip = answers.home.zip_code.replace(/\D/g, "");
+    if (zip.length !== 5) {
+      setErrorMessage("Enter a valid 5-digit ZIP code before generating the report.");
+      return;
+    }
 
     if (!hasPaidAccess) {
       setErrorMessage("Paid access is required to save and view a report.");
@@ -676,29 +513,60 @@ export default function AssessmentPage() {
         return;
       }
 
-      const { data: savedAssessment, error } = await supabase
+      const aiResponse = await fetch("/api/generate-assessment-ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: {
+            ...answers,
+            home: {
+              ...answers.home,
+              zip_code: zip,
+            },
+          },
+          photos: uploadedPhotos,
+        }),
+      });
+
+      const aiData = (await aiResponse.json()) as {
+        error?: string;
+        reportText?: string;
+        report?: USNarrativeReport;
+        analysis?: Record<string, unknown>;
+      };
+
+      if (!aiResponse.ok || !aiData.analysis) {
+        setErrorMessage(aiData.error || "Failed to generate the USA assessment.");
+        return;
+      }
+
+      const { data: savedAssessment, error: saveError } = await supabase
         .from("assessments")
         .insert({
           user_id: user.id,
           answers: {
             ...answers,
+            home: {
+              ...answers.home,
+              zip_code: zip,
+            },
             uploaded_photo_count: uploadedPhotos.length,
           },
-          scores: analysis,
+          scores: aiData.analysis,
         })
         .select("id")
         .single();
 
-      if (error || !savedAssessment) {
-        setErrorMessage(error?.message || "Failed to save assessment.");
+      if (saveError || !savedAssessment) {
+        setErrorMessage(saveError?.message || "Failed to save assessment.");
         return;
       }
 
-      if (aiReportText) {
+      if (aiData.reportText) {
         const { error: reportError } = await supabase.from("reports").insert({
           user_id: user.id,
           assessment_id: savedAssessment.id,
-          report_text: aiReportText,
+          report_text: aiData.reportText,
         });
 
         if (reportError) {
@@ -707,16 +575,11 @@ export default function AssessmentPage() {
         }
       }
 
-      const reportPath = `/report/${savedAssessment.id}`;
-
-      resetAssessmentDraft();
-      setSaving(false);
-
-      router.push(reportPath);
+      router.push(`/report/${savedAssessment.id}`);
       router.refresh();
     } catch {
       setErrorMessage(
-        "Something went wrong while saving the assessment. Please refresh the page and try again."
+        "Something went wrong while generating the assessment. Please try again."
       );
     } finally {
       setSaving(false);
@@ -725,16 +588,9 @@ export default function AssessmentPage() {
 
   if (checkingAccess) {
     return (
-      <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
-        <div className="mx-auto flex min-h-[70vh] max-w-4xl items-center justify-center">
-          <div className="rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
-              Checking access
-            </p>
-            <h1 className="mt-4 text-3xl font-black text-black">
-              Loading your Save Your EGO assessment...
-            </h1>
-          </div>
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-10">
+        <div className="mx-auto max-w-3xl rounded-3xl bg-white p-10 text-center shadow-sm">
+          <p className="font-black text-[#17356f]">Checking access...</p>
         </div>
       </main>
     );
@@ -742,55 +598,48 @@ export default function AssessmentPage() {
 
   if (!hasPaidAccess) {
     return (
-      <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
-        <div className="mx-auto flex min-h-[70vh] max-w-5xl items-center justify-center">
-          <section className="w-full rounded-[2rem] border border-[#dbe8f2] bg-white p-8 text-center shadow-xl shadow-[#17356f]/10 sm:p-12">
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-[#fff2a8] text-4xl">
-              🔒
-            </div>
-
-            <p className="mt-8 text-sm font-black uppercase tracking-[0.22em] text-[#17356f]">
-              Paid access required
-            </p>
-
-            <h1 className="mx-auto mt-5 max-w-3xl text-4xl font-black tracking-tight text-[#17356f] sm:text-5xl">
-              Your Save Your EGO assessment is locked
-            </h1>
-
-            <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-slate-700 sm:text-lg">
-              Complete payment to unlock your personalised home energy assessment
-              and report for electricity, gas and oil. If you have already paid,
-              make sure you are signed in with the same email address used at checkout.
-            </p>
-
-            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
-              <a
-                href="https://www.saveyourego.com/"
-                className="rounded-full bg-[#17356f] px-8 py-4 text-base font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:opacity-90"
-              >
-                Unlock My Report
-              </a>
-
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-full border border-[#dbe8f2] bg-white px-8 py-4 text-base font-black text-[#17356f] shadow-sm transition hover:bg-slate-50"
-              >
-                Back to dashboard
-              </button>
-            </div>
-          </section>
+      <main className="min-h-screen bg-[#f7fbff] px-5 py-10">
+        <div className="mx-auto max-w-3xl rounded-3xl bg-white p-10 text-center shadow-sm">
+          <h1 className="text-3xl font-black text-[#17356f]">
+            Paid access required
+          </h1>
+          <p className="mt-4 text-slate-600">
+            Sign in with the email used at checkout, or complete payment to unlock
+            the Save Your EGO assessment.
+          </p>
+          <a
+            href="https://www.saveyourego.com/"
+            className="mt-6 inline-flex rounded-full bg-[#17356f] px-7 py-3 font-black text-white"
+          >
+            Unlock My Report
+          </a>
         </div>
       </main>
     );
   }
 
+  const isAttachedGarage = answers.home.garage_type === "Attached";
+  const isHeatPump = answers.hvac.main_heating === "Heat pump";
+  const hasExtraFridge =
+    answers.appliances.refrigerators_in_regular_use === "2" ||
+    answers.appliances.refrigerators_in_regular_use === "3+";
+  const apartmentOrCondo =
+    answers.home.home_type === "Apartment" || answers.home.home_type === "Condo";
+  const showSolarRoof =
+    answers.solar_battery_ev.solar_interest !== "No" &&
+    answers.home.home_type !== "Apartment" &&
+    answers.solar_battery_ev.authority_to_install_solar !== "No";
+  const showEV =
+    answers.solar_battery_ev.ev_phev === "Yes" ||
+    answers.solar_battery_ev.ev_phev === "Planning";
+  const energySources = answers.bills_behaviour.energy_sources;
+
   return (
-    <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[#f7fbff] px-4 py-6 text-[#050505] sm:px-8">
       <div className="mx-auto max-w-6xl">
         <section className="overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
-          <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="p-6 sm:p-8 lg:p-10">
+          <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="p-6 sm:p-9">
               <Image
                 src="/save-your-ego-logo.png"
                 alt="Save Your EGO"
@@ -799,975 +648,1177 @@ export default function AssessmentPage() {
                 priority
                 className="h-auto w-64"
               />
-
-              <div className="mt-7 inline-flex rounded-full bg-[#17356f] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
-                Home energy assessment
-              </div>
-
-              <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-black sm:text-5xl">
-                Build your Save Your EGO report
-              </h1>
-
-              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                A practical home energy analyser for identifying likely energy
-                drains, reducing waste and improving household efficiency
-                across Electricity, Gas and Oil.
+              <p className="mt-7 text-xs font-black uppercase tracking-[0.2em] text-[#17356f]">
+                USA home energy assessment
               </p>
-
-              <p className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
-                Covering Electricity, Gas and Oil
+              <h1 className="mt-3 text-4xl font-black tracking-tight text-black sm:text-5xl">
+                Find the waste before you buy the upgrade
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
+                We look for no-cost actions, controls, maintenance, hidden loads
+                and targeted checks before recommending major spending.
               </p>
             </div>
-
-            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
-              <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
-                Assessment focus
+            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-7 text-white sm:p-9">
+              <p className="text-sm font-black uppercase tracking-[0.18em] text-[#ffd600]">
+                Core rule
               </p>
-
-              <div className="mt-8 grid gap-4">
-                
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
-                    <p className="text-xs font-black uppercase opacity-70">
-                      Sections
-                    </p>
-                    <p className="mt-2 text-3xl font-black">
-  {isApartment ? "6" : "7"}
-</p>
-                  </div>
-
-                  <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
-                    <p className="text-xs font-black uppercase opacity-70">
-                      Output
-                    </p>
-                    <p className="mt-2 text-lg font-black">AI report</p>
-                  </div>
-                </div>
-
-                {!isApartment && (
-  <div className="rounded-[1.5rem] bg-white p-5 text-black">
-    <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-      Solar review
-    </p>
-    <p className="mt-2 text-xl font-black">
-      Diagnostic, not default
-    </p>
-  </div>
-)}
+              <p className="mt-5 text-3xl font-black leading-tight">
+                Fix the $20 problem before the $20,000 solution.
+              </p>
+              <div className="mt-7 rounded-2xl bg-white/10 p-5 text-sm leading-6 text-white/85">
+                Your ZIP is used behind the scenes to adjust climate weighting.
+                Equipment age alone never triggers replacement.
               </div>
             </div>
           </div>
         </section>
 
-        <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-          This tool provides an indicative home energy assessment only. It is
-          not a substitute for a qualified energy assessment, electrician,
-          retrofit designer, heating engineer, structural professional, grant
-          advisor or building compliance expert.
-        </div>
-
         <div className="mt-6 space-y-6">
-          <SectionShell
+          <Section
             number="1"
-            title="Home details"
-            description="Start with the basic property details. If the customer does not know a technical answer, use the unknown option where available."
-            accent="navy"
+            title="Your Home"
+            description="Home type, size, windows, garage and comfort patterns establish what you can control and where losses may occur."
           >
             <div className="grid gap-5 md:grid-cols-3">
+              <TextField
+                label="ZIP code"
+                value={answers.home.zip_code}
+                required
+                placeholder="e.g. 85001"
+                onChange={(value) => updateHome("zip_code", value.replace(/\D/g, "").slice(0, 5))}
+              />
               <SelectField
-                label="Country"
-                value={answers.country}
-                options={COUNTRY_OPTIONS}
+                label="Home type"
+                value={answers.home.home_type}
+                options={US_HOME_TYPES}
                 onChange={(value) => {
-                  const defaults =
-                    COUNTRY_DEFAULTS[value] ?? COUNTRY_DEFAULTS.US;
-
-                  setAnswers((current) => ({
-                    ...current,
-                    country: value,
-                    unit_rate: defaults.electricity_price,
-                  }));
-
-                  clearAiReport();
+                  updateHome("home_type", value);
+                  if (value === "Apartment") {
+                    updateSolar("authority_to_install_solar", "No");
+                    updateSolar("solar_interest", "No");
+                  } else if (value === "Condo") {
+                    updateSolar("authority_to_install_solar", "Shared/HOA/condo");
+                  }
                 }}
               />
-
               <SelectField
-  label="Property type"
-  value={answers.property_type}
-  options={PROPERTY_TYPES}
-  onChange={(value) => {
-    setAnswers((current) => ({
-      ...current,
-      property_type: value,
-      ...(value === "Apartment"
-        ? {
-            has_solar: false,
-            solar_roof_orientation: UNKNOWN_OPTION,
-            solar_roof_shading: UNKNOWN_OPTION,
-            solar_roof_space: UNKNOWN_OPTION,
-            solar_daytime_use: UNKNOWN_OPTION,
-            solar_ev_status: "No",
-            solar_interest: "No",
-          }
-        : {}),
-    }));
-
-    clearAiReport();
-  }}
-/>
-
-              <NumberField
-                label="Number of bedrooms"
-                value={answers.bedrooms}
-                min={1}
-                max={12}
-                onChange={(value) => updateAnswer("bedrooms", value)}
+                label="When was the home built?"
+                value={answers.home.build_year_band}
+                options={US_BUILD_YEAR_BANDS}
+                onChange={(value) => updateHome("build_year_band", value)}
               />
-
-              <NumberField
-                label="Year built"
-                value={answers.year_built}
-                min={1800}
-                max={2030}
-                onChange={(value) => updateAnswer("year_built", value)}
-              />
-
-              <NumberField
-                label="Approx. floor area, m²"
-                value={answers.floor_area}
-                min={20}
-                max={1000}
-                onChange={(value) => updateAnswer("floor_area", value)}
-              />
-
               <SelectField
-                label="Glazing type"
-                value={answers.glazing}
-                options={GLAZING_TYPES}
-                onChange={(value) => updateAnswer("glazing", value)}
+                label="Approximate home size"
+                value={answers.home.home_size_band}
+                options={US_HOME_SIZE_BANDS}
+                onChange={(value) => updateHome("home_size_band", value)}
               />
-
               <SelectField
-                label="Main heating system"
-                value={answers.main_heating}
-                options={HEATING_SYSTEMS}
-                onChange={(value) => updateAnswer("main_heating", value)}
+                label="People in the home"
+                value={answers.home.occupants}
+                options={US_OCCUPANT_BANDS}
+                onChange={(value) => updateHome("occupants", value)}
               />
-
-              <TextField
-                label="Energy use intensity if known"
-                value={answers.energy_rating}
-                placeholder="e.g. 227 kWh/m²/yr"
-                onChange={(value) => updateAnswer("energy_rating", value)}
+              <SelectField
+                label="What is underneath most of the home?"
+                value={answers.home.foundation}
+                options={US_FOUNDATION_TYPES}
+                onChange={(value) => updateHome("foundation", value)}
               />
-
-              <NumberField
-                label="Number of occupants"
-                value={answers.occupants}
-                min={1}
-                max={12}
-                onChange={(value) => updateAnswer("occupants", value)}
+              <SelectField
+                label="Garage"
+                value={answers.home.garage_type}
+                options={US_GARAGE_TYPES}
+                onChange={(value) => {
+                  updateHome("garage_type", value);
+                  if (value !== "Attached") {
+                    updateHome("rooms_above_or_beside_attached_garage", "N/A");
+                  }
+                }}
+              />
+              {isAttachedGarage && (
+                <SelectField
+                  label="Conditioned room above/beside garage?"
+                  value={answers.home.rooms_above_or_beside_attached_garage}
+                  options={["Yes", "No", "Not sure"]}
+                  onChange={(value) =>
+                    updateHome("rooms_above_or_beside_attached_garage", value)
+                  }
+                />
+              )}
+              <SelectField
+                label="Windows"
+                value={answers.home.windows}
+                options={US_WINDOW_TYPES}
+                onChange={(value) => updateHome("windows", value)}
+              />
+              <SelectField
+                label="Age of most windows"
+                value={answers.home.window_age_band}
+                options={US_WINDOW_AGE_BANDS}
+                onChange={(value) => updateHome("window_age_band", value)}
+              />
+              <SelectField
+                label="Sunny-window coverings"
+                value={answers.home.sunny_window_coverings}
+                options={[
+                  "Curtains",
+                  "Blinds/shades",
+                  "Exterior shutters/awnings",
+                  "Solar screens/window film",
+                  "Nothing",
+                  "Mixture",
+                ]}
+                onChange={(value) => updateHome("sunny_window_coverings", value)}
+              />
+              <SelectField
+                label="Close coverings to block strong summer sun?"
+                value={answers.home.closes_coverings_for_summer_sun}
+                options={["Usually", "Sometimes", "Rarely", "Never", "N/A or not sure"]}
+                onChange={(value) =>
+                  updateHome("closes_coverings_for_summer_sun", value)
+                }
+              />
+              <SelectField
+                label="Any rooms consistently hotter or colder?"
+                value={answers.home.rooms_consistently_hot_or_cold}
+                options={["No", "Yes", "Not sure"]}
+                onChange={(value) => {
+                  updateHome("rooms_consistently_hot_or_cold", value);
+                  if (value !== "Yes") updateHome("hot_or_cold_room_locations", []);
+                }}
               />
             </div>
 
-            <div
-  className={`mt-5 grid gap-3 ${
-    isApartment ? "md:grid-cols-1" : "md:grid-cols-2"
-  }`}
->
-  {!isApartment && (
-    <ToggleField
-      label="Solar PV already installed"
-      value={answers.has_solar}
-      onChange={(value) => updateAnswer("has_solar", value)}
-    />
-  )}
-
-  <ToggleField
-    label="Battery already installed"
-    value={answers.has_battery}
-    onChange={(value) => updateAnswer("has_battery", value)}
-  />
-</div>
-
-            <label className="mt-5 grid gap-2 text-sm font-bold text-slate-700">
-              Anything else worth knowing?
-              <textarea
-                value={answers.notes}
-                placeholder="Optional notes about the home, lifestyle, energy concerns or planned upgrades."
-                onChange={(event) => updateAnswer("notes", event.target.value)}
-                className="min-h-28 rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
+            <div className="mt-5 grid gap-5">
+              <MultiCheck
+                label="Window or exterior-door issues"
+                value={answers.home.window_door_issues}
+                options={WINDOW_DOOR_ISSUES}
+                onChange={(value) => updateHome("window_door_issues", value)}
               />
-            </label>
-          </SectionShell>
+              {answers.home.rooms_consistently_hot_or_cold === "Yes" && (
+                <MultiCheck
+                  label="Where are the hot/cold rooms?"
+                  value={answers.home.hot_or_cold_room_locations}
+                  options={HOT_COLD_LOCATIONS}
+                  onChange={(value) =>
+                    updateHome("hot_or_cold_room_locations", value)
+                  }
+                />
+              )}
+            </div>
+          </Section>
 
-          {!isApartment && (
-  <SectionShell
-    number="2"
-    title="Solar suitability"
-            description="Solar should not be recommended by default. These details help the app judge whether solar PV is a strong candidate, a possible option, or not the first priority."
-            accent="blue"
+          <Section
+            number="2"
+            title="Heating, Air Conditioning & Comfort"
+            description="Controls, airflow and symptoms come before equipment replacement."
           >
             <div className="grid gap-5 md:grid-cols-3">
               <SelectField
-                label="Roof orientation"
-                value={answers.solar_roof_orientation}
-                options={SOLAR_ROOF_ORIENTATIONS}
+                label="Main heating"
+                value={answers.hvac.main_heating}
+                options={US_HEATING_TYPES}
+                onChange={(value) => {
+                  updateHvac("main_heating", value);
+                  if (value !== "Heat pump") {
+                    updateHvac("heat_pump_aux_heat_frequency", "N/A");
+                  }
+                }}
+              />
+              <SelectField
+                label="Main cooling"
+                value={answers.hvac.main_cooling}
+                options={US_COOLING_TYPES}
+                onChange={(value) => updateHvac("main_cooling", value)}
+              />
+              <SelectField
+                label="Age of main heating/cooling system"
+                value={answers.hvac.system_age_band}
+                options={US_SYSTEM_AGE_BANDS}
+                onChange={(value) => updateHvac("system_age_band", value)}
+              />
+              <SelectField
+                label="Thermostat"
+                value={answers.hvac.thermostat_type}
+                options={[
+                  "Manual",
+                  "Programmable",
+                  "Smart",
+                  "Multiple thermostats/zones",
+                  "Not sure",
+                ]}
+                onChange={(value) => updateHvac("thermostat_type", value)}
+              />
+              <NumberField
+                label="Typical summer setting while home (°F)"
+                value={answers.hvac.summer_setpoint_f}
+                min={55}
+                max={90}
+                onChange={(value) => updateHvac("summer_setpoint_f", value)}
+              />
+              <NumberField
+                label="Typical winter setting while home (°F)"
+                value={answers.hvac.winter_setpoint_f}
+                min={50}
+                max={85}
+                onChange={(value) => updateHvac("winter_setpoint_f", value)}
+              />
+              <SelectField
+                label="Change thermostat when away/sleeping?"
+                value={answers.hvac.setback_when_away_or_sleeping}
+                options={["Automatically", "Usually", "Sometimes", "Rarely", "Never"]}
                 onChange={(value) =>
-                  updateAnswer("solar_roof_orientation", value)
+                  updateHvac("setback_when_away_or_sleeping", value)
+                }
+              />
+              <SelectField
+                label="HVAC filter checked/replaced"
+                value={answers.hvac.filter_frequency}
+                options={[
+                  "Monthly",
+                  "Every 2-3 months",
+                  "A few times/year",
+                  "Rarely",
+                  "Not sure",
+                ]}
+                onChange={(value) => updateHvac("filter_frequency", value)}
+              />
+              <SelectField
+                label="Supply or return vents blocked?"
+                value={answers.hvac.blocked_supply_or_return_vents}
+                options={["Yes", "No", "Not sure"]}
+                onChange={(value) =>
+                  updateHvac("blocked_supply_or_return_vents", value)
+                }
+              />
+              <SelectField
+                label="Where does most ductwork run?"
+                value={answers.hvac.duct_location}
+                options={[
+                  "Conditioned space",
+                  "Attic",
+                  "Crawlspace",
+                  "Basement",
+                  "Garage",
+                  "Combination",
+                  "Not sure",
+                ]}
+                onChange={(value) => updateHvac("duct_location", value)}
+              />
+              <SelectField
+                label="Ceiling fan use"
+                value={answers.hvac.ceiling_fan_use}
+                options={["Regularly", "Sometimes", "Rarely", "No"]}
+                onChange={(value) => updateHvac("ceiling_fan_use", value)}
+              />
+              {answers.hvac.ceiling_fan_use !== "No" && (
+                <SelectField
+                  label="Turn fans off in empty rooms?"
+                  value={answers.hvac.turns_off_fans_in_empty_rooms}
+                  options={["Usually", "Sometimes", "Rarely", "Never", "N/A"]}
+                  onChange={(value) =>
+                    updateHvac("turns_off_fans_in_empty_rooms", value)
+                  }
+                />
+              )}
+              <SelectField
+                label="Portable space heaters"
+                value={answers.hvac.portable_space_heater_use}
+                options={["Never", "Occasionally", "Regularly", "Several rooms"]}
+                onChange={(value) =>
+                  updateHvac("portable_space_heater_use", value)
+                }
+              />
+              {isHeatPump && (
+                <SelectField
+                  label="Auxiliary/emergency heat runs"
+                  value={answers.hvac.heat_pump_aux_heat_frequency}
+                  options={["Rarely", "Sometimes", "Frequently", "Not sure"]}
+                  onChange={(value) =>
+                    updateHvac("heat_pump_aux_heat_frequency", value)
+                  }
+                />
+              )}
+            </div>
+            <div className="mt-5">
+              <MultiCheck
+                label="HVAC symptoms"
+                value={answers.hvac.symptoms}
+                options={HVAC_SYMPTOMS}
+                onChange={(value) => updateHvac("symptoms", value)}
+              />
+            </div>
+          </Section>
+
+          <Section
+            number="3"
+            title="Water Heating"
+            description="Usage, controls and simple losses are checked before replacement recommendations."
+          >
+            <div className="grid gap-5 md:grid-cols-3">
+              <SelectField
+                label="Water heating"
+                value={answers.water_heating.type}
+                options={US_WATER_HEATING_TYPES}
+                onChange={(value) => updateWater("type", value)}
+              />
+              <SelectField
+                label="Water-heater age"
+                value={answers.water_heating.age_band}
+                options={["Under 5", "5-10", "10-15", "15+ years", "Not sure"]}
+                onChange={(value) => updateWater("age_band", value)}
+              />
+              <SelectField
+                label="Temperature setting"
+                value={answers.water_heating.temperature_band}
+                options={["Below 120F", "Around 120F", "121-130F", "Above 130F", "Not sure"]}
+                onChange={(value) => updateWater("temperature_band", value)}
+              />
+              <SelectField
+                label="Showers per day"
+                value={answers.water_heating.showers_per_day}
+                options={["1-2", "3-4", "5-6", "7+", "Not sure"]}
+                onChange={(value) => updateWater("showers_per_day", value)}
+              />
+              <SelectField
+                label="Typical shower length"
+                value={answers.water_heating.shower_length}
+                options={["Under 5 min", "5-10", "10-15", "Over 15", "Varies"]}
+                onChange={(value) => updateWater("shower_length", value)}
+              />
+              <SelectField
+                label="Mostly showers or baths?"
+                value={answers.water_heating.showers_or_baths}
+                options={["Showers", "Baths", "Mixture"]}
+                onChange={(value) => updateWater("showers_or_baths", value)}
+              />
+              <SelectField
+                label="Low-flow showerheads"
+                value={answers.water_heating.low_flow_showerheads}
+                options={["Yes", "No", "Some", "Not sure"]}
+                onChange={(value) => updateWater("low_flow_showerheads", value)}
+              />
+              <SelectField
+                label="Hot-water faucets/showerheads drip?"
+                value={answers.water_heating.dripping_hot_water_fixtures}
+                options={["Yes", "No", "Not sure"]}
+                onChange={(value) =>
+                  updateWater("dripping_hot_water_fixtures", value)
+                }
+              />
+              <SelectField
+                label="Hot water takes a long time to arrive?"
+                value={answers.water_heating.long_hot_water_wait}
+                options={["Yes", "No", "Not sure"]}
+                onChange={(value) => updateWater("long_hot_water_wait", value)}
+              />
+              <SelectField
+                label="Hot-water recirculation pump"
+                value={answers.water_heating.recirculation_pump}
+                options={[
+                  "Continuous",
+                  "Scheduled",
+                  "Demand-activated",
+                  "Yes but unsure",
+                  "No",
+                  "Not sure",
+                ]}
+                onChange={(value) => updateWater("recirculation_pump", value)}
+              />
+              <SelectField
+                label="Accessible hot-water pipes insulated?"
+                value={answers.water_heating.accessible_hot_water_pipes_insulated}
+                options={["Yes", "Some", "No", "Not sure"]}
+                onChange={(value) =>
+                  updateWater("accessible_hot_water_pipes_insulated", value)
+                }
+              />
+              <SelectField
+                label="Water-heater location"
+                value={answers.water_heating.water_heater_location}
+                options={[
+                  "Conditioned space",
+                  "Basement",
+                  "Garage",
+                  "Attic",
+                  "Crawlspace",
+                  "Utility room",
+                  "Outdoors",
+                  "Not sure",
+                ]}
+                onChange={(value) => updateWater("water_heater_location", value)}
+              />
+              <SelectField
+                label="Run out of hot water?"
+                value={answers.water_heating.runs_out_of_hot_water}
+                options={["Frequently", "Occasionally", "Rarely", "Never"]}
+                onChange={(value) => updateWater("runs_out_of_hot_water", value)}
+              />
+            </div>
+          </Section>
+
+          <Section
+            number="4"
+            title="Appliances, Laundry, Kitchen & Hidden Electrical Loads"
+            description="We focus on material loads and avoid over-prioritising tiny standby usage."
+          >
+            <div className="grid gap-5 md:grid-cols-3">
+              <SelectField
+                label="Refrigerators in regular use"
+                value={answers.appliances.refrigerators_in_regular_use}
+                options={["1", "2", "3+", "Not sure"]}
+                onChange={(value) =>
+                  updateAppliances("refrigerators_in_regular_use", value)
+                }
+              />
+              {hasExtraFridge && (
+                <SelectField
+                  label="Age of extra refrigerator/freezer"
+                  value={answers.appliances.extra_cold_storage_age_band ?? "Not sure"}
+                  options={["Under 5", "5-10", "10-15", "15+ years", "Not sure"]}
+                  onChange={(value) =>
+                    updateAppliances("extra_cold_storage_age_band", value)
+                  }
+                />
+              )}
+              <SelectField
+                label="How do you dry clothes?"
+                value={answers.appliances.clothes_dryer_type}
+                options={[
+                  "Electric dryer",
+                  "Gas dryer",
+                  "Heat-pump dryer",
+                  "Mostly air dry",
+                  "Mixture",
+                ]}
+                onChange={(value) => updateAppliances("clothes_dryer_type", value)}
+              />
+              <SelectField
+                label="Dryer loads per week"
+                value={answers.appliances.dryer_loads_per_week}
+                options={["<3", "3-5", "6-10", "10+"]}
+                onChange={(value) =>
+                  updateAppliances("dryer_loads_per_week", value)
+                }
+              />
+              <SelectField
+                label="Need more than one drying cycle?"
+                value={answers.appliances.multiple_drying_cycles}
+                options={["Often", "Sometimes", "Rarely", "Never"]}
+                onChange={(value) =>
+                  updateAppliances("multiple_drying_cycles", value)
+                }
+              />
+              <SelectField
+                label="Dishwasher heated dry"
+                value={answers.appliances.dishwasher_heated_dry}
+                options={["Always", "Sometimes", "Rarely", "Never/air dry", "Not sure"]}
+                onChange={(value) =>
+                  updateAppliances("dishwasher_heated_dry", value)
+                }
+              />
+              <SelectField
+                label="Dishwasher frequency"
+                value={answers.appliances.dishwasher_frequency}
+                options={["<1/day", "About 1/day", ">1/day"]}
+                onChange={(value) =>
+                  updateAppliances("dishwasher_frequency", value)
+                }
+              />
+              <SelectField
+                label="Laundry wash temperature"
+                value={answers.appliances.laundry_wash_temperature}
+                options={["Cold", "Warm", "Hot", "Mixed"]}
+                onChange={(value) =>
+                  updateAppliances("laundry_wash_temperature", value)
+                }
+              />
+              <SelectField
+                label="Regularly run partial loads?"
+                value={answers.appliances.partial_loads}
+                options={["Yes", "Sometimes", "Rarely", "No"]}
+                onChange={(value) => updateAppliances("partial_loads", value)}
+              />
+              <SelectField
+                label="Work from home"
+                value={answers.appliances.work_from_home_frequency}
+                options={["No", "1-2 days/week", "3-4", "5+"]}
+                onChange={(value) =>
+                  updateAppliances("work_from_home_frequency", value)
+                }
+              />
+              <SelectField
+                label="Entertainment/computing left on unnecessarily?"
+                value={answers.appliances.entertainment_left_on_unnecessarily}
+                options={["Often", "Sometimes", "Rarely", "Never"]}
+                onChange={(value) =>
+                  updateAppliances("entertainment_left_on_unnecessarily", value)
+                }
+              />
+              <SelectField
+                label="Outdoor/security lighting"
+                value={answers.appliances.outdoor_security_lighting}
+                options={["Dusk-to-dawn", "Motion", "Manual", "No", "Not sure"]}
+                onChange={(value) =>
+                  updateAppliances("outdoor_security_lighting", value)
+                }
+              />
+              <SelectField
+                label="Electric vehicle"
+                value={answers.appliances.electric_vehicle}
+                options={["Yes", "No", "Planning soon"]}
+                onChange={(value) => updateAppliances("electric_vehicle", value)}
+              />
+              <SelectField
+                label="Time-of-use electricity pricing"
+                value={answers.appliances.time_of_use_electricity_pricing}
+                options={["Yes", "No", "Not sure"]}
+                onChange={(value) =>
+                  updateAppliances("time_of_use_electricity_pricing", value)
+                }
+              />
+            </div>
+
+            <div className="mt-5 grid gap-5">
+              {hasExtraFridge && (
+                <MultiCheck
+                  label="Extra refrigerator/freezer location/type"
+                  value={answers.appliances.extra_cold_storage_location}
+                  options={EXTRA_COLD_STORAGE}
+                  onChange={(value) =>
+                    updateAppliances("extra_cold_storage_location", value)
+                  }
+                />
+              )}
+              <MultiCheck
+                label="Other cold-storage appliances"
+                value={answers.appliances.other_cold_storage}
+                options={OTHER_COLD_STORAGE}
+                onChange={(value) => updateAppliances("other_cold_storage", value)}
+              />
+              <MultiCheck
+                label="Main cooking equipment"
+                value={answers.appliances.main_cooking_equipment}
+                options={COOKING_EQUIPMENT}
+                onChange={(value) =>
+                  updateAppliances("main_cooking_equipment", value)
+                }
+              />
+              <MultiCheck
+                label="High-use computing/entertainment"
+                value={answers.appliances.high_use_computing_entertainment}
+                options={COMPUTING_LOADS}
+                onChange={(value) =>
+                  updateAppliances("high_use_computing_entertainment", value)
+                }
+              />
+              <MultiCheck
+                label="Other continuous/regular loads"
+                value={answers.appliances.other_continuous_loads}
+                options={CONTINUOUS_LOADS}
+                onChange={(value) =>
+                  updateAppliances("other_continuous_loads", value)
+                }
+              />
+            </div>
+          </Section>
+
+          <Section
+            number="5"
+            title="Pool, Spa, Garage, Outdoor & Other Loads"
+            description="These questions only matter when the home actually has these loads."
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <ToggleField
+                label="Swimming pool"
+                value={answers.outdoor.swimming_pool}
+                onChange={(value) => {
+                  updateOutdoor("swimming_pool", value);
+                  if (!value) {
+                    updateOutdoor("pool_pump_type", "N/A");
+                    updateOutdoor("pool_pump_runtime", "N/A");
+                    updateOutdoor("pool_heating", "N/A");
+                    updateOutdoor("pool_cover_use", "N/A");
+                  }
+                }}
+              />
+              <ToggleField
+                label="Hot tub / spa"
+                value={answers.outdoor.hot_tub_spa}
+                onChange={(value) => {
+                  updateOutdoor("hot_tub_spa", value);
+                  if (!value) {
+                    updateOutdoor("hot_tub_cover", "N/A");
+                    updateOutdoor("hot_tub_kept_hot_continuously", "N/A");
+                  }
+                }}
+              />
+              <ToggleField
+                label="Irrigation / sprinkler system"
+                value={answers.outdoor.irrigation_system}
+                onChange={(value) => updateOutdoor("irrigation_system", value)}
+              />
+            </div>
+
+            {answers.outdoor.swimming_pool && (
+              <>
+                {subsection("Pool")}
+                <div className="mt-3 grid gap-5 md:grid-cols-4">
+                  <SelectField
+                    label="Pool pump"
+                    value={answers.outdoor.pool_pump_type}
+                    options={["Single-speed", "Two-speed", "Variable-speed", "Not sure"]}
+                    onChange={(value) => updateOutdoor("pool_pump_type", value)}
+                  />
+                  <SelectField
+                    label="Pump runtime"
+                    value={answers.outdoor.pool_pump_runtime}
+                    options={["Under 4", "4-8", "8-12", ">12 hours/day", "Not sure"]}
+                    onChange={(value) => updateOutdoor("pool_pump_runtime", value)}
+                  />
+                  <SelectField
+                    label="Pool heating"
+                    value={answers.outdoor.pool_heating}
+                    options={["None", "Gas", "Electric resistance", "Heat pump", "Solar", "Not sure"]}
+                    onChange={(value) => updateOutdoor("pool_heating", value)}
+                  />
+                  <SelectField
+                    label="Pool cover"
+                    value={answers.outdoor.pool_cover_use}
+                    options={["Yes", "Sometimes", "No", "N/A"]}
+                    onChange={(value) => updateOutdoor("pool_cover_use", value)}
+                  />
+                </div>
+              </>
+            )}
+
+            {answers.outdoor.hot_tub_spa && (
+              <>
+                {subsection("Hot tub / spa")}
+                <div className="mt-3 grid gap-5 md:grid-cols-3">
+                  <TextField
+                    label="Use frequency"
+                    value={answers.outdoor.hot_tub_use_frequency ?? ""}
+                    placeholder="e.g. weekends"
+                    onChange={(value) =>
+                      updateOutdoor("hot_tub_use_frequency", value || null)
+                    }
+                  />
+                  <SelectField
+                    label="Cover"
+                    value={answers.outdoor.hot_tub_cover}
+                    options={["Yes", "No", "Not sure"]}
+                    onChange={(value) => updateOutdoor("hot_tub_cover", value)}
+                  />
+                  <SelectField
+                    label="Kept hot continuously?"
+                    value={answers.outdoor.hot_tub_kept_hot_continuously}
+                    options={["Yes", "No", "Not sure"]}
+                    onChange={(value) =>
+                      updateOutdoor("hot_tub_kept_hot_continuously", value)
+                    }
+                  />
+                </div>
+              </>
+            )}
+
+            {subsection("Garage and outdoor")}
+            <div className="mt-3 grid gap-5 md:grid-cols-3">
+              <SelectField
+                label="Garage door use"
+                value={
+                  answers.home.garage_type === "No garage" ||
+                  answers.home.garage_type === "Carport"
+                    ? "N/A"
+                    : answers.outdoor.garage_door_use
+                }
+                options={
+                  answers.home.garage_type === "No garage" ||
+                  answers.home.garage_type === "Carport"
+                    ? ["N/A"]
+                    : ["Several times/day", "Once/twice/day", "Occasionally"]
+                }
+                onChange={(value) => updateOutdoor("garage_door_use", value)}
+              />
+              <SelectField
+                label="Outdoor lighting control"
+                value={answers.outdoor.outdoor_lighting_control}
+                options={["Motion", "Dusk-to-dawn", "Timer", "Manual", "None"]}
+                onChange={(value) =>
+                  updateOutdoor("outdoor_lighting_control", value)
+                }
+              />
+              <SelectField
+                label="Landscape/decorative lighting"
+                value={answers.outdoor.landscape_lighting}
+                options={["LED", "Mostly LED", "Older/non-LED", "Not sure", "None"]}
+                onChange={(value) => updateOutdoor("landscape_lighting", value)}
+              />
+              <SelectField
+                label="Private well"
+                value={answers.outdoor.private_well}
+                options={["Yes", "No", "Not sure"]}
+                onChange={(value) => {
+                  updateOutdoor("private_well", value);
+                  if (value !== "Yes") {
+                    updateOutdoor("well_pump_cycles_unusually_often", "N/A");
+                  }
+                }}
+              />
+              {answers.outdoor.private_well === "Yes" && (
+                <SelectField
+                  label="Well pump cycles unusually often?"
+                  value={answers.outdoor.well_pump_cycles_unusually_often}
+                  options={["Yes", "No", "Not sure"]}
+                  onChange={(value) =>
+                    updateOutdoor("well_pump_cycles_unusually_often", value)
+                  }
+                />
+              )}
+            </div>
+
+            <div className="mt-5 grid gap-5">
+              {answers.home.garage_type !== "No garage" && (
+                <MultiCheck
+                  label="Garage equipment"
+                  value={answers.outdoor.garage_equipment}
+                  options={GARAGE_EQUIPMENT}
+                  onChange={(value) => updateOutdoor("garage_equipment", value)}
+                />
+              )}
+              <MultiCheck
+                label="Other unusual loads"
+                value={answers.outdoor.unusual_loads}
+                options={UNUSUAL_LOADS}
+                onChange={(value) => updateOutdoor("unusual_loads", value)}
+              />
+            </div>
+          </Section>
+
+          <Section
+            number="6"
+            title="Solar, Battery & EV"
+            description="Solar is optional and will only appear in the report when roof control, roof information and the household context support it."
+          >
+            <div className="grid gap-5 md:grid-cols-3">
+              <SelectField
+                label="Already have rooftop solar?"
+                value={answers.solar_battery_ev.rooftop_solar ? "Yes" : "No"}
+                options={["Yes", "No"]}
+                onChange={(value) => updateSolar("rooftop_solar", value === "Yes")}
+              />
+              <SelectField
+                label="Interested in solar?"
+                value={answers.solar_battery_ev.solar_interest}
+                options={["Yes", "Maybe", "No"]}
+                onChange={(value) => updateSolar("solar_interest", value)}
+              />
+              <SelectField
+                label="Authority to install rooftop solar"
+                value={answers.solar_battery_ev.authority_to_install_solar}
+                options={
+                  apartmentOrCondo
+                    ? ["No", "Shared/HOA/condo", "Not sure", "Yes"]
+                    : ["Yes", "No", "Not sure"]
+                }
+                onChange={(value) =>
+                  updateSolar("authority_to_install_solar", value)
+                }
+              />
+              {answers.solar_battery_ev.rooftop_solar && (
+                <>
+                  <NumberField
+                    label="Approx. solar size (kW), if known"
+                    value={answers.solar_battery_ev.solar_size_kw}
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    onChange={(value) => updateSolar("solar_size_kw", value)}
+                  />
+                  <NumberField
+                    label="Solar install year, if known"
+                    value={answers.solar_battery_ev.solar_install_year}
+                    min={1990}
+                    max={2035}
+                    onChange={(value) => updateSolar("solar_install_year", value)}
+                  />
+                </>
+              )}
+              <SelectField
+                label="Home battery installed?"
+                value={answers.solar_battery_ev.home_battery_installed ? "Yes" : "No"}
+                options={["Yes", "No"]}
+                onChange={(value) =>
+                  updateSolar("home_battery_installed", value === "Yes")
+                }
+              />
+              <SelectField
+                label="Battery goal"
+                value={answers.solar_battery_ev.battery_goal}
+                options={[
+                  "Backup power",
+                  "Peak-rate reduction",
+                  "Use more solar",
+                  "Energy independence",
+                  "Not interested",
+                  "Not sure",
+                ]}
+                onChange={(value) => updateSolar("battery_goal", value)}
+              />
+              <SelectField
+                label="EV / PHEV"
+                value={answers.solar_battery_ev.ev_phev}
+                options={["Yes", "No", "Planning"]}
+                onChange={(value) => {
+                  updateSolar("ev_phev", value);
+                  if (value === "No") {
+                    updateSolar("home_charging_type", "N/A");
+                    updateSolar("ev_charging_time", "N/A");
+                    updateSolar("cheaper_off_peak_ev_rate", "N/A");
+                  }
+                }}
+              />
+            </div>
+
+            {showSolarRoof && (
+              <div className="mt-5 grid gap-5 md:grid-cols-3">
+                <SelectField
+                  label="Roof orientation"
+                  value={answers.solar_battery_ev.roof_orientation}
+                  options={[
+                    "Mostly south",
+                    "Mostly east/west",
+                    "Mostly north",
+                    "Multiple directions",
+                    "Flat",
+                    "Not sure",
+                  ]}
+                  onChange={(value) => updateSolar("roof_orientation", value)}
+                />
+                <SelectField
+                  label="Roof shading"
+                  value={answers.solar_battery_ev.roof_shading}
+                  options={["Little/none", "Some", "Heavy", "Not sure"]}
+                  onChange={(value) => updateSolar("roof_shading", value)}
+                />
+                <SelectField
+                  label="Usable roof space"
+                  value={answers.solar_battery_ev.usable_roof_space}
+                  options={["Plenty", "Limited", "Very limited", "Not sure"]}
+                  onChange={(value) => updateSolar("usable_roof_space", value)}
+                />
+              </div>
+            )}
+
+            {showEV && (
+              <div className="mt-5 grid gap-5 md:grid-cols-3">
+                <SelectField
+                  label="Home charging"
+                  value={answers.solar_battery_ev.home_charging_type}
+                  options={["120V/Level 1", "Level 2", "Mostly public", "Not sure"]}
+                  onChange={(value) => updateSolar("home_charging_type", value)}
+                />
+                <SelectField
+                  label="Typical charging time"
+                  value={answers.solar_battery_ev.ev_charging_time}
+                  options={[
+                    "Overnight",
+                    "Daytime",
+                    "Whenever plugged in",
+                    "Scheduled off-peak",
+                    "Not sure",
+                  ]}
+                  onChange={(value) => updateSolar("ev_charging_time", value)}
+                />
+                <SelectField
+                  label="Cheaper off-peak EV rate?"
+                  value={answers.solar_battery_ev.cheaper_off_peak_ev_rate}
+                  options={["Yes", "No", "Not sure"]}
+                  onChange={(value) =>
+                    updateSolar("cheaper_off_peak_ev_rate", value)
+                  }
+                />
+              </div>
+            )}
+          </Section>
+
+          <Section
+            number="7"
+            title="Bills, Energy Use & Household Behaviour"
+            description="Actual usage is preferred over bill amounts where available, and changes in occupancy or utility rates are separated from efficiency problems."
+          >
+            <MultiCheck
+              label="Energy sources used in the home"
+              value={answers.bills_behaviour.energy_sources}
+              options={[...US_ENERGY_SOURCES]}
+              onChange={(value) => updateBills("energy_sources", value)}
+            />
+
+            <div className="mt-5 grid gap-5 md:grid-cols-3">
+              <NumberField
+                label="Typical monthly electricity bill ($)"
+                value={answers.bills_behaviour.typical_monthly_electricity_bill}
+                min={0}
+                step={1}
+                onChange={(value) =>
+                  updateBills("typical_monthly_electricity_bill", value)
+                }
+              />
+              <NumberField
+                label="Highest electricity bill ($)"
+                value={answers.bills_behaviour.highest_electricity_bill}
+                min={0}
+                onChange={(value) => updateBills("highest_electricity_bill", value)}
+              />
+              <NumberField
+                label="Electricity unit rate ($/kWh), if known"
+                value={answers.bills_behaviour.electricity_unit_rate_per_kwh}
+                min={0}
+                step={0.001}
+                onChange={(value) =>
+                  updateBills("electricity_unit_rate_per_kwh", value)
+                }
+              />
+              <NumberField
+                label="Monthly electricity use (kWh), if known"
+                value={answers.bills_behaviour.electricity_usage_kwh_monthly}
+                min={0}
+                onChange={(value) =>
+                  updateBills("electricity_usage_kwh_monthly", value)
+                }
+              />
+              <NumberField
+                label="Annual electricity use (kWh), if known"
+                value={answers.bills_behaviour.electricity_usage_kwh_annual}
+                min={0}
+                onChange={(value) =>
+                  updateBills("electricity_usage_kwh_annual", value)
                 }
               />
 
-              <SelectField
-                label="Roof shading"
-                value={answers.solar_roof_shading}
-                options={SOLAR_ROOF_SHADING}
-                onChange={(value) => updateAnswer("solar_roof_shading", value)}
-              />
+              {energySources.includes("Natural gas") && (
+                <>
+                  <NumberField
+                    label="Typical monthly natural-gas bill ($)"
+                    value={answers.bills_behaviour.natural_gas_typical_bill}
+                    min={0}
+                    onChange={(value) =>
+                      updateBills("natural_gas_typical_bill", value)
+                    }
+                  />
+                  <NumberField
+                    label="Natural gas therms, if known"
+                    value={answers.bills_behaviour.natural_gas_therms}
+                    min={0}
+                    onChange={(value) => updateBills("natural_gas_therms", value)}
+                  />
+                  <NumberField
+                    label="Gas rate ($/therm), if known"
+                    value={answers.bills_behaviour.natural_gas_unit_rate_per_therm}
+                    min={0}
+                    step={0.01}
+                    onChange={(value) =>
+                      updateBills("natural_gas_unit_rate_per_therm", value)
+                    }
+                  />
+                </>
+              )}
+
+              {energySources.includes("Propane") && (
+                <>
+                  <NumberField
+                    label="Approx. annual propane spend ($)"
+                    value={answers.bills_behaviour.propane_annual_spend}
+                    min={0}
+                    onChange={(value) =>
+                      updateBills("propane_annual_spend", value)
+                    }
+                  />
+                  <NumberField
+                    label="Propane gallons/year, if known"
+                    value={answers.bills_behaviour.propane_gallons}
+                    min={0}
+                    onChange={(value) => updateBills("propane_gallons", value)}
+                  />
+                  <NumberField
+                    label="Propane rate ($/gallon), if known"
+                    value={answers.bills_behaviour.propane_unit_rate_per_gallon}
+                    min={0}
+                    step={0.01}
+                    onChange={(value) =>
+                      updateBills("propane_unit_rate_per_gallon", value)
+                    }
+                  />
+                </>
+              )}
+
+              {energySources.includes("Heating oil") && (
+                <>
+                  <NumberField
+                    label="Approx. annual heating-oil spend ($)"
+                    value={answers.bills_behaviour.heating_oil_annual_spend}
+                    min={0}
+                    onChange={(value) =>
+                      updateBills("heating_oil_annual_spend", value)
+                    }
+                  />
+                  <NumberField
+                    label="Heating-oil gallons/year, if known"
+                    value={answers.bills_behaviour.heating_oil_gallons}
+                    min={0}
+                    onChange={(value) =>
+                      updateBills("heating_oil_gallons", value)
+                    }
+                  />
+                  <NumberField
+                    label="Heating-oil rate ($/gallon), if known"
+                    value={answers.bills_behaviour.heating_oil_unit_rate_per_gallon}
+                    min={0}
+                    step={0.01}
+                    onChange={(value) =>
+                      updateBills("heating_oil_unit_rate_per_gallon", value)
+                    }
+                  />
+                </>
+              )}
 
               <SelectField
-                label="Available roof space"
-                value={answers.solar_roof_space}
-                options={SOLAR_ROOF_SPACE}
-                onChange={(value) => updateAnswer("solar_roof_space", value)}
+                label="When are bills highest?"
+                value={answers.bills_behaviour.bills_highest}
+                options={["Summer", "Winter", "Similar all year", "Varies", "Not sure"]}
+                onChange={(value) => updateBills("bills_highest", value)}
               />
-
               <SelectField
-                label="Main daytime electricity use"
-                value={answers.solar_daytime_use}
-                options={SOLAR_DAYTIME_USE}
-                onChange={(value) => updateAnswer("solar_daytime_use", value)}
+                label="Bills increased noticeably?"
+                value={answers.bills_behaviour.bills_increased_noticeably}
+                options={["Yes", "No", "Not sure"]}
+                onChange={(value) => {
+                  updateBills("bills_increased_noticeably", value);
+                  if (value !== "Yes") updateBills("changes_when_bills_increased", []);
+                }}
               />
-
               <SelectField
-                label="EV status"
-                value={answers.solar_ev_status}
-                options={SOLAR_EV_STATUS}
-                onChange={(value) => updateAnswer("solar_ev_status", value)}
+                label="Someone home during the day"
+                value={answers.bills_behaviour.daytime_occupancy}
+                options={["Most days", "Several days/week", "Rarely", "Varies"]}
+                onChange={(value) => updateBills("daytime_occupancy", value)}
               />
-
               <SelectField
-                label="Interested in solar?"
-                value={answers.solar_interest}
-                options={SOLAR_INTEREST}
-                onChange={(value) => updateAnswer("solar_interest", value)}
+                label="Occupied year-round?"
+                value={answers.bills_behaviour.occupied_year_round}
+                options={["Yes", "Seasonal", "Away for long periods", "Varies"]}
+                onChange={(value) => updateBills("occupied_year_round", value)}
               />
+              <SelectField
+                label="Heat/AC rooms rarely used?"
+                value={answers.bills_behaviour.heats_or_cools_rarely_used_rooms}
+                options={["Yes", "Sometimes", "No", "Not sure"]}
+                onChange={(value) =>
+                  updateBills("heats_or_cools_rarely_used_rooms", value)
+                }
+              />
+              <SelectField
+                label="Doors/windows open while HVAC runs?"
+                value={answers.bills_behaviour.doors_windows_open_while_hvac_runs}
+                options={["Often", "Sometimes", "Rarely", "Never"]}
+                onChange={(value) =>
+                  updateBills("doors_windows_open_while_hvac_runs", value)
+                }
+              />
+              <SelectField
+                label="Electricity use highest"
+                value={answers.bills_behaviour.electricity_use_peak}
+                options={["Morning", "Afternoon", "Evening", "Overnight", "Not sure"]}
+                onChange={(value) => updateBills("electricity_use_peak", value)}
+              />
+              <SelectField
+                label="Time-of-use pricing?"
+                value={answers.bills_behaviour.time_of_use_pricing}
+                options={["Yes", "No", "Not sure"]}
+                onChange={(value) => updateBills("time_of_use_pricing", value)}
+              />
+              {answers.bills_behaviour.time_of_use_pricing === "Yes" && (
+                <TextField
+                  label="Peak hours, if known"
+                  value={answers.bills_behaviour.known_peak_hours ?? ""}
+                  placeholder="e.g. 4pm-9pm"
+                  onChange={(value) =>
+                    updateBills("known_peak_hours", value || null)
+                  }
+                />
+              )}
             </div>
 
-            <div className="mt-6 rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#17356f]/70">
-                    Solar preview
-                  </p>
-
-                  <h3 className="mt-1 text-2xl font-black text-[#17356f]">
-                    {analysis.solarSuitability.rating}
-                  </h3>
-                </div>
-
-                <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-[#17356f]">
-                  Indicative only
-                </span>
+            {answers.bills_behaviour.bills_increased_noticeably === "Yes" && (
+              <div className="mt-5">
+                <MultiCheck
+                  label="What changed around the same time?"
+                  value={answers.bills_behaviour.changes_when_bills_increased}
+                  options={BILL_CHANGE_REASONS}
+                  onChange={(value) =>
+                    updateBills("changes_when_bills_increased", value)
+                  }
+                />
               </div>
+            )}
+          </Section>
 
-              <p className="mt-4 text-sm leading-7 text-slate-700">
-                {analysis.solarSuitability.reason}
+          <section className="rounded-[1.75rem] border border-[#dbe8f2] bg-white p-6 shadow-sm">
+            <h2 className="text-2xl font-black text-[#17356f]">
+              Optional appliance photos
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Photos can support the assessment but will not override your answers
+              or be used to invent unreadable model specifications.
+            </p>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => handlePhotos(event.target.files)}
+              className="mt-4 block w-full rounded-xl border border-[#dbe8f2] bg-[#f7fbff] p-3 text-sm"
+            />
+            {uploadedPhotos.length > 0 && (
+              <p className="mt-2 text-sm font-bold text-[#17356f]">
+                {uploadedPhotos.length} photo(s) ready for supporting analysis.
               </p>
+            )}
+          </section>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Suggested system size
-                  </p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    {analysis.solarSuitability.suggested_system_size}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Battery view
-                  </p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    {analysis.solarSuitability.battery_view}
-                  </p>
-                </div>
-              </div>
+          {errorMessage && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
+              {errorMessage}
             </div>
-          </SectionShell>
           )}
 
-          <SectionShell
-            number={isApartment ? "2" : "3"}
-            title="Electricity, Gas and Oil costs"
-            description="Save Your EGO means Electricity, Gas and Oil. Add what is known. Unknown values can be left at zero."
-            accent="yellow"
-          >
-            <div className="rounded-2xl border border-[#dbe8f2] bg-[#fffdf0] p-5">
-              <h3 className="text-lg font-black text-black">Electricity</h3>
-
-              <div className="mt-4 grid gap-5 md:grid-cols-3">
-                <SelectField
-                  label="Electricity billing frequency"
-                  value={answers.bill_frequency}
-                  options={BILLING_FREQUENCIES}
-                  onChange={(value) => updateAnswer("bill_frequency", value)}
-                />
-
-                <NumberField
-                  label={`Average electricity bill (${countryDefaults.currency})`}
-                  value={answers.avg_electricity_bill}
-                  min={0}
-                  step={10}
-                  onChange={(value) =>
-                    updateAnswer("avg_electricity_bill", value)
-                  }
-                />
-
-                <NumberField
-                  label={`Electricity unit rate (${countryDefaults.currency}/kWh)`}
-                  value={answers.unit_rate}
-                  min={0.05}
-                  max={2}
-                  step={0.01}
-                  onChange={(value) => updateAnswer("unit_rate", value)}
-                />
-
-                <NumberField
-                  label={`Standing charge per electricity bill (${countryDefaults.currency})`}
-                  value={answers.standing_charge}
-                  min={0}
-                  step={1}
-                  onChange={(value) => updateAnswer("standing_charge", value)}
-                />
-
-                <NumberField
-                  label={`Annual electricity spend if known (${countryDefaults.currency})`}
-                  value={answers.annual_bill_override}
-                  min={0}
-                  step={50}
-                  onChange={(value) =>
-                    updateAnswer("annual_bill_override", value)
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-[#f1faff] p-5">
-              <h3 className="text-lg font-black text-[#17356f]">Gas</h3>
-
-              <div className="mt-4">
-                <ToggleField
-                  label="Gas used in this home"
-                  value={answers.uses_gas}
-                  onChange={(value) => updateAnswer("uses_gas", value)}
-                />
-              </div>
-
-              {answers.uses_gas && (
-                <div className="mt-4 grid gap-5 md:grid-cols-3">
-                  <SelectField
-                    label="Gas billing frequency"
-                    value={answers.gas_bill_frequency}
-                    options={BILLING_FREQUENCIES}
-                    onChange={(value) =>
-                      updateAnswer("gas_bill_frequency", value)
-                    }
-                  />
-
-                  <NumberField
-                    label={`Average gas bill (${countryDefaults.currency})`}
-                    value={answers.avg_gas_bill}
-                    min={0}
-                    step={10}
-                    onChange={(value) => updateAnswer("avg_gas_bill", value)}
-                  />
-
-                  <NumberField
-                    label={`Gas unit rate if known (${countryDefaults.currency}/kWh)`}
-                    value={answers.gas_unit_rate}
-                    min={0}
-                    step={0.01}
-                    onChange={(value) => updateAnswer("gas_unit_rate", value)}
-                  />
-
-                  <NumberField
-                    label={`Annual gas spend if known (${countryDefaults.currency})`}
-                    value={answers.annual_gas_spend}
-                    min={0}
-                    step={50}
-                    onChange={(value) =>
-                      updateAnswer("annual_gas_spend", value)
-                    }
-                  />
-
-                  <SelectField
-                    label="Gas boiler age"
-                    value={answers.gas_boiler_age}
-                    options={AGE_BAND_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("gas_boiler_age", value)
-                    }
-                  />
-
-                  <SelectField
-                    label="Gas heating usage"
-                    value={answers.gas_heating_usage}
-                    options={USAGE_LEVEL_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("gas_heating_usage", value)
-                    }
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-slate-50 p-5">
-              <h3 className="text-lg font-black text-black">Oil</h3>
-
-              <div className="mt-4">
-                <ToggleField
-                  label="Oil used in this home"
-                  value={answers.uses_oil}
-                  onChange={(value) => updateAnswer("uses_oil", value)}
-                />
-              </div>
-
-              {answers.uses_oil && (
-                <div className="mt-4 grid gap-5 md:grid-cols-3">
-                  <NumberField
-                    label="Oil litres used per year if known"
-                    value={answers.oil_litres_per_year}
-                    min={0}
-                    step={50}
-                    onChange={(value) =>
-                      updateAnswer("oil_litres_per_year", value)
-                    }
-                  />
-
-                  <NumberField
-                    label={`Oil price per litre if known (${countryDefaults.currency})`}
-                    value={answers.oil_price_per_litre}
-                    min={0}
-                    step={0.01}
-                    onChange={(value) =>
-                      updateAnswer("oil_price_per_litre", value)
-                    }
-                  />
-
-                  <NumberField
-                    label={`Annual oil spend if known (${countryDefaults.currency})`}
-                    value={answers.annual_oil_spend}
-                    min={0}
-                    step={50}
-                    onChange={(value) =>
-                      updateAnswer("annual_oil_spend", value)
-                    }
-                  />
-
-                  <SelectField
-                    label="Oil boiler age"
-                    value={answers.oil_boiler_age}
-                    options={AGE_BAND_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("oil_boiler_age", value)
-                    }
-                  />
-
-                  <SelectField
-                    label="Oil heating usage"
-                    value={answers.oil_heating_usage}
-                    options={USAGE_LEVEL_OPTIONS}
-                    onChange={(value) =>
-                      updateAnswer("oil_heating_usage", value)
-                    }
-                  />
-                </div>
-              )}
-            </div>
-          </SectionShell>
-
-          <SectionShell
-            number={isApartment ? "3" : "4"}
-            title="Advanced home fabric details"
-            description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
-            accent="blue"
-          >
-            <div className="grid gap-5 md:grid-cols-2">
-              {Object.entries(FABRIC_TYPES).map(([label, options]) => (
-                <SelectField
-                  key={label}
-                  label={label}
-                  value={answers.fabric_meta[label] ?? "Unknown"}
-                  options={options}
-                  onChange={(value) => updateFabricMeta(label, value)}
-                />
-              ))}
-            </div>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Wall insulation level"
-                  value={answers.wall_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("wall_rating", value)}
-                />
-                {answers.wall_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Wall U-value, W/m²K"
-                      value={answers.wall_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("wall_u_manual", value)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Window performance"
-                  value={answers.window_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("window_rating", value)}
-                />
-                {answers.window_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Window U-value, W/m²K"
-                      value={answers.window_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("window_u_manual", value)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Floor insulation level"
-                  value={answers.floor_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("floor_rating", value)}
-                />
-                {answers.floor_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Floor U-value, W/m²K"
-                      value={answers.floor_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("floor_u_manual", value)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-                <SelectField
-                  label="Roof insulation level"
-                  value={answers.roof_rating}
-                  options={INSULATION_LEVEL_OPTIONS}
-                  onChange={(value) => updateAnswer("roof_rating", value)}
-                />
-                {answers.roof_rating === "I know the U-value" && (
-                  <div className="mt-4">
-                    <NumberField
-                      label="Roof U-value, W/m²K"
-                      value={answers.roof_u_manual}
-                      min={0}
-                      step={0.01}
-                      onChange={(value) =>
-                        updateAnswer("roof_u_manual", value)
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          </SectionShell>
-
-          <SectionShell
-            number={isApartment ? "4" : "5"}
-            title="Appliances and usage"
-            description="Select the appliances in the home, or add another appliance if it is not listed."
-            accent="black"
-          >
-            <div className="grid gap-5 md:grid-cols-2">
-              {Object.entries(APPLIANCE_LIBRARY).map(
-                ([category, appliances]) => (
-                  <div
-                    key={category}
-                    className="rounded-2xl border border-[#dbe8f2] bg-white p-5 shadow-sm"
-                  >
-                    <h3 className="font-black text-[#17356f]">{category}</h3>
-
-                    <div className="mt-3 grid gap-2">
-                      {appliances.map((appliance) => {
-                        const checked = answers.appliances.some(
-                          (item) => item.appliance === appliance
-                        );
-
-                        return (
-                          <label
-                            key={appliance}
-                            className="flex items-center gap-3 rounded-xl bg-[#f7fbff] px-3 py-2 text-sm font-semibold text-slate-700"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() =>
-                                toggleAppliance(category, appliance)
-                              }
-                              className="h-4 w-4 accent-[#17356f]"
-                            />
-                            {appliance}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-              <h3 className="font-black text-[#17356f]">
-                Other appliance not listed
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Add anything unusual or specific, such as a heated towel rail,
-                pond pump, dehumidifier, workshop equipment, hot tub, second
-                freezer or home office setup.
-              </p>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
-                <input
-                  type="text"
-                  value={otherApplianceName}
-                  placeholder="e.g. Heated towel rail"
-                  onChange={(event) =>
-                    setOtherApplianceName(event.target.value)
-                  }
-                  className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 text-sm shadow-sm outline-none transition focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
-                />
-
-                <button
-                  type="button"
-                  onClick={addOtherAppliance}
-                  className="rounded-xl bg-[#17356f] px-5 py-3 text-sm font-black text-white transition hover:bg-black"
-                >
-                  Add appliance
-                </button>
-              </div>
-            </div>
-
-            {answers.appliances.length > 0 && (
-              <div className="mt-6 space-y-4">
-                <h3 className="text-xl font-black text-[#17356f]">
-                  Selected appliances
-                </h3>
-
-                {answers.appliances.map((item) => (
-                  <div
-                    key={item.appliance}
-                    className="grid gap-4 rounded-2xl border border-[#dbe8f2] bg-white p-5 shadow-sm md:grid-cols-4"
-                  >
-                    <div>
-                      <p className="font-black text-black">{item.appliance}</p>
-                      <p className="text-sm font-semibold text-slate-500">
-                        {item.category}
-                      </p>
-                    </div>
-
-                    <SelectField
-                      label="Age"
-                      value={item.age_band}
-                      options={AGE_BAND_OPTIONS}
-                      onChange={(value) =>
-                        updateAppliance(item.appliance, "age_band", value)
-                      }
-                    />
-
-                    <SelectField
-                      label="Usage"
-                      value={item.usage}
-                      options={USAGE_LEVEL_OPTIONS}
-                      onChange={(value) =>
-                        updateAppliance(item.appliance, "usage", value)
-                      }
-                    />
-
-                    <NumberField
-                      label="Quantity"
-                      value={item.qty}
-                      min={1}
-                      max={10}
-                      onChange={(value) =>
-                        updateAppliance(item.appliance, "qty", value)
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionShell>
-
-          <SectionShell
-            number={isApartment ? "5" : "6"}
-            title="Assessment preview"
-            description="This is the rule-based assessment view before the AI report is generated."
-            accent="yellow"
-          >
-            <div
-  className={`grid gap-4 ${
-    isApartment ? "md:grid-cols-3" : "md:grid-cols-4"
-  }`}
->
-              {!isApartment && (
-  <PreviewCard
-    label="Solar suitability"
-    value={analysis.solarSuitability.rating}
-    colour="navy"
-  />
-)}
-
-              <PreviewCard
-                label="Appliance estimate"
-                value={`${analysis.applianceKwh.toFixed(0)} kWh/yr`}
-                colour="blue"
-              />
-
-              <PreviewCard
-                label="Main heat-loss area"
-                value={analysis.biggestLossArea}
-                colour="white"
-              />
-
-              <PreviewCard
-                label="Solar suitability"
-                value={analysis.solarSuitability.rating}
-                colour="navy"
-              />
-            </div>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              {Object.entries(analysis.quickScores).map(([label, score]) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5"
-                >
-                  <p className="text-sm font-black text-slate-500">{label}</p>
-                  <p className="mt-1 text-2xl font-black text-[#17356f]">
-                    {score}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-[#dbe8f2] bg-white p-5">
-              <h3 className="font-black text-[#17356f]">Rule-based view</h3>
-              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
-                {analysis.recommendations.slice(0, 6).map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          </SectionShell>
-
-          <SectionShell
-            number={isApartment ? "6" : "7"}
-            title="AI assessment"
-            description={
-  isApartment
-    ? "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, optional photos and rule-based findings."
-    : "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
-}
-            accent="blue"
-          >
-            <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
-              <h3 className="font-black text-[#17356f]">
-                Optional appliance photos
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Upload up to 3 appliance photos, rating plates, labels or
-                controls. The photos are compressed before analysis so they
-                work better on mobile connections. These photos are used for
-                this AI assessment only and are not stored permanently yet.
-              </p>
-
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/jpg"
-                multiple
-                onChange={(event) => handlePhotoUpload(event.target.files)}
-                className="mt-4 block w-full rounded-xl border border-[#dbe8f2] bg-white p-3 text-sm"
-              />
-
-              {photoErrorMessage && (
-                <p className="mt-3 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-                  {photoErrorMessage}
+          <section className="rounded-[2rem] bg-[#17356f] p-6 text-white shadow-xl sm:p-8">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#ffd600]">
+                  Ready to analyse
                 </p>
-              )}
-
-              {uploadedPhotos.length > 0 && (
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  {uploadedPhotos.map((photo) => (
-                    <div
-                      key={photo.name}
-                      className="rounded-xl border border-[#dbe8f2] bg-white p-3"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={photo.dataUrl}
-                        alt={photo.name}
-                        className="h-36 w-full rounded-lg object-cover"
-                      />
-                      <p className="mt-2 truncate text-xs text-slate-600">
-                        {photo.name}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {aiErrorMessage && (
-              <p className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-                {aiErrorMessage}
-              </p>
-            )}
-
-            <div className="mt-5 rounded-3xl border border-[#ffd600] bg-[#fff6bf] p-5">
-              <h3 className="text-xl font-black text-black">
-                Step 1: Generate the AI assessment
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                This creates the detailed recommendations used in the final
-                report, including likely costs, savings, payback guidance and
-                next steps.
-              </p>
-
-              <button
-                type="button"
-                disabled={generatingAi}
-                onClick={handleGenerateAiAssessment}
-                className="mt-4 rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {generatingAi
-                  ? "Generating AI assessment..."
-                  : aiReportText
-                    ? "Regenerate AI assessment"
-                    : "Generate AI assessment"}
-              </button>
-            </div>
-
-            {aiReport && (
-              <div className="mt-6 space-y-5">
-                <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-5">
-                  <h3 className="font-black text-black">Bottom line</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-800">
-                    {aiReport.bottom_line}
-                  </p>
-                </div>
-
-                {aiReport.photo_summary && (
-                  <div className="rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
-                    <h3 className="font-black text-[#17356f]">Photo notes</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-800">
-                      {aiReport.photo_summary}
-                    </p>
-                  </div>
-                )}
-
-                <AiList
-                  title="Top 3 likely energy drains"
-                  items={aiReport.top_energy_drains}
-                />
-
-                <AiList
-                  title="Top 3 recommended actions"
-                  items={aiReport.top_recommended_actions}
-                />
-
-                <AiList title="Quick wins" items={aiReport.quick_wins} />
-
-                <AiList
-                  title="Bigger upgrades"
-                  items={aiReport.bigger_upgrades}
-                />
-
-                <AiList
-                  title="Extra insights"
-                  items={aiReport.extra_insights}
-                />
+                <h2 className="mt-2 text-3xl font-black">
+                  Build my US home energy report
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
+                  Recommendations are ranked from no-cost actions through
+                  investigation and only then larger upgrades.
+                </p>
               </div>
-            )}
-          </SectionShell>
-        </div>
-
-        {errorMessage && (
-          <p className="mt-6 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
-            {errorMessage}
-          </p>
-        )}
-
-        <section className="mt-8 rounded-[1.75rem] border border-[#ffd600] bg-[#fff6bf] p-6 shadow-lg shadow-[#17356f]/10">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
-                Final step
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black text-black">
-                Ready to view the customer report?
-              </h2>
-
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                Generate the AI assessment first for the strongest report, then
-                save the assessment to open the full Save Your EGO results page.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-full border border-[#dbe8f2] bg-white px-6 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
-              >
-                Back to dashboard
-              </button>
-
               <button
                 type="button"
                 disabled={saving}
                 onClick={handleSubmit}
-                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full bg-[#ffd600] px-8 py-4 text-base font-black text-black disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {saving
-                  ? "Saving..."
-                  : aiReportText
-                    ? "Save AI report and view results"
-                    : "Save assessment and view report"}
+                {saving ? "Analysing home..." : "Generate My Report"}
               </button>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   );
