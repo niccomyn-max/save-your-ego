@@ -384,8 +384,10 @@ export default function AssessmentPage() {
     };
   }, []);
 
+  type SectionKey = Exclude<keyof USAssessmentAnswers, "assessment_version">;
+
   function updateSection(
-    section: keyof USAssessmentAnswers,
+    section: SectionKey,
     key: string,
     value: unknown
   ) {
