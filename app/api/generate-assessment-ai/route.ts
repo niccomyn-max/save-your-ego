@@ -23,6 +23,24 @@ const reportSchema = {
       items: { type: "string" },
       maxItems: 4,
     },
+    photo_evidence: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          photo_number: { type: "integer", minimum: 1, maximum: 5 },
+          finding: { type: "string" },
+          confidence: {
+            type: "string",
+            enum: ["High", "Medium"],
+          },
+        },
+        required: ["photo_number", "finding", "confidence"],
+        additionalProperties: false,
+      },
+      maxItems: 5,
+    },
+    photo_evidence_limitations: { type: "string" },
     positive_findings: {
       type: "array",
       items: { type: "string" },
@@ -44,6 +62,8 @@ const reportSchema = {
     "home_energy_snapshot",
     "fuel_specific_findings",
     "solar_battery_ev_findings",
+    "photo_evidence",
+    "photo_evidence_limitations",
     "positive_findings",
     "what_to_check_next",
     "assumptions_and_limits",
@@ -175,7 +195,11 @@ Rules:
 - Do not repeat the same advice across sections.
 - If evidence is insufficient, say so.
 - Photos can support evidence but cannot override the validated analysis or create a recommendation.
-- Do not infer unreadable specifications or inefficiency from appearance alone.
+- For photo_evidence, include only facts that are clearly visible or legible in an uploaded photo and materially useful to the assessment, such as a readable manufacturer/model, EnergyGuide value, nameplate specification, system type, or visible control/setting.
+- Each photo_evidence item must identify the correct photo_number. Use only High or Medium confidence. If a detail is uncertain, blurry, cropped, unreadable, or requires inference, do not include it.
+- Never infer equipment age, condition, efficiency, failure, energy waste, or replacement need from appearance alone.
+- If photos were uploaded but none provide reliable additional evidence, return photo_evidence as an empty array and set photo_evidence_limitations to: "The uploaded photos were reviewed, but they did not provide reliable additional evidence beyond the assessment answers."
+- If no photos were uploaded, return an empty photo_evidence array and set photo_evidence_limitations to an empty string.
 - Keep the report concise and actionable.
 
 Customer-facing recommendation groups in VALIDATED ANALYSIS:
@@ -205,7 +229,7 @@ ${JSON.stringify(analysis, null, 2)}
       content.push({
         type: "input_text",
         text:
-          "The following appliance photos are supporting evidence only. Do not create new recommendations from appearance alone.",
+          "The following photos must be reviewed for the Photo Evidence section. Extract only clearly visible or legible facts that are relevant to this home energy assessment. Do not create new recommendations from the photos and do not guess from appearance.",
       });
 
       photos.forEach((photo, index) => {
