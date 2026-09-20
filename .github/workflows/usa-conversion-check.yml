@@ -1,0 +1,28 @@
+name: USA Conversion Check
+
+on:
+  push:
+    branches:
+      - usa-conversion
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-publishable-key
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+      OPENAI_API_KEY: placeholder-openai-key
+      CLICKFUNNELS_WEBHOOK_SECRET: placeholder-webhook-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm install --no-save tsx
+      - run: npx tsx scripts/run-usa-regression.ts
+      - run: npm run build

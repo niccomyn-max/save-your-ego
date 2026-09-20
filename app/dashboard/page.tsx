@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { StartNewAssessmentButton } from "@/components/start-new-assessment-button";
 
 type Assessment = {
   id: string;
@@ -35,7 +36,7 @@ function formatDate(value?: string | null) {
     return "Unknown date";
   }
 
-  return new Date(value).toLocaleDateString("en-GB", {
+  return new Date(value).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -86,16 +87,25 @@ function getSavingPotential(assessment: Assessment) {
   };
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 function getFuelCoverage(answers: Record<string, unknown> | null) {
+  if (answers?.assessment_version === "usa-v1") {
+    const bills = asRecord(answers.bills_behaviour);
+    const sources = Array.isArray(bills.energy_sources)
+      ? bills.energy_sources.map(String)
+      : [];
+    return sources.length > 0 ? sources.join(", ") : "Electricity";
+  }
+
   const fuel = ["Electricity"];
 
-  if (answers?.uses_gas) {
-    fuel.push("Gas");
-  }
-
-  if (answers?.uses_oil) {
-    fuel.push("Oil");
-  }
+  if (answers?.uses_gas) fuel.push("Gas");
+  if (answers?.uses_oil) fuel.push("Oil");
 
   return fuel.join(", ");
 }
@@ -131,17 +141,47 @@ function DashboardStat({
 function AssessmentCard({ assessment }: { assessment: Assessment }) {
   const answers = assessment.answers ?? {};
   const scores = assessment.scores ?? {};
-  const savingPotential = getSavingPotential(assessment);
+  const isUSA = answers.assessment_version === "usa-v1";
+  const savingPotential = isUSA
+    ? {
+        label: "USA report ready",
+        className: "bg-[#e9f6fe] text-[#17356f] border-[#59b9ec]",
+      }
+    : getSavingPotential(assessment);
+  const home = isUSA ? asRecord(answers.home) : {};
+  const hvac = isUSA ? asRecord(answers.hvac) : {};
 
-  const propertyType = displayValue(answers.property_type, "Home");
-  const bedrooms = displayValue(answers.bedrooms, "N/A");
-  const mainHeating = displayValue(answers.main_heating_system, "Not provided");
+  const propertyType = isUSA
+    ? displayValue(home.home_type, "Home")
+    : displayValue(answers.property_type, "Home");
+  const bedrooms = isUSA
+    ? displayValue(home.home_size_band, "N/A")
+    : displayValue(answers.bedrooms, "N/A");
+  const mainHeating = isUSA
+    ? displayValue(hvac.main_heating, "Not provided")
+    : displayValue(answers.main_heating_system ?? answers.main_heating, "Not provided");
   const fuelCoverage = getFuelCoverage(answers);
 
-  const heatLossArea = displayValue(scores.biggestLossArea, "Not calculated");
-  const fabricBand = displayValue(scores.fabricBand, "Not calculated");
-  const electricityKwh = Math.round(Number(scores.estimatedBillKwh ?? 0));
-  const applianceKwh = Math.round(Number(scores.applianceKwh ?? 0));
+  const annualSpend =
+    isUSA && typeof scores.annual_energy_spend === "number"
+      ? new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0,
+        }).format(scores.annual_energy_spend)
+      : "Not enough information";
+  const heatLossArea = isUSA
+    ? annualSpend
+    : displayValue(scores.biggestLossArea, "Not calculated");
+  const fabricBand = isUSA
+    ? `${Array.isArray(scores.recommendations) ? scores.recommendations.length : 0} recommendations`
+    : displayValue(scores.fabricBand, "Not calculated");
+  const electricityKwh = isUSA
+    ? 0
+    : Math.round(Number(scores.estimatedBillKwh ?? 0));
+  const applianceKwh = isUSA
+    ? 0
+    : Math.round(Number(scores.applianceKwh ?? 0));
 
   return (
     <article className="overflow-hidden rounded-[1.75rem] border border-[#dbe8f2] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#17356f]/10">
@@ -181,32 +221,32 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
       <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
         <div className="rounded-2xl bg-[#fff6bf] p-4">
           <p className="text-xs font-black uppercase tracking-wide text-[#6b5200]">
-            Electricity
+            {isUSA ? "Assessment" : "Electricity"}
           </p>
           <p className="mt-2 text-xl font-black text-black">
-            {electricityKwh > 0 ? `${electricityKwh} kWh` : "Not estimated"}
+            {isUSA ? "USA home" : electricityKwh > 0 ? `${electricityKwh} kWh` : "Not estimated"}
           </p>
         </div>
 
         <div className="rounded-2xl bg-[#e9f6fe] p-4">
           <p className="text-xs font-black uppercase tracking-wide text-[#17356f]/70">
-            Appliances
+            {isUSA ? "Climate" : "Appliances"}
           </p>
           <p className="mt-2 text-xl font-black text-[#17356f]">
-            {applianceKwh > 0 ? `${applianceKwh} kWh` : "0 kWh"}
+            {isUSA ? displayValue(scores.climate_context, "Pending") : applianceKwh > 0 ? `${applianceKwh} kWh` : "0 kWh"}
           </p>
         </div>
 
         <div className="rounded-2xl bg-slate-100 p-4">
           <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-            Main heat-loss area
+            {isUSA ? "Annual energy spend" : "Main heat-loss area"}
           </p>
           <p className="mt-2 text-xl font-black text-black">{heatLossArea}</p>
         </div>
 
         <div className="rounded-2xl bg-[#17356f] p-4 text-white">
           <p className="text-xs font-black uppercase tracking-wide text-white/60">
-            Fabric profile
+            {isUSA ? "Recommendations" : "Fabric profile"}
           </p>
           <p className="mt-2 text-xl font-black">{fabricBand}</p>
         </div>
@@ -214,7 +254,7 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
 
       <div className="grid gap-3 border-t border-[#dbe8f2] bg-[#fbfdff] p-5 text-sm sm:grid-cols-3 sm:p-6">
         <div>
-          <p className="font-black text-slate-400">Bedrooms</p>
+          <p className="font-black text-slate-400">{isUSA ? "Home size" : "Bedrooms"}</p>
           <p className="mt-1 font-bold text-[#17356f]">{bedrooms}</p>
         </div>
 
@@ -285,17 +325,16 @@ async function DashboardContent() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                View saved Save Your EGO assessments, open customer reports and
-                generate a new Electricity, Gas and Oil review.
+                View your saved USA home energy assessments, open reports, and
+                start a new diagnostic whenever your home, equipment, or bills change.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/assessment"
+                <StartNewAssessmentButton
                   className="inline-flex items-center justify-center rounded-full bg-[#ffd600] px-6 py-4 text-sm font-black text-black shadow-sm transition hover:bg-[#ffec64]"
                 >
                   Start new assessment
-                </Link>
+                </StartNewAssessmentButton>
 
                 {latestAssessment && (
                   <Link
@@ -339,10 +378,10 @@ async function DashboardContent() {
 
                 <div className="rounded-[1.5rem] bg-white p-5 text-black">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                    App coverage
+                    USA assessment
                   </p>
                   <p className="mt-2 text-xl font-black">
-                    Electricity. Gas. Oil.
+                    HVAC · Bills · Solar · EV
                   </p>
                 </div>
               </div>
@@ -381,17 +420,16 @@ async function DashboardContent() {
                 </h2>
 
                 <p className="mt-3 text-base leading-7 text-slate-700">
-                  Start your first Save Your EGO assessment and create a clear,
-                  customer-friendly energy report covering Electricity, Gas and
-                  Oil.
+                  Start your first USA home energy assessment and create a clear,
+                  action-first report tailored to your home, climate, equipment,
+                  and energy bills.
                 </p>
 
-                <Link
-                  href="/assessment"
+                <StartNewAssessmentButton
                   className="mt-6 inline-flex items-center justify-center rounded-full bg-[#17356f] px-6 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black"
                 >
                   Start first assessment
-                </Link>
+                </StartNewAssessmentButton>
               </div>
 
               <div className="p-6 sm:p-8">
@@ -405,8 +443,8 @@ async function DashboardContent() {
                       Energy snapshot
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
-                      A clear summary of heat loss, electricity use and likely
-                      improvement potential.
+                      A clear summary of your home, climate, energy use and the
+                      issues most worth your attention.
                     </p>
                   </div>
 
@@ -415,7 +453,8 @@ async function DashboardContent() {
                       AI-assisted recommendations
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Practical actions, quick wins and bigger upgrade ideas.
+                      $0 quick wins, low-cost fixes, investigations and only
+                      evidence-supported larger upgrades.
                     </p>
                   </div>
 
