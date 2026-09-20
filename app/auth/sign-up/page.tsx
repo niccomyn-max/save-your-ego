@@ -1,11 +1,14 @@
+import { AuthShell } from "@/components/auth-shell";
 import { SignUpForm } from "@/components/sign-up-form";
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <SignUpForm />
-      </div>
-    </div>
+    <AuthShell
+      eyebrow="Create your account"
+      title="Set up your Save Your EGO access"
+      description="Create the account you’ll use for your USA home energy assessments and saved reports."
+    >
+      <SignUpForm />
+    </AuthShell>
   );
 }
