@@ -206,6 +206,13 @@ function confidenceLabel(confidence: Recommendation["confidence"]) {
   return "Limited evidence";
 }
 
+function groupLabel(group: Recommendation["group"]) {
+  if (group === "Do Now") return "Start here";
+  if (group === "Low-Cost Fixes") return "Small fix";
+  if (group === "Investigate Next") return "Check first";
+  return "Later option";
+}
+
 function paybackLabel(item: Recommendation) {
   if (item.type === "Investigation") return "Not applicable";
   if (item.payback === "Cannot be estimated reliably") return "Not enough data";
@@ -320,7 +327,7 @@ function TopPrioritiesSummary({
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-black text-black">{item.title}</h3>
                 <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-black text-[#17356f] ring-1 ring-[#dbe8f2]">
-                  {item.group}
+                  {groupLabel(item.group)}
                 </span>
               </div>
               <p className="mt-1 text-sm leading-6 text-slate-600">
@@ -444,7 +451,7 @@ function PhotoEvidenceSection({
     <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#59b9ec] bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black text-[#17356f]">Photo Evidence</h2>
+          <h2 className="text-2xl font-black text-[#17356f]">What We Could Read From Your Photos</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             We reviewed your uploaded photos for useful details such as model
             numbers, labels and settings. A photo can support a finding, but it
