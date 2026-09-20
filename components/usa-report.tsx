@@ -392,6 +392,42 @@ function PhotoEvidenceSection({
 }) {
   if (photoCount <= 0) return null;
 
+  const groupedFindings = Array.from(
+    findings.reduce(
+      (groups, item) => {
+        if (
+          typeof item.photo_number !== "number" ||
+          !item.finding ||
+          !item.confidence
+        ) {
+          return groups;
+        }
+
+        const existing = groups.get(item.photo_number) ?? {
+          photoNumber: item.photo_number,
+          confidence: item.confidence,
+          findings: [] as string[],
+        };
+
+        if (item.confidence === "High") {
+          existing.confidence = "High";
+        }
+
+        existing.findings.push(item.finding);
+        groups.set(item.photo_number, existing);
+        return groups;
+      },
+      new Map<
+        number,
+        {
+          photoNumber: number;
+          confidence: "High" | "Medium";
+          findings: string[];
+        }
+      >()
+    ).values()
+  ).sort((a, b) => a.photoNumber - b.photoNumber);
+
   return (
     <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#59b9ec] bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -408,24 +444,28 @@ function PhotoEvidenceSection({
         </span>
       </div>
 
-      {findings.length > 0 ? (
+      {groupedFindings.length > 0 ? (
         <div className="mt-5 grid gap-3">
-          {findings.map((item, index) => (
+          {groupedFindings.map((group) => (
             <div
-              key={`photo-evidence-${item.photo_number}-${index}`}
+              key={`photo-evidence-${group.photoNumber}`}
               className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[#17356f] px-3 py-1 text-[11px] font-black text-white">
-                  Photo {item.photo_number}
+                  Photo {group.photoNumber}
                 </span>
                 <span className="rounded-full bg-[#ffd600] px-3 py-1 text-[11px] font-black text-black">
-                  {item.confidence} confidence
+                  {group.confidence} confidence
                 </span>
               </div>
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                {item.finding}
-              </p>
+              <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-6 text-slate-700">
+                {group.findings.map((finding, index) => (
+                  <li key={`photo-${group.photoNumber}-finding-${index}`}>
+                    {finding}
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
         </div>
@@ -436,7 +476,7 @@ function PhotoEvidenceSection({
         </div>
       )}
 
-      {findings.length > 0 && limitations && (
+      {groupedFindings.length > 0 && limitations && (
         <p className="mt-4 text-xs leading-5 text-slate-500">{limitations}</p>
       )}
     </section>
