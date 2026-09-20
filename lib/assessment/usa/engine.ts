@@ -1354,33 +1354,33 @@ function positiveFindings(answers: USAssessmentAnswers) {
   const positives: string[] = [];
 
   if (answers.hvac.blocked_supply_or_return_vents === "No") {
-    positives.push("No blocked supply or return vents were reported.");
+    positives.push("You did not report any blocked heating or cooling vents.");
   }
 
   if (
     answers.hvac.filter_frequency === "Monthly" ||
     answers.hvac.filter_frequency === "Every 2-3 months"
   ) {
-    positives.push("HVAC filter maintenance appears reasonably regular.");
+    positives.push("You already check or replace the heating and cooling filter regularly.");
   }
 
   if (answers.water_heating.temperature_band === "Around 120F") {
-    positives.push("The reported water-heater setting is around 120F.");
+    positives.push("Your water heater is set around 120°F, which is a sensible starting point for many homes.");
   }
 
   if (
     answers.appliances.entertainment_left_on_unnecessarily === "Rarely" ||
     answers.appliances.entertainment_left_on_unnecessarily === "Never"
   ) {
-    positives.push("Unnecessary entertainment/computing runtime appears limited.");
+    positives.push("You are already doing a good job of turning off TVs, computers and entertainment equipment when they are not needed.");
   }
 
   if (answers.bills_behaviour.doors_windows_open_while_hvac_runs === "Never") {
-    positives.push("You reported that doors/windows are not left open while HVAC runs.");
+    positives.push("You already keep doors and windows closed while heating or cooling is running.");
   }
 
   if (answers.solar_battery_ev.ev_charging_time === "Scheduled off-peak") {
-    positives.push("EV charging is already scheduled off-peak.");
+    positives.push("Your EV charging is already scheduled for the cheaper off-peak period.");
   }
 
   return positives.slice(0, 5);
@@ -1445,14 +1445,14 @@ export function analyseUSAssessment(
     assumptions: [
       ...(climateResult.climate_context
         ? [
-            `Climate weighting is derived from ZIP code ${climateResult.zip_code} using county-level Building America 2021 climate data.`,
+            `We use ZIP code ${climateResult.zip_code} to match your home to the right US climate region.`,
           ]
         : [
-            "ZIP-derived climate context was unavailable, so neutral climate weighting was used.",
+            "We could not match the ZIP code to a climate region, so climate did not change the recommendation priorities.",
           ]),
-      "Equipment age is treated as context and never as a standalone replacement trigger.",
-      "Where savings evidence is weak, no payback is invented.",
-      "No-cost actions use existing equipment or behaviour and are shown as Cost $0 / Payback Immediate.",
+      "We never recommend replacing equipment just because it is old.",
+      "If there is not enough reliable information to estimate savings or payback, we leave the number out rather than guess.",
+      "Actions marked $0 use equipment or controls you already have and do not require a purchase.",
     ],
     positive_findings: positiveFindings(answers),
     suppressed_recommendation_ids: controlSuppressed.map((item) => item.id),
