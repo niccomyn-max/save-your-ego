@@ -804,7 +804,8 @@ function candidateRules(
 
   if (
     climate === "Hot-Humid" &&
-    answers.appliances.other_continuous_loads.includes("Dehumidifier")
+    (answers.appliances.other_continuous_loads.includes("Dehumidifier") ||
+      answers.appliances.other_continuous_loads.includes("Dehumidifiers"))
   ) {
     items.push(
       makeCandidate({
