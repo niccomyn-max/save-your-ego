@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { StartNewAssessmentButton } from "@/components/start-new-assessment-button";
 
 type Assessment = {
   id: string;
@@ -329,12 +330,11 @@ async function DashboardContent() {
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/assessment"
+                <StartNewAssessmentButton
                   className="inline-flex items-center justify-center rounded-full bg-[#ffd600] px-6 py-4 text-sm font-black text-black shadow-sm transition hover:bg-[#ffec64]"
                 >
                   Start new assessment
-                </Link>
+                </StartNewAssessmentButton>
 
                 {latestAssessment && (
                   <Link
@@ -425,12 +425,11 @@ async function DashboardContent() {
                   and energy bills.
                 </p>
 
-                <Link
-                  href="/assessment"
+                <StartNewAssessmentButton
                   className="mt-6 inline-flex items-center justify-center rounded-full bg-[#17356f] px-6 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black"
                 >
                   Start first assessment
-                </Link>
+                </StartNewAssessmentButton>
               </div>
 
               <div className="p-6 sm:p-8">
