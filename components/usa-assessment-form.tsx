@@ -82,7 +82,7 @@ const HVAC_SYMPTOMS = [
 
 const COLD_STORAGE_LOCATIONS = [
   "Kitchen",
-  "Garage",
+  "Do you have a garage?",
   "Basement",
   "Utility room",
   "Outbuilding",
@@ -154,7 +154,7 @@ const BILL_CHANGE_REASONS = [
   "Added EV",
   "Added pool/spa",
   "More people at home",
-  "Work from home",
+  "How often does someone work from home?",
   "New appliance",
   "HVAC change",
   "Rate increase",
@@ -163,13 +163,13 @@ const BILL_CHANGE_REASONS = [
 ];
 
 const ASSESSMENT_SECTIONS = [
-  "Home",
+  "Your Home",
   "Heating & Cooling",
   "Hot Water",
   "Appliances",
   "Outdoor",
   "Solar & EV",
-  "Bills",
+  "Your Bills",
 ] as const;
 
 function Section({
@@ -315,7 +315,9 @@ function ToggleField({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-xl border border-[#dbe8f2] bg-[#f7fbff] p-4 text-sm font-bold text-slate-700">
+    <label
+      className={`flex items-center gap-3 rounded-xl border p-4 text-sm font-bold transition ${value ? "border-[#17356f] bg-[#e9f6fe] text-[#17356f] shadow-sm" : "border-[#dbe8f2] bg-[#f7fbff] text-slate-700"}`}
+    >
       <input
         type="checkbox"
         checked={value}
@@ -362,7 +364,7 @@ function CheckboxGroup({
         {options.map((option) => (
           <label
             key={option}
-            className="flex items-center gap-3 rounded-xl border border-[#dbe8f2] bg-[#f7fbff] p-3 text-sm font-semibold text-slate-700"
+            className={`flex items-center gap-3 rounded-xl border p-3 text-sm font-semibold transition ${values.includes(option) ? "border-[#17356f] bg-[#e9f6fe] text-[#17356f] shadow-sm" : "border-[#dbe8f2] bg-[#f7fbff] text-slate-700"}`}
           >
             <input
               type="checkbox"
@@ -408,6 +410,7 @@ export default function USAssessmentForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
   const [photoErrorMessage, setPhotoErrorMessage] = useState("");
+  const [activeSection, setActiveSection] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -430,6 +433,28 @@ export default function USAssessmentForm() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const sections = Array.from({ length: ASSESSMENT_SECTIONS.length }, (_, index) =>
+      document.getElementById(`assessment-section-${index + 1}`)
+    ).filter((section): section is HTMLElement => Boolean(section));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (!visible) return;
+        const number = Number(visible.target.id.replace("assessment-section-", ""));
+        if (Number.isFinite(number)) setActiveSection(number);
+      },
+      { rootMargin: "-20% 0px -65% 0px", threshold: [0.05, 0.2, 0.5] }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
   }, []);
 
   const climate = useMemo(
@@ -495,7 +520,7 @@ export default function USAssessmentForm() {
     }));
   }
 
-  function updateGarage(value: string) {
+  function updateDo you have a garage?(value: string) {
     updateSection("home", "garage_type", value);
 
     if (value !== "Attached") {
@@ -790,7 +815,7 @@ export default function USAssessmentForm() {
     );
   }
 
-  const isAttachedGarage = answers.home.garage_type === "Attached";
+  const isAttachedDo you have a garage? = answers.home.garage_type === "Attached";
   const isHeatPump = answers.hvac.main_heating === "Heat pump";
   const hasPool = answers.outdoor.swimming_pool;
   const hasSpa = answers.outdoor.hot_tub_spa;
@@ -819,7 +844,7 @@ export default function USAssessmentForm() {
                 className="h-auto w-64"
               />
               <div className="mt-7 inline-flex rounded-full bg-[#17356f] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
-                USA Home Energy Assessment
+                Home Energy Checkup
               </div>
               <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-black sm:text-5xl">
                 Find the waste before you buy the upgrade
@@ -832,21 +857,21 @@ export default function USAssessmentForm() {
 
             <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
-                USA diagnostic model
+                How it works
               </p>
               <div className="mt-8 grid gap-4">
                 <div className="rounded-[1.5rem] bg-white/10 p-5">
                   <p className="text-xs font-black uppercase text-white/60">
-                    Sections
+                    Quick sections
                   </p>
                   <p className="mt-2 text-5xl font-black">7</p>
                 </div>
                 <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
                   <p className="text-xs font-black uppercase opacity-70">
-                    Core rule
+                    Our promise
                   </p>
                   <p className="mt-2 text-xl font-black">
-                    Fix the $20 problem before the $20,000 solution.
+                    Start with the simple fix before the expensive upgrade.
                   </p>
                 </div>
                 <div className="rounded-[1.5rem] bg-white p-5 text-black">
@@ -854,7 +879,7 @@ export default function USAssessmentForm() {
                     Climate
                   </p>
                   <p className="mt-2 text-xl font-black">
-                    Derived from your ZIP code
+                    Matched to your local climate
                   </p>
                 </div>
               </div>
@@ -871,9 +896,9 @@ export default function USAssessmentForm() {
               <a
                 key={label}
                 href={`#assessment-section-${index + 1}`}
-                className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black text-[#17356f] transition hover:bg-[#e9f6fe]"
+                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition ${activeSection === index + 1 ? "bg-[#17356f] text-white shadow-sm" : "text-[#17356f] hover:bg-[#e9f6fe]"}`}
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#17356f] text-[10px] text-white">
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] ${activeSection === index + 1 ? "bg-white text-[#17356f]" : "bg-[#17356f] text-white"}`}>
                   {index + 1}
                 </span>
                 {label}
@@ -893,18 +918,15 @@ export default function USAssessmentForm() {
             Good to know
           </span>
           <p>
-            This is an indicative home energy assessment, not a code-compliance,
-            engineering, electrical, gas, structural, tax-credit or contractor
-            determination. If you do not know an answer, leave it unknown rather
-            than guessing.
+            This gives you practical guidance for your home. It is not a contractor inspection or engineering report. If you do not know an answer, choose “Not sure” or leave optional numbers blank — guessing can make the advice less useful.
           </p>
         </div>
 
         <div className="mt-6 space-y-6">
           <Section
             number={1}
-            title="Home Details & Building Basics"
-            description="We start with the home, its location and the symptoms you actually notice. ZIP code is used internally to derive climate context."
+            title="Your Home & Comfort"
+            description="Tell us the basics about your home and anything that feels uncomfortable, drafty, too hot or too cold."
           >
             <div className="grid gap-5 md:grid-cols-3">
               <TextField
@@ -933,33 +955,33 @@ export default function USAssessmentForm() {
                 onChange={(value) => updateSection("home", "build_year_band", value)}
               />
               <SelectField
-                label="Approximate home size"
+                label="About how large is your home?"
                 value={answers.home.home_size_band}
                 options={US_HOME_SIZE_BANDS}
                 onChange={(value) => updateSection("home", "home_size_band", value)}
               />
               <SelectField
-                label="Number of occupants"
+                label="How many people live here?"
                 value={answers.home.occupants}
                 options={US_OCCUPANT_BANDS}
                 onChange={(value) => updateSection("home", "occupants", value)}
               />
               <SelectField
-                label="Foundation"
+                label="What is underneath the home?"
                 value={answers.home.foundation}
                 options={US_FOUNDATION_TYPES}
                 onChange={(value) => updateSection("home", "foundation", value)}
               />
               <SelectField
-                label="Garage"
+                label="Do you have a garage?"
                 value={answers.home.garage_type}
                 options={US_GARAGE_TYPES}
-                onChange={updateGarage}
+                onChange={updateDo you have a garage?}
               />
 
-              {isAttachedGarage && (
+              {isAttachedDo you have a garage? && (
                 <SelectField
-                  label="Rooms above or beside attached garage"
+                  label="Is there a room above or next to the attached garage?"
                   value={answers.home.rooms_above_or_beside_attached_garage}
                   options={["Yes", "No", "Not sure"]}
                   onChange={(value) =>
@@ -973,13 +995,13 @@ export default function USAssessmentForm() {
               )}
 
               <SelectField
-                label="Windows"
+                label="What type of windows do you mostly have?"
                 value={answers.home.windows}
                 options={US_WINDOW_TYPES}
                 onChange={(value) => updateSection("home", "windows", value)}
               />
               <SelectField
-                label="Approximate window age"
+                label="About how old are most of the windows?"
                 value={answers.home.window_age_band}
                 options={US_WINDOW_AGE_BANDS}
                 onChange={(value) => updateSection("home", "window_age_band", value)}
@@ -988,7 +1010,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-6 grid gap-6">
               <CheckboxGroup
-                label="Do you notice any window or door issues?"
+                label="Do you notice any of these window or door problems?"
                 values={answers.home.window_door_issues}
                 options={WINDOW_DOOR_ISSUES}
                 onChange={(values) =>
@@ -998,7 +1020,7 @@ export default function USAssessmentForm() {
 
               <div className="grid gap-5 md:grid-cols-2">
                 <SelectField
-                  label="Main sunny-window covering"
+                  label="What do you usually use on sunny windows?"
                   value={answers.home.sunny_window_coverings}
                   options={[
                     "Curtains",
@@ -1013,7 +1035,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Close coverings before strong summer sun?"
+                  label="Do you close blinds or curtains before strong summer sun hits?"
                   value={answers.home.closes_coverings_for_summer_sun}
                   options={[
                     "Usually",
@@ -1031,7 +1053,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Any rooms consistently hotter or colder?"
+                  label="Is any room usually much hotter or colder than the rest of the home?"
                   value={answers.home.rooms_consistently_hot_or_cold}
                   options={["No", "Yes", "Not sure"]}
                   onChange={(value) =>
@@ -1042,7 +1064,7 @@ export default function USAssessmentForm() {
 
               {answers.home.rooms_consistently_hot_or_cold === "Yes" && (
                 <CheckboxGroup
-                  label="Where are the hot or cold rooms?"
+                  label="Where is the uncomfortable room?"
                   values={answers.home.hot_or_cold_room_locations}
                   options={HOT_COLD_LOCATIONS}
                   onChange={(values) =>
@@ -1055,12 +1077,12 @@ export default function USAssessmentForm() {
 
           <Section
             number={2}
-            title="Heating, Cooling & Thermostat"
-            description="This section looks for operating, airflow and comfort symptoms before considering equipment replacement."
+            title="Heating & Cooling"
+            description="Tell us how you heat and cool the home, how you use the thermostat, and whether anything seems wrong."
           >
             <div className="grid gap-5 md:grid-cols-3">
               <SelectField
-                label="Main heating system"
+                label="What mainly heats your home?"
                 value={answers.hvac.main_heating}
                 options={US_HEATING_TYPES}
                 onChange={(value) =>
@@ -1068,7 +1090,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Main cooling system"
+                label="What mainly cools your home?"
                 value={answers.hvac.main_cooling}
                 options={US_COOLING_TYPES}
                 onChange={(value) =>
@@ -1076,7 +1098,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Approximate system age"
+                label="About how old is the main heating/cooling equipment?"
                 value={answers.hvac.system_age_band}
                 options={US_SYSTEM_AGE_BANDS}
                 onChange={(value) =>
@@ -1084,7 +1106,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Thermostat"
+                label="What type of thermostat do you have?"
                 value={answers.hvac.thermostat_type}
                 options={[
                   "Manual",
@@ -1098,7 +1120,7 @@ export default function USAssessmentForm() {
                 }
               />
               <NumberField
-                label="Typical summer setpoint"
+                label="Usual summer thermostat setting"
                 value={answers.hvac.summer_setpoint_f}
                 min={55}
                 max={90}
@@ -1108,7 +1130,7 @@ export default function USAssessmentForm() {
                 }
               />
               <NumberField
-                label="Typical winter setpoint"
+                label="Usual winter thermostat setting"
                 value={answers.hvac.winter_setpoint_f}
                 min={50}
                 max={85}
@@ -1118,7 +1140,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Setback when away or sleeping"
+                label="Do you change the thermostat when you’re away or asleep?"
                 value={answers.hvac.setback_when_away_or_sleeping}
                 options={["Automatically", "Usually", "Sometimes", "Rarely", "Never"]}
                 onChange={(value) =>
@@ -1126,7 +1148,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="HVAC filter check/replacement"
+                label="How often do you check or replace the air filter?"
                 value={answers.hvac.filter_frequency}
                 options={[
                   "Monthly",
@@ -1140,7 +1162,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Blocked supply or return vents?"
+                label="Are any heating/cooling vents blocked by furniture, rugs or belongings?"
                 value={answers.hvac.blocked_supply_or_return_vents}
                 options={["Yes", "No", "Not sure"]}
                 onChange={(value) =>
@@ -1148,14 +1170,14 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Where do most ducts run?"
+                label="Where do most of the air ducts run?"
                 value={answers.hvac.duct_location}
                 options={[
                   "Conditioned space",
                   "Attic",
                   "Crawlspace",
                   "Basement",
-                  "Garage",
+                  "Do you have a garage?",
                   "Combination",
                   "Not sure",
                 ]}
@@ -1164,7 +1186,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Ceiling-fan use"
+                label="How often do you use ceiling fans?"
                 value={answers.hvac.ceiling_fan_use}
                 options={["Regularly", "Sometimes", "Rarely", "No"]}
                 onChange={(value) =>
@@ -1173,7 +1195,7 @@ export default function USAssessmentForm() {
               />
               {answers.hvac.ceiling_fan_use !== "No" && (
                 <SelectField
-                  label="Turn fans off in empty rooms?"
+                  label="Do you turn ceiling fans off when nobody is in the room?"
                   value={answers.hvac.turns_off_fans_in_empty_rooms}
                   options={["Usually", "Sometimes", "Rarely", "Never", "N/A"]}
                   onChange={(value) =>
@@ -1182,7 +1204,7 @@ export default function USAssessmentForm() {
                 />
               )}
               <SelectField
-                label="Portable space-heater use"
+                label="How often do you use portable space heaters?"
                 value={answers.hvac.portable_space_heater_use}
                 options={["Never", "Occasionally", "Regularly", "Several rooms"]}
                 onChange={(value) =>
@@ -1191,7 +1213,7 @@ export default function USAssessmentForm() {
               />
               {isHeatPump && (
                 <SelectField
-                  label="Auxiliary/emergency heat frequency"
+                  label="How often do you see AUX or Emergency Heat?"
                   value={answers.hvac.heat_pump_aux_heat_frequency}
                   options={["Rarely", "Sometimes", "Frequently", "Not sure"]}
                   onChange={(value) =>
@@ -1203,7 +1225,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-6">
               <CheckboxGroup
-                label="HVAC symptoms"
+                label="Have you noticed any of these heating or cooling problems?"
                 values={answers.hvac.symptoms}
                 options={HVAC_SYMPTOMS}
                 onChange={(values) => updateSection("hvac", "symptoms", values)}
@@ -1213,12 +1235,12 @@ export default function USAssessmentForm() {
 
           <Section
             number={3}
-            title="Water Heating & Hot Water"
-            description="Hot-water habits and distribution problems often reveal useful savings before a water-heater replacement is justified."
+            title="Hot Water"
+            description="A few simple hot-water habits and problems can matter more than the age of the water heater."
           >
             <div className="grid gap-5 md:grid-cols-3">
               <SelectField
-                label="Water-heating system"
+                label="What heats your water?"
                 value={answers.water_heating.type}
                 options={US_WATER_HEATING_TYPES}
                 onChange={(value) =>
@@ -1226,7 +1248,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Approximate age"
+                label="About how old is it?"
                 value={answers.water_heating.age_band}
                 options={["Under 5", "5-10", "10-15", "15+ years", "Not sure"]}
                 onChange={(value) =>
@@ -1234,7 +1256,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Temperature setting"
+                label="Water-heater temperature"
                 value={answers.water_heating.temperature_band}
                 options={[
                   "Below 120F",
@@ -1248,7 +1270,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Showers per day"
+                label="About how many showers does the household take each day?"
                 value={answers.water_heating.showers_per_day}
                 options={["1-2", "3-4", "5-6", "7+", "Not sure"]}
                 onChange={(value) =>
@@ -1256,7 +1278,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Typical shower length"
+                label="How long is a typical shower?"
                 value={answers.water_heating.shower_length}
                 options={["Under 5 min", "5-10", "10-15", "Over 15", "Varies"]}
                 onChange={(value) =>
@@ -1264,7 +1286,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Mostly showers or baths?"
+                label="Does your household mostly take showers or baths?"
                 value={answers.water_heating.showers_or_baths}
                 options={["Showers", "Baths", "Mixture"]}
                 onChange={(value) =>
@@ -1272,7 +1294,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Low-flow showerheads?"
+                label="Do you have water-saving showerheads?"
                 value={answers.water_heating.low_flow_showerheads}
                 options={["Yes", "No", "Some", "Not sure"]}
                 onChange={(value) =>
@@ -1280,7 +1302,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Dripping hot-water faucet/showerhead?"
+                label="Does any hot-water faucet or shower drip?"
                 value={answers.water_heating.dripping_hot_water_fixtures}
                 options={["Yes", "No", "Not sure"]}
                 onChange={(value) =>
@@ -1292,7 +1314,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Long wait for hot water?"
+                label="Do you wait a long time for hot water at a faucet or shower?"
                 value={answers.water_heating.long_hot_water_wait}
                 options={["Yes", "No", "Not sure"]}
                 onChange={(value) =>
@@ -1300,7 +1322,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Hot-water recirculation pump"
+                label="Do you have a hot-water recirculation system?"
                 value={answers.water_heating.recirculation_pump}
                 options={[
                   "Continuous",
@@ -1315,7 +1337,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Accessible hot-water pipes insulated?"
+                label="Are the hot-water pipes you can see insulated?"
                 value={answers.water_heating.accessible_hot_water_pipes_insulated}
                 options={["Yes", "Some", "No", "Not sure"]}
                 onChange={(value) =>
@@ -1327,12 +1349,12 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Water-heater location"
+                label="Where is the water heater?"
                 value={answers.water_heating.water_heater_location}
                 options={[
                   "Conditioned space",
                   "Basement",
-                  "Garage",
+                  "Do you have a garage?",
                   "Attic",
                   "Crawlspace",
                   "Utility room",
@@ -1344,7 +1366,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Run out of hot water?"
+                label="How often do you run out of hot water?"
                 value={answers.water_heating.runs_out_of_hot_water}
                 options={["Frequently", "Occasionally", "Rarely", "Never"]}
                 onChange={(value) =>
@@ -1356,12 +1378,12 @@ export default function USAssessmentForm() {
 
           <Section
             number={4}
-            title="Appliances, Laundry & Plug Loads"
-            description="We look for repeated runtime, unnecessary standby use and hidden continuous loads rather than assuming an older appliance should be replaced."
+            title="Appliances & Everyday Energy Use"
+            description="Tell us about the appliances and electronics you use regularly. We are looking for avoidable use, not excuses to replace working equipment."
           >
             <div className="grid gap-5 md:grid-cols-3">
               <SelectField
-                label="Refrigerators in regular use"
+                label="How many refrigerators are used regularly?"
                 value={answers.appliances.refrigerators_in_regular_use}
                 options={["1", "2", "3+", "Not sure"]}
                 onChange={(value) =>
@@ -1369,7 +1391,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Extra refrigerator/freezer age"
+                label="About how old is the extra fridge or freezer?"
                 value={answers.appliances.extra_cold_storage_age_band ?? "Not applicable"}
                 options={[
                   "Not applicable",
@@ -1389,7 +1411,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Clothes dryer"
+                label="How do you usually dry clothes?"
                 value={answers.appliances.clothes_dryer_type}
                 options={[
                   "Electric dryer",
@@ -1403,7 +1425,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Dryer loads per week"
+                label="How many dryer loads do you run in a typical week?"
                 value={answers.appliances.dryer_loads_per_week}
                 options={["<3", "3-5", "6-10", "10+"]}
                 onChange={(value) =>
@@ -1411,7 +1433,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Need multiple drying cycles?"
+                label="Do clothes often need a second drying cycle?"
                 value={answers.appliances.multiple_drying_cycles}
                 options={["Often", "Sometimes", "Rarely", "Never"]}
                 onChange={(value) =>
@@ -1419,7 +1441,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Dishwasher heated dry"
+                label="How often do you use the dishwasher’s heated-dry setting?"
                 value={answers.appliances.dishwasher_heated_dry}
                 options={["Always", "Sometimes", "Rarely", "Never/air dry", "Not sure"]}
                 onChange={(value) =>
@@ -1427,7 +1449,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Dishwasher frequency"
+                label="How often do you run the dishwasher?"
                 value={answers.appliances.dishwasher_frequency}
                 options={["<1/day", "About 1/day", ">1/day"]}
                 onChange={(value) =>
@@ -1435,7 +1457,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Laundry wash temperature"
+                label="What temperature do you usually wash clothes at?"
                 value={answers.appliances.laundry_wash_temperature}
                 options={["Cold", "Warm", "Hot", "Mixed"]}
                 onChange={(value) =>
@@ -1443,7 +1465,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Run partial appliance loads?"
+                label="Do you often run the dishwasher or washer before it is full?"
                 value={answers.appliances.partial_loads}
                 options={["Yes", "Sometimes", "Rarely", "No"]}
                 onChange={(value) =>
@@ -1451,7 +1473,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Work from home"
+                label="How often does someone work from home?"
                 value={answers.appliances.work_from_home_frequency}
                 options={["No", "1-2 days/week", "3-4", "5+"]}
                 onChange={(value) =>
@@ -1459,7 +1481,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Equipment left on unnecessarily"
+                label="Are TVs, computers or gaming equipment left on when nobody is using them?"
                 value={answers.appliances.entertainment_left_on_unnecessarily}
                 options={["Often", "Sometimes", "Rarely", "Never"]}
                 onChange={(value) =>
@@ -1471,7 +1493,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Outdoor/security lighting"
+                label="How are outdoor or security lights controlled?"
                 value={answers.appliances.outdoor_security_lighting}
                 options={["Dusk-to-dawn", "Motion", "Manual", "No", "Not sure"]}
                 onChange={(value) =>
@@ -1482,7 +1504,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-6 grid gap-6">
               <CheckboxGroup
-                label="Where is extra cold storage located?"
+                label="Where is the extra fridge or freezer?"
                 values={answers.appliances.extra_cold_storage_location}
                 options={COLD_STORAGE_LOCATIONS}
                 onChange={(values) =>
@@ -1490,7 +1512,7 @@ export default function USAssessmentForm() {
                 }
               />
               <CheckboxGroup
-                label="Other cold-storage appliances"
+                label="Do you use any other fridges or freezers?"
                 values={answers.appliances.other_cold_storage}
                 options={OTHER_COLD_STORAGE}
                 onChange={(values) =>
@@ -1498,7 +1520,7 @@ export default function USAssessmentForm() {
                 }
               />
               <CheckboxGroup
-                label="Main cooking equipment"
+                label="What do you cook with most often?"
                 values={answers.appliances.main_cooking_equipment}
                 options={COOKING_EQUIPMENT}
                 onChange={(values) =>
@@ -1506,7 +1528,7 @@ export default function USAssessmentForm() {
                 }
               />
               <CheckboxGroup
-                label="High-use computing or entertainment equipment"
+                label="Which electronics are used a lot in your home?"
                 values={answers.appliances.high_use_computing_entertainment}
                 options={COMPUTING_LOADS}
                 onChange={(values) =>
@@ -1518,7 +1540,7 @@ export default function USAssessmentForm() {
                 }
               />
               <CheckboxGroup
-                label="Other continuous loads"
+                label="Do any of these run for long periods or all the time?"
                 values={answers.appliances.other_continuous_loads}
                 options={CONTINUOUS_LOADS}
                 onChange={(values) =>
@@ -1528,13 +1550,10 @@ export default function USAssessmentForm() {
 
               <div className="rounded-2xl border border-dashed border-[#59b9ec] bg-[#f7fbff] p-5">
                 <h3 className="font-black text-[#17356f]">
-                  Optional AI photo review
+                  Optional appliance or equipment photos
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Upload up to 5 photos of appliance labels or equipment. When
-                  you generate the report, AI will review each image for clearly
-                  readable energy-related evidence. It will not guess from an
-                  unclear photo or override your answers.
+                  You can add up to 5 clear photos of appliance labels or equipment nameplates. We’ll use readable details to improve the report. A photo will never trigger a replacement recommendation on its own.
                 </p>
                 <input
                   type="file"
@@ -1572,8 +1591,8 @@ export default function USAssessmentForm() {
 
           <Section
             number={5}
-            title="Pool, Spa, Garage & Outdoor Loads"
-            description="These loads can dominate a bill in some homes, so they appear only when relevant."
+            title="Pool, Spa & Outdoor"
+            description="These can use a lot of energy in some homes, so we’ll only ask about what you actually have."
           >
             <div className="grid gap-4 md:grid-cols-2">
               <ToggleField
@@ -1667,7 +1686,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-3">
               <SelectField
-                label="Garage-door use"
+                label="Do you have a garage?-door use"
                 value={answers.outdoor.garage_door_use}
                 options={["Several times/day", "Once/twice/day", "Occasionally", "N/A"]}
                 onChange={(value) =>
@@ -1723,7 +1742,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-6 grid gap-6">
               <CheckboxGroup
-                label="Garage equipment"
+                label="Do you have a garage? equipment"
                 values={answers.outdoor.garage_equipment}
                 options={GARAGE_EQUIPMENT}
                 onChange={(values) =>
@@ -1731,7 +1750,7 @@ export default function USAssessmentForm() {
                 }
               />
               <CheckboxGroup
-                label="Other unusual loads"
+                label="Do you have any of these larger or unusual energy users?"
                 values={answers.outdoor.unusual_loads}
                 options={UNUSUAL_LOADS}
                 onChange={(values) =>
@@ -1744,7 +1763,7 @@ export default function USAssessmentForm() {
           <Section
             number={6}
             title="Solar, Battery & EV"
-            description="Solar is treated as a diagnostic opportunity, not a default recommendation. Ownership and roof control come first."
+            description="We’ll only suggest looking at solar when your answers make it relevant. We won’t guess at system size or savings."
           >
             <div className="grid gap-4 md:grid-cols-2">
               <ToggleField
@@ -1798,7 +1817,7 @@ export default function USAssessmentForm() {
               )}
 
               <SelectField
-                label="Interested in solar?"
+                label="Are you interested in rooftop solar?"
                 value={answers.solar_battery_ev.solar_interest}
                 options={["Yes", "Maybe", "No"]}
                 onChange={(value) =>
@@ -1806,7 +1825,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="Authority to install rooftop solar"
+                label="Can you personally approve rooftop solar for this home?"
                 value={answers.solar_battery_ev.authority_to_install_solar}
                 options={["Yes", "No", "Shared/HOA/condo", "Not sure"]}
                 onChange={(value) =>
@@ -1822,7 +1841,7 @@ export default function USAssessmentForm() {
             {canAskRoof && (
               <div className="mt-5 grid gap-5 md:grid-cols-3">
                 <SelectField
-                  label="Roof orientation"
+                  label="Which direction does most usable roof space face?"
                   value={answers.solar_battery_ev.roof_orientation}
                   options={[
                     "Mostly south",
@@ -1837,7 +1856,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Roof shading"
+                  label="How shaded is the roof?"
                   value={answers.solar_battery_ev.roof_shading}
                   options={["Little/none", "Some", "Heavy", "Not sure"]}
                   onChange={(value) =>
@@ -1845,7 +1864,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Usable roof space"
+                  label="How much usable roof space is available?"
                   value={answers.solar_battery_ev.usable_roof_space}
                   options={["Plenty", "Limited", "Very limited", "Not sure"]}
                   onChange={(value) =>
@@ -1857,7 +1876,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-5 grid gap-5 md:grid-cols-3">
               <SelectField
-                label="Battery goal"
+                label="What would you want a home battery to do?"
                 value={answers.solar_battery_ev.battery_goal}
                 options={[
                   "Backup power",
@@ -1872,7 +1891,7 @@ export default function USAssessmentForm() {
                 }
               />
               <SelectField
-                label="EV / PHEV"
+                label="Do you have an electric or plug-in hybrid vehicle?"
                 value={answers.solar_battery_ev.ev_phev}
                 options={["Yes", "No", "Planning"]}
                 onChange={updateEv}
@@ -1882,7 +1901,7 @@ export default function USAssessmentForm() {
             {hasEv && (
               <div className="mt-5 grid gap-5 md:grid-cols-3">
                 <SelectField
-                  label="Home charging"
+                  label="How do you usually charge at home?"
                   value={answers.solar_battery_ev.home_charging_type}
                   options={["120V/Level 1", "Level 2", "Mostly public", "Not sure"]}
                   onChange={(value) =>
@@ -1890,7 +1909,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Typical charging time"
+                  label="When do you usually charge?"
                   value={answers.solar_battery_ev.ev_charging_time}
                   options={[
                     "Overnight",
@@ -1904,7 +1923,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Cheaper off-peak EV rate?"
+                  label="Does your electric plan offer cheaper hours for EV charging?"
                   value={answers.solar_battery_ev.cheaper_off_peak_ev_rate}
                   options={["Yes", "No", "Not sure"]}
                   onChange={(value) =>
@@ -1921,12 +1940,12 @@ export default function USAssessmentForm() {
 
           <Section
             number={7}
-            title="Energy Bills & Household Behaviour"
-            description="Actual usage or bill data is preferred when available. You can leave optional numeric fields blank rather than guessing."
+            title="Your Energy Bills & Habits"
+            description="Your bills help us understand where the money is going. Add the numbers you know and leave the rest blank."
           >
             <div className="grid gap-6">
               <CheckboxGroup
-                label="Energy sources used at home"
+                label="Which energy sources does your home use?"
                 values={answers.bills_behaviour.energy_sources}
                 options={[
                   "Electricity",
@@ -1944,7 +1963,7 @@ export default function USAssessmentForm() {
 
               <div className="grid gap-5 md:grid-cols-3">
                 <NumberField
-                  label="Typical monthly electricity bill"
+                  label="Typical monthly electric bill"
                   value={answers.bills_behaviour.typical_monthly_electricity_bill}
                   prefix="$"
                   min={0}
@@ -1958,7 +1977,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <NumberField
-                  label="Highest electricity bill"
+                  label="Highest monthly electric bill"
                   value={answers.bills_behaviour.highest_electricity_bill}
                   prefix="$"
                   min={0}
@@ -1972,7 +1991,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <NumberField
-                  label="Electricity use per month if known"
+                  label="Typical monthly electricity use, if shown on your bill"
                   value={answers.bills_behaviour.electricity_usage_kwh_monthly}
                   min={0}
                   suffix="kWh"
@@ -1985,7 +2004,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <NumberField
-                  label="Annual electricity use if known"
+                  label="Annual electricity use, if known"
                   value={answers.bills_behaviour.electricity_usage_kwh_annual}
                   min={0}
                   suffix="kWh"
@@ -1998,7 +2017,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <NumberField
-                  label="Electricity rate if known"
+                  label="Electricity price per kWh, if known"
                   value={answers.bills_behaviour.electricity_unit_rate_per_kwh}
                   min={0}
                   step={0.001}
@@ -2109,7 +2128,7 @@ export default function USAssessmentForm() {
               {answers.bills_behaviour.energy_sources.includes("Heating oil") && (
                 <div className="grid gap-5 md:grid-cols-3">
                   <NumberField
-                    label="Annual heating-oil spend"
+                    label="About how much do you spend on heating oil each year?"
                     value={answers.bills_behaviour.heating_oil_annual_spend}
                     prefix="$"
                     min={0}
@@ -2122,7 +2141,7 @@ export default function USAssessmentForm() {
                     }
                   />
                   <NumberField
-                    label="Annual heating-oil use"
+                    label="About how many gallons of heating oil do you use each year?"
                     value={answers.bills_behaviour.heating_oil_gallons}
                     min={0}
                     suffix="gal"
@@ -2135,7 +2154,7 @@ export default function USAssessmentForm() {
                     }
                   />
                   <NumberField
-                    label="Heating-oil rate if known"
+                    label="Heating-oil price per gallon, if known"
                     value={answers.bills_behaviour.heating_oil_unit_rate_per_gallon}
                     min={0}
                     step={0.01}
@@ -2154,7 +2173,7 @@ export default function USAssessmentForm() {
 
               <div className="grid gap-5 md:grid-cols-3">
                 <SelectField
-                  label="When are bills highest?"
+                  label="When are your energy bills usually highest?"
                   value={answers.bills_behaviour.bills_highest}
                   options={["Summer", "Winter", "Similar all year", "Varies", "Not sure"]}
                   onChange={(value) =>
@@ -2162,7 +2181,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Bills increased noticeably?"
+                  label="Have your energy bills risen noticeably?"
                   value={answers.bills_behaviour.bills_increased_noticeably}
                   options={["Yes", "No", "Not sure"]}
                   onChange={(value) =>
@@ -2174,7 +2193,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Home occupied during the day"
+                  label="Is someone usually home during the day?"
                   value={answers.bills_behaviour.daytime_occupancy}
                   options={["Most days", "Several days/week", "Rarely", "Varies"]}
                   onChange={(value) =>
@@ -2182,7 +2201,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Occupied year-round?"
+                  label="Is the home lived in year-round?"
                   value={answers.bills_behaviour.occupied_year_round}
                   options={["Yes", "Seasonal", "Away for long periods", "Varies"]}
                   onChange={(value) =>
@@ -2190,7 +2209,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Heat/cool rarely used rooms?"
+                  label="Do you heat or cool rooms that are rarely used?"
                   value={answers.bills_behaviour.heats_or_cools_rarely_used_rooms}
                   options={["Yes", "Sometimes", "No", "Not sure"]}
                   onChange={(value) =>
@@ -2202,7 +2221,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Doors/windows open while HVAC runs?"
+                  label="Are doors or windows left open while heating or cooling is running?"
                   value={answers.bills_behaviour.doors_windows_open_while_hvac_runs}
                   options={["Often", "Sometimes", "Rarely", "Never"]}
                   onChange={(value) =>
@@ -2214,7 +2233,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Electricity use peaks"
+                  label="When do you think your electricity use is highest?"
                   value={answers.bills_behaviour.electricity_use_peak}
                   options={["Morning", "Afternoon", "Evening", "Overnight", "Not sure"]}
                   onChange={(value) =>
@@ -2222,7 +2241,7 @@ export default function USAssessmentForm() {
                   }
                 />
                 <SelectField
-                  label="Time-of-use pricing?"
+                  label="Does your electricity price change by time of day?"
                   value={answers.bills_behaviour.time_of_use_pricing}
                   options={["Yes", "No", "Not sure"]}
                   onChange={(value) =>
@@ -2231,7 +2250,7 @@ export default function USAssessmentForm() {
                 />
                 {answers.bills_behaviour.time_of_use_pricing === "Yes" && (
                   <TextField
-                    label="Known peak hours"
+                    label="If you know them, what are the expensive peak hours?"
                     value={answers.bills_behaviour.known_peak_hours ?? ""}
                     placeholder="e.g. 4-9 PM"
                     onChange={(value) =>
@@ -2267,15 +2286,13 @@ export default function USAssessmentForm() {
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]">
-                Ready to analyse
+                Ready for your plan
               </p>
               <h2 className="mt-2 text-3xl font-black text-black">
-                Build your US home energy report
+                See what to do first in your home
               </h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Your answers are checked by the deterministic engine first. AI
-                then turns the validated findings into a clear report and reviews
-                any photos you uploaded for reliable supporting evidence.
+                We’ll compare your answers with the home-energy rules, put the most useful actions first, and use AI to turn the results into a clear report. If you uploaded photos, AI will also read useful label details.
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -2302,8 +2319,8 @@ export default function USAssessmentForm() {
               className="w-full rounded-full bg-[#ffd600] px-8 py-4 text-base font-black text-black shadow-lg transition hover:bg-[#ffea5c] disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
             >
               {saving
-                ? "AI is reviewing your assessment..."
-                : "Generate My AI-Assisted Report"}
+                ? "Building your home energy plan..."
+                : "Create My Home Energy Plan"}
             </button>
           </div>
         </section>
