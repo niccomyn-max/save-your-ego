@@ -175,7 +175,7 @@ function formatCost(item: Recommendation) {
     return "$0 homeowner check";
   }
   if (item.cost.min === null || item.cost.max === null) {
-    return "Not enough information to estimate reliably";
+    return "Not enough data to estimate";
   }
   if (item.cost.min === item.cost.max) return money(item.cost.min);
   return `${money(item.cost.min)}–${money(item.cost.max)}`;
@@ -184,7 +184,7 @@ function formatCost(item: Recommendation) {
 function formatSavings(item: Recommendation) {
   const range = item.savings?.annual_cost_savings;
   if (!range || range.min === null || range.max === null) {
-    return "Not enough information to estimate reliably";
+    return "Not enough data to estimate";
   }
   if (range.min === range.max) return `${money(range.min)}/year`;
   return `${money(range.min)}–${money(range.max)}/year`;
@@ -198,6 +198,18 @@ function benefitLabels(item: Recommendation) {
   if (item.benefits.reliability) labels.push("Reliability");
   if (item.benefits.maintenance) labels.push("Maintenance");
   return labels;
+}
+
+function confidenceLabel(confidence: Recommendation["confidence"]) {
+  if (confidence === "High") return "Strong evidence";
+  if (confidence === "Medium") return "Some evidence";
+  return "Limited evidence";
+}
+
+function paybackLabel(item: Recommendation) {
+  if (item.type === "Investigation") return "Not applicable";
+  if (item.payback === "Cannot be estimated reliably") return "Not enough data";
+  return item.payback;
 }
 
 function RecommendationCard({
@@ -214,14 +226,14 @@ function RecommendationCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-            Priority {index + 1}
+            Step {index + 1}
           </p>
           <h3 className="mt-1 text-lg font-black leading-6 text-black">
             {item.title}
           </h3>
         </div>
         <span className="rounded-full bg-[#ffd600] px-3 py-1 text-[11px] font-black text-black">
-          {item.confidence} confidence
+          {confidenceLabel(item.confidence)}
         </span>
       </div>
 
@@ -230,13 +242,13 @@ function RecommendationCard({
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-3">
           <p className="text-[10px] font-black uppercase tracking-wide text-[#6b5200]">
-            Estimated cost
+            Likely cost
           </p>
           <p className="mt-1 text-sm font-black text-black">{formatCost(item)}</p>
         </div>
         <div className="rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-3">
           <p className="text-[10px] font-black uppercase tracking-wide text-[#17356f]/70">
-            Estimated saving
+            Possible bill savings
           </p>
           <p className="mt-1 text-sm font-black text-[#17356f]">
             {formatSavings(item)}
@@ -247,7 +259,7 @@ function RecommendationCard({
             Payback
           </p>
           <p className="mt-1 text-sm font-black text-black">
-            {item.type === "Investigation" ? "Not applicable" : item.payback}
+            {paybackLabel(item)}
           </p>
         </div>
       </div>
@@ -255,7 +267,7 @@ function RecommendationCard({
       {item.why_this_appeared.length > 0 && (
         <div className="mt-4 rounded-2xl border border-[#dbe8f2] bg-white p-4">
           <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">
-            Why this appeared
+            Why we picked this
           </p>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700">
             {item.why_this_appeared.slice(0, 3).map((reason) => (
@@ -286,14 +298,14 @@ function TopPrioritiesSummary({
 }: {
   items: Recommendation[];
 }) {
-  if (items.length === 0) return null;
+  if (items.length < 2) return null;
 
   return (
     <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm">
-      <h2 className="text-2xl font-black text-[#17356f]">Top Priorities</h2>
+      <h2 className="text-2xl font-black text-[#17356f]">Your Action Plan</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">
-        Your highest-priority actions and checks. Full details appear once in the
-        relevant section below.
+        Start with the first item and work down the list. The full explanation for
+        each action appears below.
       </p>
       <ol className="mt-5 grid gap-3">
         {items.map((item, index) => (
@@ -350,7 +362,7 @@ function RecommendationGroup({
     >
       <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
       <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+      <div className={`mt-5 grid gap-4 ${items.length === 1 ? "grid-cols-1" : "lg:grid-cols-2"}`}>
         {items.map((item, index) => (
           <RecommendationCard key={item.id} item={item} index={index} />
         ))}
@@ -434,13 +446,13 @@ function PhotoEvidenceSection({
         <div>
           <h2 className="text-2xl font-black text-[#17356f]">Photo Evidence</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Uploaded photos are reviewed by AI as supporting evidence. They can
-            confirm readable details, but they do not override your answers or
-            create recommendations on their own.
+            We reviewed your uploaded photos for useful details such as model
+            numbers, labels and settings. A photo can support a finding, but it
+            will never create a new recommendation by itself.
           </p>
         </div>
         <span className="rounded-full bg-[#e9f6fe] px-4 py-2 text-xs font-black text-[#17356f]">
-          Photos reviewed by AI: {photoCount}
+          Photos reviewed: {photoCount}
         </span>
       </div>
 
@@ -633,7 +645,7 @@ export function USAReport({
         <div className="mt-6 space-y-5">
           <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-black text-[#17356f]">
-              Your Home Energy Snapshot
+              Your Home at a Glance
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-700">
               {narrative?.home_energy_snapshot ||
@@ -648,7 +660,7 @@ export function USAReport({
               </div>
               <div className="rounded-2xl bg-[#f7fbff] p-4">
                 <p className="text-xs font-black uppercase text-slate-400">
-                  Bills highest
+                  Highest bills
                 </p>
                 <p className="mt-1 font-black text-[#17356f]">
                   {String(bills.bills_highest ?? "Not sure")}
@@ -656,7 +668,7 @@ export function USAReport({
               </div>
               <div className="rounded-2xl bg-[#f7fbff] p-4">
                 <p className="text-xs font-black uppercase text-slate-400">
-                  Recommendations
+                  Actions found
                 </p>
                 <p className="mt-1 font-black text-[#17356f]">
                   {recommendations.length}
@@ -668,29 +680,29 @@ export function USAReport({
           <TopPrioritiesSummary items={topPriorities} />
 
           <RecommendationGroup
-            title="$0 Quick Wins"
-            description="Only genuine no-purchase actions appear here. Every item uses existing equipment or behaviour and has immediate payback."
+            title="Start Here — $0 Actions"
+            description="These cost nothing and use what you already have. They are the easiest place to start."
             items={doNow}
             accent="yellow"
           />
 
           <RecommendationGroup
-            title="Low-Cost Fixes"
-            description="Small repairs and maintenance items where the evidence supports spending a little before considering major upgrades."
+            title="Small Fixes Worth Doing"
+            description="Simple maintenance or low-cost repairs that make sense before you consider anything expensive."
             items={lowCost}
             accent="blue"
           />
 
           <RecommendationGroup
-            title="Investigate Next"
-            description="Potentially important issues to check before spending. Investigation does not mean buying equipment."
+            title="Check This Before Spending"
+            description="These are things to look into before you pay for repairs or replacement equipment."
             items={investigate}
             accent="black"
           />
 
           <RecommendationGroup
-            title="Consider Later"
-            description="Larger upgrades only appear when the available evidence supports keeping them on the table."
+            title="Bigger Upgrades to Consider Later"
+            description="These are not first steps. They are options to revisit only after the simpler actions and checks are done."
             items={considerLater}
             accent="navy"
           />
@@ -702,25 +714,25 @@ export function USAReport({
           />
 
           <TextList
-            title="Fuel-Specific Findings"
+            title="What Your Energy Use Tells Us"
             items={cleanStrings(narrative?.fuel_specific_findings)}
           />
 
           {solarRelevant && (
             <TextList
-              title="Solar / Battery / EV"
+              title="Solar, Battery & EV"
               items={solarBatteryEvFindings}
             />
           )}
 
-          <TextList title="Positive Findings" items={positiveFindings} />
+          <TextList title="What’s Already Working Well" items={positiveFindings} />
 
           <TextList
-            title="What to Check Next"
+            title="Your Next Steps"
             items={cleanStrings(narrative?.what_to_check_next)}
           />
 
-          <TextList title="Assumptions & Limits" items={assumptions.slice(0, 8)} />
+          <TextList title="What This Report Can and Can’t Tell You" items={assumptions.slice(0, 8)} />
         </div>
       </div>
     </main>
