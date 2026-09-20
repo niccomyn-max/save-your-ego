@@ -35,7 +35,7 @@ function formatDate(value?: string | null) {
     return "Unknown date";
   }
 
-  return new Date(value).toLocaleDateString("en-GB", {
+  return new Date(value).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -140,9 +140,13 @@ function DashboardStat({
 function AssessmentCard({ assessment }: { assessment: Assessment }) {
   const answers = assessment.answers ?? {};
   const scores = assessment.scores ?? {};
-  const savingPotential = getSavingPotential(assessment);
-
   const isUSA = answers.assessment_version === "usa-v1";
+  const savingPotential = isUSA
+    ? {
+        label: "USA report ready",
+        className: "bg-[#e9f6fe] text-[#17356f] border-[#59b9ec]",
+      }
+    : getSavingPotential(assessment);
   const home = isUSA ? asRecord(answers.home) : {};
   const hvac = isUSA ? asRecord(answers.hvac) : {};
 
@@ -157,11 +161,19 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
     : displayValue(answers.main_heating_system ?? answers.main_heating, "Not provided");
   const fuelCoverage = getFuelCoverage(answers);
 
+  const annualSpend =
+    isUSA && typeof scores.annual_energy_spend === "number"
+      ? new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          maximumFractionDigits: 0,
+        }).format(scores.annual_energy_spend)
+      : "Not enough information";
   const heatLossArea = isUSA
-    ? displayValue(scores.climate_context, "ZIP climate pending")
+    ? annualSpend
     : displayValue(scores.biggestLossArea, "Not calculated");
   const fabricBand = isUSA
-    ? `${Array.isArray(scores.recommendations) ? scores.recommendations.length : 0} priorities`
+    ? `${Array.isArray(scores.recommendations) ? scores.recommendations.length : 0} recommendations`
     : displayValue(scores.fabricBand, "Not calculated");
   const electricityKwh = isUSA
     ? 0
@@ -208,10 +220,10 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
       <div className="grid gap-4 p-5 sm:grid-cols-2 sm:p-6 lg:grid-cols-4">
         <div className="rounded-2xl bg-[#fff6bf] p-4">
           <p className="text-xs font-black uppercase tracking-wide text-[#6b5200]">
-            {isUSA ? "Version" : "Electricity"}
+            {isUSA ? "Assessment" : "Electricity"}
           </p>
           <p className="mt-2 text-xl font-black text-black">
-            {isUSA ? "USA v1" : electricityKwh > 0 ? `${electricityKwh} kWh` : "Not estimated"}
+            {isUSA ? "USA home" : electricityKwh > 0 ? `${electricityKwh} kWh` : "Not estimated"}
           </p>
         </div>
 
@@ -226,14 +238,14 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
 
         <div className="rounded-2xl bg-slate-100 p-4">
           <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-            {isUSA ? "Home context" : "Main heat-loss area"}
+            {isUSA ? "Annual energy spend" : "Main heat-loss area"}
           </p>
           <p className="mt-2 text-xl font-black text-black">{heatLossArea}</p>
         </div>
 
         <div className="rounded-2xl bg-[#17356f] p-4 text-white">
           <p className="text-xs font-black uppercase tracking-wide text-white/60">
-            {isUSA ? "Report priorities" : "Fabric profile"}
+            {isUSA ? "Recommendations" : "Fabric profile"}
           </p>
           <p className="mt-2 text-xl font-black">{fabricBand}</p>
         </div>
@@ -312,8 +324,8 @@ async function DashboardContent() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                View saved Save Your EGO assessments, open customer reports and
-                generate a new Electricity, Gas and Oil review.
+                View your saved USA home energy assessments, open reports, and
+                start a new diagnostic whenever your home, equipment, or bills change.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -366,10 +378,10 @@ async function DashboardContent() {
 
                 <div className="rounded-[1.5rem] bg-white p-5 text-black">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                    App coverage
+                    USA assessment
                   </p>
                   <p className="mt-2 text-xl font-black">
-                    Electricity. Gas. Oil.
+                    HVAC · Bills · Solar · EV
                   </p>
                 </div>
               </div>
@@ -408,9 +420,9 @@ async function DashboardContent() {
                 </h2>
 
                 <p className="mt-3 text-base leading-7 text-slate-700">
-                  Start your first Save Your EGO assessment and create a clear,
-                  customer-friendly energy report covering Electricity, Gas and
-                  Oil.
+                  Start your first USA home energy assessment and create a clear,
+                  action-first report tailored to your home, climate, equipment,
+                  and energy bills.
                 </p>
 
                 <Link
@@ -432,8 +444,8 @@ async function DashboardContent() {
                       Energy snapshot
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
-                      A clear summary of heat loss, electricity use and likely
-                      improvement potential.
+                      A clear summary of your home, climate, energy use and the
+                      issues most worth your attention.
                     </p>
                   </div>
 
@@ -442,7 +454,8 @@ async function DashboardContent() {
                       AI-assisted recommendations
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Practical actions, quick wins and bigger upgrade ideas.
+                      $0 quick wins, low-cost fixes, investigations and only
+                      evidence-supported larger upgrades.
                     </p>
                   </div>
 
