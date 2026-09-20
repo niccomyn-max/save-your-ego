@@ -2263,7 +2263,7 @@ export default function USAssessmentForm() {
           </Section>
         </div>
 
-        <section className="mt-6 rounded-[2rem] border border-[#dbe8f2] bg-white p-6 shadow-xl sm:p-8">
+        <section className="mt-6 overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-gradient-to-br from-white via-[#f7fbff] to-[#e9f6fe] p-6 shadow-xl sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]">
@@ -2273,9 +2273,9 @@ export default function USAssessmentForm() {
                 Build your US home energy report
               </h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                The deterministic engine will rank only supported recommendations.
-                The AI writes the explanation after costs, payback, control and
-                suppression rules have already been applied.
+                Your answers are checked by the deterministic engine first. AI
+                then turns the validated findings into a clear report and reviews
+                any photos you uploaded for reliable supporting evidence.
               </p>
 
               <div className="mt-4 flex flex-wrap gap-2">
@@ -2299,7 +2299,7 @@ export default function USAssessmentForm() {
               type="button"
               onClick={handleSubmit}
               disabled={saving}
-              className="rounded-full bg-[#ffd600] px-8 py-4 text-base font-black text-black shadow-lg transition hover:bg-[#ffea5c] disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-full bg-[#ffd600] px-8 py-4 text-base font-black text-black shadow-lg transition hover:bg-[#ffea5c] disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
             >
               {saving
                 ? "AI is reviewing your assessment..."
