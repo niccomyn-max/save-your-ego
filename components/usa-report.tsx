@@ -214,9 +214,58 @@ function groupLabel(group: Recommendation["group"]) {
 }
 
 function paybackLabel(item: Recommendation) {
-  if (item.type === "Investigation") return "Not applicable";
-  if (item.payback === "Cannot be estimated reliably") return "Not enough data";
+  if (item.type === "Investigation") return null;
+  if (item.payback === "Cannot be estimated reliably") return null;
   return item.payback;
+}
+
+function recommendationMetrics(item: Recommendation) {
+  const metrics: Array<{
+    label: string;
+    value: string;
+    className: string;
+    labelClassName: string;
+    valueClassName: string;
+  }> = [];
+
+  const costKnown =
+    item.type === "No-Cost Action" ||
+    (item.cost.min !== null && item.cost.max !== null) ||
+    (item.type === "Investigation" && item.cost.min === 0 && item.cost.max === 0);
+
+  if (costKnown) {
+    metrics.push({
+      label: "Likely cost",
+      value: formatCost(item),
+      className: "border-[#ffe76a] bg-[#fff6bf]",
+      labelClassName: "text-[#6b5200]",
+      valueClassName: "text-black",
+    });
+  }
+
+  const savings = item.savings?.annual_cost_savings;
+  if (savings?.min !== null && savings?.min !== undefined && savings?.max !== null && savings?.max !== undefined) {
+    metrics.push({
+      label: "Possible bill savings",
+      value: formatSavings(item),
+      className: "border-[#bde8ff] bg-[#e9f6fe]",
+      labelClassName: "text-[#17356f]/70",
+      valueClassName: "text-[#17356f]",
+    });
+  }
+
+  const payback = paybackLabel(item);
+  if (payback) {
+    metrics.push({
+      label: "Payback",
+      value: payback,
+      className: "border-[#dbe8f2] bg-white",
+      labelClassName: "text-slate-400",
+      valueClassName: "text-black",
+    });
+  }
+
+  return metrics;
 }
 
 function RecommendationCard({
@@ -229,8 +278,8 @@ function RecommendationCard({
   const benefits = benefitLabels(item);
 
   return (
-    <article className="rounded-3xl border border-[#dbe8f2] bg-[#f7fbff] p-5 print:break-inside-avoid">
-      <div className="flex items-start justify-between gap-3">
+    <article className="rounded-3xl border border-[#dbe8f2] bg-[#f7fbff] p-5 print:break-inside-avoid print:p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
             Step {index + 1}
@@ -239,37 +288,30 @@ function RecommendationCard({
             {item.title}
           </h3>
         </div>
-        <span className="rounded-full bg-[#ffd600] px-3 py-1 text-[11px] font-black text-black">
+        <span className="whitespace-nowrap rounded-full bg-[#ffd600] px-3 py-1 text-[11px] font-black text-black">
           {confidenceLabel(item.confidence)}
         </span>
       </div>
 
       <p className="mt-3 text-sm leading-6 text-slate-700">{item.summary}</p>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-3">
-          <p className="text-[10px] font-black uppercase tracking-wide text-[#6b5200]">
-            Likely cost
-          </p>
-          <p className="mt-1 text-sm font-black text-black">{formatCost(item)}</p>
+      {recommendationMetrics(item).length > 0 && (
+        <div className={`mt-4 grid gap-2 ${recommendationMetrics(item).length === 1 ? "grid-cols-1 sm:max-w-xs" : recommendationMetrics(item).length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
+          {recommendationMetrics(item).map((metric) => (
+            <div
+              key={metric.label}
+              className={`rounded-2xl border p-3 ${metric.className}`}
+            >
+              <p className={`text-[10px] font-black uppercase tracking-wide ${metric.labelClassName}`}>
+                {metric.label}
+              </p>
+              <p className={`mt-1 text-sm font-black ${metric.valueClassName}`}>
+                {metric.value}
+              </p>
+            </div>
+          ))}
         </div>
-        <div className="rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-3">
-          <p className="text-[10px] font-black uppercase tracking-wide text-[#17356f]/70">
-            Possible bill savings
-          </p>
-          <p className="mt-1 text-sm font-black text-[#17356f]">
-            {formatSavings(item)}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-[#dbe8f2] bg-white p-3">
-          <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">
-            Payback
-          </p>
-          <p className="mt-1 text-sm font-black text-black">
-            {paybackLabel(item)}
-          </p>
-        </div>
-      </div>
+      )}
 
       {item.why_this_appeared.length > 0 && (
         <div className="mt-4 rounded-2xl border border-[#dbe8f2] bg-white p-4">
@@ -572,10 +614,15 @@ export function USAReport({
   return (
     <main className="report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
       <style>{`
+        @page { margin: 10mm; }
         @media print {
           body { background: white !important; }
           .report-page { background: white !important; padding: 0 !important; }
           .report-section, .report-cover { box-shadow: none !important; }
+          .report-section { margin-top: 10px !important; }
+          .report-section h2 { font-size: 18px !important; line-height: 1.25 !important; }
+          .report-section p, .report-section li { line-height: 1.45 !important; }
+          .report-cover { break-after: page; }
         }
       `}</style>
 
@@ -609,7 +656,7 @@ export function USAReport({
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
                 {narrative?.bottom_line ||
-                  "This report prioritises no-cost actions, low-cost fixes and investigation before major upgrades."}
+                  "Start with the simple actions first. Bigger upgrades only appear when your answers support taking a closer look."}
               </p>
               <p className="mt-6 text-sm font-semibold text-slate-500">
                 Assessment {assessmentId.slice(0, 8)} · {formatDate(createdAt)}
@@ -650,13 +697,13 @@ export function USAReport({
         </section>
 
         <div className="mt-6 space-y-5">
-          <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+          <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:p-5">
             <h2 className="text-2xl font-black text-[#17356f]">
               Your Home at a Glance
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-700">
               {narrative?.home_energy_snapshot ||
-                "The report uses your household answers, ZIP-derived climate context and validated recommendation rules to identify the most material opportunities."}
+                "This summary uses the answers you gave us, your local climate and the issues you noticed around the home to decide what is worth your attention first."}
             </p>
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl bg-[#f7fbff] p-4">
