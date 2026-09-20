@@ -272,9 +272,32 @@ ${JSON.stringify(analysis, null, 2)}
       },
     });
 
+    const report = JSON.parse(response.output_text) as {
+      bottom_line: string;
+      home_energy_snapshot: string;
+      fuel_specific_findings: string[];
+      solar_battery_ev_findings: string[];
+      photo_evidence: Array<{
+        photo_number: number;
+        finding: string;
+        confidence: "High" | "Medium";
+      }>;
+      photo_evidence_limitations: string;
+      positive_findings: string[];
+      what_to_check_next: string[];
+      assumptions_and_limits: string[];
+    };
+
+    report.what_to_check_next = analysis.recommendations
+      .filter((item) => item.group === "Investigate Next")
+      .slice(0, 5)
+      .map((item) => item.title);
+
+    const reportText = JSON.stringify(report);
+
     return NextResponse.json({
-      reportText: response.output_text,
-      report: JSON.parse(response.output_text),
+      reportText,
+      report,
       analysis,
     });
   } catch (error) {
