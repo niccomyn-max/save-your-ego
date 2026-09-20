@@ -154,7 +154,7 @@ const BILL_CHANGE_REASONS = [
   "Added EV",
   "Added pool/spa",
   "More people at home",
-  "How often does someone work from home?",
+  "Work from home",
   "New appliance",
   "HVAC change",
   "Rate increase",
@@ -177,12 +177,16 @@ function Section({
   title,
   description,
   children,
+  active,
 }: {
   number: number;
   title: string;
   description: string;
   children: React.ReactNode;
+  active: boolean;
 }) {
+  if (!active) return null;
+
   return (
     <section
       id={`assessment-section-${number}`}
@@ -193,7 +197,10 @@ function Section({
           {number}
         </div>
         <div>
-          <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+            Step {number} of {ASSESSMENT_SECTIONS.length}
+          </p>
+          <h2 className="mt-1 text-2xl font-black text-[#17356f]">{title}</h2>
           <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
             {description}
           </p>
@@ -435,28 +442,6 @@ export default function USAssessmentForm() {
     };
   }, []);
 
-  useEffect(() => {
-    const sections = Array.from({ length: ASSESSMENT_SECTIONS.length }, (_, index) =>
-      document.getElementById(`assessment-section-${index + 1}`)
-    ).filter((section): section is HTMLElement => Boolean(section));
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-        if (!visible) return;
-        const number = Number(visible.target.id.replace("assessment-section-", ""));
-        if (Number.isFinite(number)) setActiveSection(number);
-      },
-      { rootMargin: "-20% 0px -65% 0px", threshold: [0.05, 0.2, 0.5] }
-    );
-
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
-
   const climate = useMemo(
     () => deriveUSClimateFromZip(answers.home.zip_code),
     [answers.home.zip_code]
@@ -465,6 +450,17 @@ export default function USAssessmentForm() {
   const analysis = useMemo(() => analyseUSAssessment(answers), [answers]);
 
   type USSectionKey = Exclude<keyof USAssessmentAnswers, "assessment_version">;
+
+  function goToSection(section: number) {
+    const next = Math.max(1, Math.min(ASSESSMENT_SECTIONS.length, section));
+    setActiveSection(next);
+
+    requestAnimationFrame(() => {
+      document
+        .getElementById("assessment-progress")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   function updateSection(
     section: USSectionKey,
@@ -665,7 +661,7 @@ export default function USAssessmentForm() {
 
     if (answers.home.zip_code.length !== 5) {
       setErrorMessage("Please enter a valid 5-digit US ZIP code.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      goToSection(1);
       return;
     }
 
@@ -850,8 +846,9 @@ export default function USAssessmentForm() {
                 Find the waste before you buy the upgrade
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                Seven focused sections help identify likely energy waste, low-cost
-                fixes and the checks worth doing before larger purchases.
+                Answer simple questions about your home, comfort and bills. We’ll
+                turn them into a clear plan showing what to do first, what can wait,
+                and where spending may not be necessary.
               </p>
             </div>
 
@@ -888,22 +885,41 @@ export default function USAssessmentForm() {
         </section>
 
         <nav
-          aria-label="Assessment sections"
-          className="sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#dbe8f2] bg-white/95 p-2 shadow-lg shadow-[#17356f]/10 backdrop-blur"
+          id="assessment-progress"
+          aria-label="Assessment steps"
+          className="sticky top-3 z-20 mt-5 overflow-hidden rounded-2xl border border-[#dbe8f2] bg-white/95 shadow-lg shadow-[#17356f]/10 backdrop-blur"
         >
-          <div className="flex min-w-max gap-2">
-            {ASSESSMENT_SECTIONS.map((label, index) => (
-              <a
-                key={label}
-                href={`#assessment-section-${index + 1}`}
-                className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition ${activeSection === index + 1 ? "bg-[#17356f] text-white shadow-sm" : "text-[#17356f] hover:bg-[#e9f6fe]"}`}
-              >
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] ${activeSection === index + 1 ? "bg-white text-[#17356f]" : "bg-[#17356f] text-white"}`}>
-                  {index + 1}
-                </span>
-                {label}
-              </a>
-            ))}
+          <div className="h-1 bg-slate-100">
+            <div
+              className="h-full bg-[#ffd600] transition-all duration-300"
+              style={{
+                width: `${(activeSection / ASSESSMENT_SECTIONS.length) * 100}%`,
+              }}
+            />
+          </div>
+          <div className="overflow-x-auto p-2">
+            <div className="flex min-w-max gap-2">
+              {ASSESSMENT_SECTIONS.map((label, index) => {
+                const step = index + 1;
+                const isActive = activeSection === step;
+                const isComplete = activeSection > step;
+
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => goToSection(step)}
+                    aria-current={isActive ? "step" : undefined}
+                    className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition ${isActive ? "bg-[#17356f] text-white shadow-sm" : isComplete ? "bg-[#e9f6fe] text-[#17356f]" : "text-slate-500 hover:bg-slate-50"}`}
+                  >
+                    <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] ${isActive ? "bg-white text-[#17356f]" : isComplete ? "bg-[#17356f] text-white" : "bg-slate-200 text-slate-600"}`}>
+                      {isComplete ? "✓" : step}
+                    </span>
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </nav>
 
@@ -925,6 +941,7 @@ export default function USAssessmentForm() {
         <div className="mt-6 space-y-6">
           <Section
             number={1}
+            active={activeSection === 1}
             title="Your Home & Comfort"
             description="Tell us the basics about your home and anything that feels uncomfortable, drafty, too hot or too cold."
           >
@@ -1077,6 +1094,7 @@ export default function USAssessmentForm() {
 
           <Section
             number={2}
+            active={activeSection === 2}
             title="Heating & Cooling"
             description="Tell us how you heat and cool the home, how you use the thermostat, and whether anything seems wrong."
           >
@@ -1235,6 +1253,7 @@ export default function USAssessmentForm() {
 
           <Section
             number={3}
+            active={activeSection === 3}
             title="Hot Water"
             description="A few simple hot-water habits and problems can matter more than the age of the water heater."
           >
@@ -1378,6 +1397,7 @@ export default function USAssessmentForm() {
 
           <Section
             number={4}
+            active={activeSection === 4}
             title="Appliances & Everyday Energy Use"
             description="Tell us about the appliances and electronics you use regularly. We are looking for avoidable use, not excuses to replace working equipment."
           >
@@ -1591,6 +1611,7 @@ export default function USAssessmentForm() {
 
           <Section
             number={5}
+            active={activeSection === 5}
             title="Pool, Spa & Outdoor"
             description="These can use a lot of energy in some homes, so we’ll only ask about what you actually have."
           >
@@ -1762,6 +1783,7 @@ export default function USAssessmentForm() {
 
           <Section
             number={6}
+            active={activeSection === 6}
             title="Solar, Battery & EV"
             description="We’ll only suggest looking at solar when your answers make it relevant. We won’t guess at system size or savings."
           >
@@ -1940,6 +1962,7 @@ export default function USAssessmentForm() {
 
           <Section
             number={7}
+            active={activeSection === 7}
             title="Your Energy Bills & Habits"
             description="Your bills help us understand where the money is going. Add the numbers you know and leave the rest blank."
           >
@@ -2282,6 +2305,41 @@ export default function USAssessmentForm() {
           </Section>
         </div>
 
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[#dbe8f2] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">
+              Step {activeSection} of {ASSESSMENT_SECTIONS.length}
+            </p>
+            <p className="mt-1 text-sm font-bold text-[#17356f]">
+              {ASSESSMENT_SECTIONS[activeSection - 1]}
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => goToSection(activeSection - 1)}
+              disabled={activeSection === 1}
+              className="rounded-full border border-[#dbe8f2] bg-white px-5 py-3 text-sm font-black text-[#17356f] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Back
+            </button>
+            {activeSection < ASSESSMENT_SECTIONS.length ? (
+              <button
+                type="button"
+                onClick={() => goToSection(activeSection + 1)}
+                className="rounded-full bg-[#17356f] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-black"
+              >
+                Continue to {ASSESSMENT_SECTIONS[activeSection]}
+              </button>
+            ) : (
+              <span className="flex items-center rounded-full bg-[#e9f6fe] px-5 py-3 text-sm font-black text-[#17356f]">
+                Final step
+              </span>
+            )}
+          </div>
+        </div>
+
+        {activeSection === ASSESSMENT_SECTIONS.length && (
         <section className="mt-6 overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-gradient-to-br from-white via-[#f7fbff] to-[#e9f6fe] p-6 shadow-xl sm:p-8">
           <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
@@ -2295,19 +2353,21 @@ export default function USAssessmentForm() {
                 We’ll compare your answers with the home-energy rules, put the most useful actions first, and use AI to turn the results into a clear report. If you uploaded photos, AI will also read useful label details.
               </p>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {analysis.recommendations.slice(0, 4).map((item) => (
-                  <span
-                    key={item.id}
-                    className="rounded-full bg-[#e9f6fe] px-3 py-2 text-xs font-bold text-[#17356f]"
-                  >
-                    {item.group}: {item.title}
-                  </span>
-                ))}
-                {analysis.recommendations.length === 0 && (
-                  <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600">
-                    Complete the questions to surface targeted findings
-                  </span>
+              <div className="mt-5 rounded-2xl border border-[#dbe8f2] bg-white/80 p-4">
+                <p className="text-sm font-black text-[#17356f]">
+                  {analysis.recommendations.length > 0
+                    ? `We’ve found ${analysis.recommendations.length} tailored action${analysis.recommendations.length === 1 ? "" : "s"} for your home.`
+                    : "Your answers are complete. We’ll now build your personalized plan."}
+                </p>
+                {analysis.recommendations.length > 0 && (
+                  <ul className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+                    {analysis.recommendations.slice(0, 4).map((item) => (
+                      <li key={item.id} className="flex gap-2">
+                        <span className="mt-0.5 text-[#17356f]">✓</span>
+                        <span>{item.title}</span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </div>
             </div>
@@ -2324,6 +2384,7 @@ export default function USAssessmentForm() {
             </button>
           </div>
         </section>
+        )}
       </div>
     </main>
   );
