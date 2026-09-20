@@ -162,6 +162,16 @@ const BILL_CHANGE_REASONS = [
   "Not sure",
 ];
 
+const ASSESSMENT_SECTIONS = [
+  "Home",
+  "Heating & Cooling",
+  "Hot Water",
+  "Appliances",
+  "Outdoor",
+  "Solar & EV",
+  "Bills",
+] as const;
+
 function Section({
   number,
   title,
@@ -174,7 +184,10 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[1.75rem] border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-5 shadow-sm sm:p-7">
+    <section
+      id={`assessment-section-${number}`}
+      className="rounded-[1.75rem] border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-5 shadow-sm sm:p-7"
+    >
       <div className="flex gap-4">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] font-black text-white">
           {number}
@@ -849,17 +862,42 @@ export default function USAssessmentForm() {
           </div>
         </section>
 
+        <nav
+          aria-label="Assessment sections"
+          className="sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#dbe8f2] bg-white/95 p-2 shadow-lg shadow-[#17356f]/10 backdrop-blur"
+        >
+          <div className="flex min-w-max gap-2">
+            {ASSESSMENT_SECTIONS.map((label, index) => (
+              <a
+                key={label}
+                href={`#assessment-section-${index + 1}`}
+                className="inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black text-[#17356f] transition hover:bg-[#e9f6fe]"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#17356f] text-[10px] text-white">
+                  {index + 1}
+                </span>
+                {label}
+              </a>
+            ))}
+          </div>
+        </nav>
+
         {errorMessage && (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800">
             {errorMessage}
           </div>
         )}
 
-        <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-          This is an indicative home energy assessment, not a code-compliance,
-          engineering, electrical, gas, structural, tax-credit or contractor
-          determination. Unknown inputs stay unknown rather than being converted
-          into false precision.
+        <div className="mt-5 grid gap-3 rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-4 text-sm leading-6 text-[#17356f] sm:grid-cols-[auto_1fr] sm:items-start">
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-black uppercase tracking-wide">
+            Good to know
+          </span>
+          <p>
+            This is an indicative home energy assessment, not a code-compliance,
+            engineering, electrical, gas, structural, tax-credit or contractor
+            determination. If you do not know an answer, leave it unknown rather
+            than guessing.
+          </p>
         </div>
 
         <div className="mt-6 space-y-6">
