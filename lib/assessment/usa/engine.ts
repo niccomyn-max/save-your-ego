@@ -203,9 +203,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "close-sunny-window-coverings",
-        title: "Close blinds or shades before strong afternoon sun",
+        title: "Close blinds or shades before the afternoon sun heats the room",
         summary:
-          "Use the window coverings you already have to cut avoidable solar heat gain before changing equipment.",
+          "This is a free way to keep a hot room cooler before you spend money on cooling equipment.",
         group: "Do Now",
         end_use_category: "Cooling",
         confidence: "High",
@@ -224,7 +224,7 @@ function candidateRules(
           "You reported a hot or sun-facing room.",
           "Existing blinds or curtains are not normally closed before strong summer sun.",
           climate
-            ? `Your ZIP maps to a ${climate} climate, so solar heat gain receives more weight.`
+            ? `Your area has a ${climate} climate, so afternoon sun can have a bigger effect on cooling.`
             : "Climate context was not available, so the recommendation is not climate-boosted.",
         ],
         benefits: {
@@ -244,9 +244,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "use-existing-thermostat-schedule",
-        title: "Use your existing thermostat schedule when away or sleeping",
+        title: "Use your thermostat schedule when nobody is home or while you sleep",
         summary:
-          "Reduce unnecessary heating or cooling runtime using the thermostat controls already installed.",
+          "Let the thermostat ease back when you do not need full heating or cooling. You can do this with the controls you already have.",
         group: "Do Now",
         end_use_category: "HVAC controls",
         confidence: "High",
@@ -280,9 +280,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "clear-blocked-vents",
-        title: "Clear blocked supply and return vents",
+        title: "Move furniture or rugs away from heating and cooling vents",
         summary:
-          "Restore airflow before assuming weak comfort means the HVAC equipment needs replacing.",
+          "Give the system a clear path for air first. Blocked vents can make rooms uncomfortable even when the equipment itself is fine.",
         group: "Do Now",
         end_use_category: "HVAC airflow",
         confidence: "High",
@@ -315,9 +315,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "turn-off-empty-room-fans",
-        title: "Turn ceiling fans off in empty rooms",
+        title: "Turn ceiling fans off when nobody is in the room",
         summary:
-          "Fans cool people rather than empty rooms, so unnecessary runtime is avoidable.",
+          "Ceiling fans make people feel cooler; they do not cool an empty room. Turn them off when you leave.",
         group: "Do Now",
         end_use_category: "Fans",
         confidence: "High",
@@ -352,9 +352,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "check-hvac-filter",
-        title: "Check the HVAC filter before considering equipment changes",
+        title: "Check or replace the heating and cooling air filter",
         summary:
-          "A dirty filter can contribute to airflow and runtime problems. Treat this as maintenance, not proof of inefficiency.",
+          "A clogged filter can restrict airflow and make the system work harder. Check this simple maintenance item before assuming there is a bigger problem.",
         group: "Low-Cost Fixes",
         type: "Maintenance",
         end_use_category: "HVAC maintenance",
@@ -390,9 +390,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "investigate-frequent-aux-heat",
-        title: "Investigate frequent auxiliary or emergency heat",
+        title: "Check why AUX or Emergency Heat is coming on so often",
         summary:
-          "Frequent resistance backup can be a major winter load. Check controls and system performance before replacing the heat pump.",
+          "Backup heat can use a lot of electricity. If AUX or Emergency Heat appears often, have the settings and heat-pump performance checked before thinking about replacement.",
         group: "Investigate Next",
         type: "Investigation",
         end_use_category: "Heating",
@@ -414,7 +414,7 @@ function candidateRules(
           "You reported a heat pump.",
           "Auxiliary or emergency heat runs frequently.",
           climate
-            ? `Your ZIP maps to a ${climate} climate, which changes the priority of backup-heat checks.`
+            ? `Your area has a ${climate} climate, so backup heat is especially important to understand.`
             : "ZIP-derived climate context was unavailable.",
         ],
         benefits: {
@@ -441,9 +441,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "inspect-visible-duct-condition",
-        title: "Inspect visible duct condition before paying for duct work",
+        title: "Look for obvious duct damage before paying for repairs",
         summary:
-          "Look for obvious disconnected, crushed or damaged accessible ducts before commissioning repairs.",
+          "If you can safely see your ducts, look for sections that are disconnected, crushed or badly damaged. A simple problem may explain the comfort issue.",
         group: "Investigate Next",
         type: "Investigation",
         end_use_category: "Ducts",
@@ -477,9 +477,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "review-water-heater-temperature",
-        title: "Review the water-heater temperature setting",
+        title: "Check whether your water heater is set hotter than you need",
         summary:
-          "The reported setting is above 130F. Review whether a lower setting is appropriate while preserving scalding, hygiene and manufacturer guidance.",
+          "You reported a setting above 130°F. Check the manufacturer guidance and whether a lower safe setting would meet your needs.",
         group: "Do Now",
         end_use_category: "Water heating",
         confidence: "High",
@@ -511,9 +511,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "reduce-hot-water-shower-runtime",
-        title: "Reduce avoidable shower hot-water runtime",
+        title: "Cut back very long showers where practical",
         summary:
-          "Hot-water use is high enough that shower duration is worth checking before buying water-heating equipment.",
+          "Long or very frequent showers can drive hot-water use. Try the easy habit change before spending on the water heater.",
         group: "Do Now",
         end_use_category: "Water heating",
         confidence: "High",
@@ -545,9 +545,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "review-recirculation-schedule",
-        title: "Review continuous hot-water recirculation",
+        title: "Put the hot-water recirculation system on a schedule if you can",
         summary:
-          "If existing controls allow it, scheduling or demand operation can avoid unnecessary pump and pipe heat loss.",
+          "If your controls allow it, avoid running hot-water circulation all day and night when nobody needs it.",
         group: "Do Now",
         end_use_category: "Water heating",
         confidence: "High",
@@ -576,9 +576,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "repair-hot-water-drip",
-        title: "Repair dripping hot-water fixtures",
+        title: "Fix a dripping hot-water faucet or shower",
         summary:
-          "A hot-water drip wastes both water and the energy used to heat it.",
+          "A hot-water drip wastes water and also wastes the energy used to heat that water.",
         group: "Low-Cost Fixes",
         type: "Low-Cost Fix",
         end_use_category: "Water heating",
@@ -610,9 +610,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "check-dryer-airflow-before-replacement",
-        title: "Check the dryer lint path and venting before replacing the dryer",
+        title: "Check the dryer vent if clothes need more than one cycle",
         summary:
-          "Needing multiple cycles can point to airflow restriction, loading or sensor issues rather than a failed appliance.",
+          "If clothes often need a second cycle, first check the lint screen and vent path. Poor airflow can make drying take much longer.",
         group: "Investigate Next",
         type: "Investigation",
         end_use_category: "Laundry",
@@ -643,9 +643,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "disable-heated-dry",
-        title: "Use air dry instead of heated dry when practical",
+        title: "Try the dishwasher's air-dry setting",
         summary:
-          "This uses an existing dishwasher setting and requires no purchase.",
+          "If your dishes dry well enough without heated dry, switching the setting costs nothing.",
         group: "Do Now",
         end_use_category: "Dishwasher",
         confidence: "High",
@@ -672,9 +672,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "use-cooler-laundry-wash",
-        title: "Use cold or cooler laundry wash settings when suitable",
+        title: "Use a cooler wash for clothes that do not need hot water",
         summary:
-          "Reduce water-heating demand for loads that do not need a hot wash.",
+          "Heating wash water uses energy. Choose cold or warm for everyday loads when the clothing care instructions allow it.",
         group: "Do Now",
         end_use_category: "Laundry",
         confidence: "High",
@@ -697,13 +697,16 @@ function candidateRules(
     );
   }
 
-  if (answers.appliances.partial_loads === "Yes") {
+  if (
+    answers.appliances.partial_loads === "Yes" ||
+    answers.appliances.partial_loads === "Sometimes"
+  ) {
     items.push(
       noCostCandidate({
         id: "run-fuller-appliance-loads",
-        title: "Avoid routine partial dishwasher and laundry loads",
+        title: "Wait for a fuller dishwasher or laundry load when practical",
         summary:
-          "Consolidating loads can reduce repeated appliance and hot-water cycles.",
+          "Running fewer, fuller loads can cut repeated machine cycles and hot-water use.",
         group: "Do Now",
         end_use_category: "Appliances",
         confidence: "High",
@@ -733,9 +736,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "switch-off-unused-entertainment",
-        title: "Switch off computing and entertainment equipment when unused",
+        title: "Turn off TVs, computers and gaming equipment when nobody is using them",
         summary:
-          "The reported unnecessary runtime is avoidable without buying monitoring equipment.",
+          "You told us some equipment is left on when it is not being used. Switching it off is a free first step.",
         group: "Do Now",
         end_use_category: "Plug loads",
         confidence: "High",
@@ -763,15 +766,15 @@ function candidateRules(
   }
 
   if (
-    answers.appliances.refrigerators_in_regular_use !== "1" &&
+    ["2", "3+"].includes(answers.appliances.refrigerators_in_regular_use) &&
     answers.appliances.extra_cold_storage_location.length > 0
   ) {
     items.push(
       noCostCandidate({
         id: "review-extra-refrigerator-necessity",
-        title: "Review whether the extra refrigerator or freezer is actually needed",
+        title: "Decide whether you still need the extra fridge or freezer",
         summary:
-          "Before buying a monitor or replacement appliance, check whether the secondary unit can simply be turned off when not needed.",
+          "A second fridge or freezer runs all day. If it is rarely useful, turning it off can be simpler than replacing it.",
         group: "Do Now",
         end_use_category: "Refrigeration",
         confidence: "Medium",
@@ -801,14 +804,14 @@ function candidateRules(
 
   if (
     climate === "Hot-Humid" &&
-    answers.appliances.other_continuous_loads.includes("Dehumidifiers")
+    answers.appliances.other_continuous_loads.includes("Dehumidifier")
   ) {
     items.push(
       makeCandidate({
         id: "investigate-humidity-load",
-        title: "Investigate why dehumidification is needed before adding more equipment",
+        title: "Find out why the home needs so much dehumidifying",
         summary:
-          "In a hot-humid climate, persistent dehumidifier use can be a meaningful load and may point to moisture entry, HVAC runtime or humidity-control issues.",
+          "Regular dehumidifier use can add to electricity use. In a humid climate, it is worth checking where the moisture is coming from before adding more equipment.",
         group: "Investigate Next",
         type: "Investigation",
         end_use_category: "Humidity",
@@ -827,7 +830,7 @@ function candidateRules(
         ],
         why_this_appeared: [
           "A dehumidifier is used regularly.",
-          "Your ZIP maps to a Hot-Humid climate where humidity control can materially affect cooling-related energy use.",
+          "Your area is hot and humid, so moisture control can add noticeably to cooling-related electricity use.",
         ],
         benefits: {
           bill_savings: true,
@@ -846,9 +849,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "review-all-night-outdoor-lighting",
-        title: "Review all-night outdoor-lighting runtime",
+        title: "Shorten the hours outdoor lights stay on",
         summary:
-          "If lighting does not need to run continuously overnight, use existing controls or a shorter schedule before replacing fixtures.",
+          "If the lights do not need to stay on from dusk to dawn, use the timer or controls you already have to shorten the schedule.",
         group: "Do Now",
         end_use_category: "Outdoor lighting",
         confidence: "High",
@@ -881,9 +884,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "review-pool-pump-runtime",
-        title: "Review pool-pump runtime and scheduling",
+        title: "Check whether the pool pump is running longer than it needs to",
         summary:
-          "Long pump runtime can be material. Change the schedule only within manufacturer and safe filtration guidance.",
+          "Pool pumps can use a meaningful amount of electricity. Compare the current schedule with the manufacturer's filtration guidance before changing it.",
         group: "Do Now",
         end_use_category: "Pool",
         confidence: "High",
@@ -921,9 +924,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "improve-hot-tub-cover",
-        title: "Address hot-tub heat loss before changing equipment",
+        title: "Make sure the hot tub has a good, well-fitting cover",
         summary:
-          "A continuously heated spa without a confirmed effective cover can have high standing losses.",
+          "A hot tub that stays hot all the time can lose a lot of heat through the top. A good cover is the first thing to check.",
         group: "Low-Cost Fixes",
         type: "Low-Cost Fix",
         end_use_category: "Spa",
@@ -962,9 +965,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "investigate-well-pump-cycling",
-        title: "Investigate unusually frequent well-pump cycling",
+        title: "Find out why the well pump is switching on so often",
         summary:
-          "Frequent cycling can add electrical load and may indicate a pressure, leak or control issue that should be checked before replacing the pump.",
+          "A well pump that starts very frequently may have a pressure, leak or control problem. Check the cause before replacing the pump.",
         group: "Investigate Next",
         type: "Investigation",
         end_use_category: "Well pump",
@@ -1002,9 +1005,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "avoid-open-windows-with-hvac",
-        title: "Avoid leaving doors or windows open while HVAC is running",
+        title: "Keep doors and windows closed while heating or cooling is running",
         summary:
-          "This is a direct no-cost way to reduce avoidable heating or cooling load.",
+          "Open doors and windows make the system heat or cool outdoor air. Closing them is a free way to avoid that waste.",
         group: "Do Now",
         end_use_category: "HVAC behaviour",
         confidence: "High",
@@ -1037,9 +1040,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "reduce-conditioning-unused-rooms",
-        title: "Reduce conditioning of rarely used rooms where your system allows",
+        title: "Use less heating or cooling in rooms you rarely use — if your system allows it",
         summary:
-          "Use existing zoning, registers or room controls only where doing so is appropriate for the installed system.",
+          "If you already have zoning or room controls, use them for little-used rooms. Do not close vents if your system is not designed for it.",
         group: "Do Now",
         end_use_category: "HVAC controls",
         confidence: "Medium",
@@ -1074,9 +1077,9 @@ function candidateRules(
     items.push(
       noCostCandidate({
         id: "shift-ev-charging-off-peak",
-        title: "Shift EV charging to the cheaper off-peak period",
+        title: "Charge your EV during the cheaper off-peak hours",
         summary:
-          "Use existing vehicle or charger scheduling if available. This can reduce cost without reducing driving or buying new equipment.",
+          "Use the scheduling feature in your car or charger so the same charging happens when electricity costs less.",
         group: "Do Now",
         end_use_category: "EV",
         confidence: "High",
@@ -1115,9 +1118,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "weatherstrip-window-door-leaks",
-        title: "Seal obvious window and door gaps before considering replacement",
+        title: "Seal obvious drafts around windows and doors before replacing them",
         summary:
-          "Visible gaps and drafts support a small repair first. Window age alone is not being used as a replacement trigger.",
+          "A draft or worn seal may be fixable for a small cost. Try sealing the obvious gaps before thinking about new windows.",
         group: "Low-Cost Fixes",
         type: "Low-Cost Fix",
         end_use_category: "Envelope",
@@ -1152,9 +1155,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "investigate-room-over-garage",
-        title: "Investigate insulation, air sealing and airflow around the room over the garage",
+        title: "Check why the room over the garage is hotter or colder than the rest of the home",
         summary:
-          "A room over an attached garage is a targeted diagnostic path. Check the surrounding envelope and airflow before blaming the HVAC equipment.",
+          "Rooms over garages can be uncomfortable because of insulation, air leaks or airflow. Check those basics before assuming the heating or cooling system is the problem.",
         group: "Investigate Next",
         type: "Investigation",
         end_use_category: "Envelope",
@@ -1201,9 +1204,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "consider-hvac-replacement-after-diagnosis",
-        title: "Consider HVAC replacement only after performance checks",
+        title: "Have the heating and cooling system checked before thinking about replacement",
         summary:
-          "Age is supporting context here, not the trigger. This appears only because age is combined with performance symptoms and simpler airflow causes are not obvious from your answers.",
+          "The system is older and you also reported performance problems. A proper check is the next step; age by itself is not a reason to replace it.",
         group: "Consider Later",
         type: "Major Upgrade",
         end_use_category: "HVAC",
@@ -1254,9 +1257,9 @@ function candidateRules(
     items.push(
       makeCandidate({
         id: "consider-solar-after-demand-review",
-        title: "Consider a solar feasibility review after avoidable demand is addressed",
+        title: "Solar may be worth a closer look",
         summary:
-          "Roof control and basic roof information support a later solar review, but system sizing and payback are intentionally not invented here.",
+          "You are interested in solar and your roof answers look promising enough for a proper quote or feasibility check. We have not guessed at system size, savings or payback.",
         group: "Consider Later",
         type: "Major Upgrade",
         end_use_category: "Solar",
