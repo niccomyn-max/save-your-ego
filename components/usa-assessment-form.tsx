@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -828,6 +829,18 @@ export default function USAssessmentForm() {
   return (
     <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center rounded-full border border-[#dbe8f2] bg-white px-4 py-2.5 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
+          >
+            ← Back to dashboard
+          </Link>
+          <p className="hidden text-xs font-semibold text-slate-500 sm:block">
+            This assessment is saved when you create the report.
+          </p>
+        </div>
+
         <section className="overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
           <div className="grid lg:grid-cols-[1.15fr_0.85fr]">
             <div className="p-6 sm:p-8 lg:p-10">
