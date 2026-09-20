@@ -82,7 +82,7 @@ const HVAC_SYMPTOMS = [
 
 const COLD_STORAGE_LOCATIONS = [
   "Kitchen",
-  "Do you have a garage?",
+  "Garage",
   "Basement",
   "Utility room",
   "Outbuilding",
@@ -520,7 +520,7 @@ export default function USAssessmentForm() {
     }));
   }
 
-  function updateDo you have a garage?(value: string) {
+  function updateGarage(value: string) {
     updateSection("home", "garage_type", value);
 
     if (value !== "Attached") {
@@ -815,7 +815,7 @@ export default function USAssessmentForm() {
     );
   }
 
-  const isAttachedDo you have a garage? = answers.home.garage_type === "Attached";
+  const isAttachedGarage = answers.home.garage_type === "Attached";
   const isHeatPump = answers.hvac.main_heating === "Heat pump";
   const hasPool = answers.outdoor.swimming_pool;
   const hasSpa = answers.outdoor.hot_tub_spa;
@@ -973,13 +973,13 @@ export default function USAssessmentForm() {
                 onChange={(value) => updateSection("home", "foundation", value)}
               />
               <SelectField
-                label="Do you have a garage?"
+                label="Garage"
                 value={answers.home.garage_type}
                 options={US_GARAGE_TYPES}
-                onChange={updateDo you have a garage?}
+                onChange={updateGarage}
               />
 
-              {isAttachedDo you have a garage? && (
+              {isAttachedGarage && (
                 <SelectField
                   label="Is there a room above or next to the attached garage?"
                   value={answers.home.rooms_above_or_beside_attached_garage}
@@ -1177,7 +1177,7 @@ export default function USAssessmentForm() {
                   "Attic",
                   "Crawlspace",
                   "Basement",
-                  "Do you have a garage?",
+                  "Garage",
                   "Combination",
                   "Not sure",
                 ]}
@@ -1354,7 +1354,7 @@ export default function USAssessmentForm() {
                 options={[
                   "Conditioned space",
                   "Basement",
-                  "Do you have a garage?",
+                  "Garage",
                   "Attic",
                   "Crawlspace",
                   "Utility room",
@@ -1686,7 +1686,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-6 grid gap-5 md:grid-cols-3">
               <SelectField
-                label="Do you have a garage?-door use"
+                label="How often is the garage door opened?"
                 value={answers.outdoor.garage_door_use}
                 options={["Several times/day", "Once/twice/day", "Occasionally", "N/A"]}
                 onChange={(value) =>
@@ -1742,7 +1742,7 @@ export default function USAssessmentForm() {
 
             <div className="mt-6 grid gap-6">
               <CheckboxGroup
-                label="Do you have a garage? equipment"
+                label="What energy-using equipment is in the garage?"
                 values={answers.outdoor.garage_equipment}
                 options={GARAGE_EQUIPMENT}
                 onChange={(values) =>
