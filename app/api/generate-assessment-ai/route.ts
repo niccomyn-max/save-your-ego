@@ -192,6 +192,13 @@ const reportSchema = {
       minItems: 3,
       maxItems: 5,
     },
+
+    general_energy_saving_tips: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 5,
+      maxItems: 8,
+    },
   },
   required: [
     "photo_summary",
@@ -217,6 +224,7 @@ const reportSchema = {
     "contractor_questions",
     "what_to_check_next",
     "important_assumptions",
+    "general_energy_saving_tips",
   ],
   additionalProperties: false,
 };
@@ -339,6 +347,10 @@ Important:
 - Do not repeat the same idea across multiple sections unless it genuinely belongs there.
 - Do not make the report feel thin.
 - Do not overstate certainty.
+- Separate personalised findings from broadly useful general guidance.
+- If inputs are incomplete, unknown, zero or sparse, do not leave the report empty or repetitive. Give useful general household energy-saving guidance in general_energy_saving_tips while clearly presenting it as general guidance, not as a diagnosis of this specific home.
+- General tips should be practical and broadly applicable: thermostat scheduling, heating/cooling filters and maintenance, hot-water habits, laundry and dishwasher efficiency, standby loads, lighting, draft checks, utility tariff/plan reviews and seasonal energy habits where relevant.
+- Do not claim that a general tip is a confirmed problem in this home unless the entered answers support it.
 
 Usage warning rules:
 - If estimated annual electricity use is above 12,000 kWh, unusual_usage_warning must clearly say this is unusually high and should be checked.
@@ -475,6 +487,9 @@ Exactly 3 detailed low-cost action objects with the same fields.
 
 23. important_assumptions:
 3 to 5 assumptions or caveats used in the analysis.
+
+24. general_energy_saving_tips:
+5 to 8 concise, useful household energy-saving tips. These must still be useful when the homeowner has provided very little information. Keep them clearly general unless the assessment answers support personalising one.
 
 Assessment answers:
 ${JSON.stringify(answers, null, 2)}
