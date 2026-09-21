@@ -19,9 +19,9 @@ export function PrintReportButton() {
     <button
       type="button"
       onClick={handlePrint}
-      className="inline-flex items-center justify-center rounded-full bg-[#17356f] px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-black print:hidden"
+      className="rounded-md bg-black px-5 py-3 text-sm font-medium text-white print:hidden"
     >
-      Save / Print PDF
+      Download / Save PDF report
     </button>
   );
 }
