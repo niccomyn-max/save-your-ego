@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { deriveUSClimateFromZip } from "@/lib/assessment/us-climate";
 import {
   AGE_BANDS,
   APPLIANCE_LIBRARY,
@@ -28,6 +29,9 @@ import {
 
 const defaultAnswers: EnergyAssessmentAnswers = {
   country: "US",
+  zip_code: "",
+  state: "",
+  climate_context: "",
   property_type: "Detached",
   bedrooms: 3,
   year_built: 1995,
@@ -141,12 +145,14 @@ function AiList({
 }
 
 function SectionShell({
+  id,
   number,
   title,
   description,
   children,
   accent = "blue",
 }: {
+  id: string;
   number: string;
   title: string;
   description?: string;
@@ -164,7 +170,8 @@ function SectionShell({
 
   return (
     <section
-      className={`rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
+      id={id}
+      className={`scroll-mt-28 rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
@@ -378,13 +385,65 @@ export default function AssessmentPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
   const [photoErrorMessage, setPhotoErrorMessage] = useState("");
   const [otherApplianceName, setOtherApplianceName] = useState("");
+  const [activeSection, setActiveSection] = useState("home-details");
 
   const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
+  const zipClimate = useMemo(
+    () => deriveUSClimateFromZip(answers.zip_code ?? ""),
+    [answers.zip_code]
+  );
   const countryDefaults =
     COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.US;
 
   const isApartment = answers.property_type === "Apartment";
-    function clearAiReport() {
+  const assessmentSections = useMemo(
+    () => [
+      { id: "home-details", label: "Home" },
+      ...(!isApartment ? [{ id: "solar-suitability", label: "Solar" }] : []),
+      { id: "energy-costs", label: "Bills & Fuels" },
+      { id: "fabric-details", label: "Home Fabric" },
+      { id: "appliances-usage", label: "Appliances" },
+      { id: "assessment-preview", label: "Preview" },
+      { id: "ai-assessment", label: "AI Report" },
+    ],
+    [isApartment]
+  );
+
+  useEffect(() => {
+    const sections = assessmentSections
+      .map((section) => document.getElementById(section.id))
+      .filter((section): section is HTMLElement => Boolean(section));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visible) setActiveSection(visible.target.id);
+      },
+      { rootMargin: "-20% 0px -65% 0px", threshold: [0.05, 0.2, 0.5] }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [assessmentSections]);
+
+  function updateZip(value: string) {
+    const cleaned = value.replace(/\D/g, "").slice(0, 5);
+    const climate = deriveUSClimateFromZip(cleaned);
+
+    setAnswers((current) => ({
+      ...current,
+      zip_code: cleaned,
+      state: climate.state,
+      climate_context: climate.climate_context,
+    }));
+
+    clearAiReport();
+  }
+
+  function clearAiReport() {
     setAiReport(null);
     setAiReportText("");
     setAiErrorMessage("");
@@ -860,6 +919,29 @@ export default function AssessmentPage() {
           </div>
         </section>
 
+        <nav
+          aria-label="Assessment sections"
+          className="sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#dbe8f2] bg-white/95 p-2 shadow-lg shadow-[#17356f]/10 backdrop-blur"
+        >
+          <div className="flex min-w-max gap-2">
+            {assessmentSections.map((section, index) => {
+              const isActive = activeSection === section.id;
+              return (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition ${isActive ? "bg-[#17356f] text-white shadow-sm" : "text-[#17356f] hover:bg-[#e9f6fe]"}`}
+                >
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] ${isActive ? "bg-white text-[#17356f]" : "bg-[#e9f6fe] text-[#17356f]"}`}>
+                    {index + 1}
+                  </span>
+                  {section.label}
+                </a>
+              );
+            })}
+          </div>
+        </nav>
+
         <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
           This tool provides an indicative home energy assessment only. It is
           not a substitute for a qualified energy assessment, electrician,
@@ -869,6 +951,7 @@ export default function AssessmentPage() {
 
         <div className="mt-6 space-y-6">
           <SectionShell
+            id="home-details"
             number="1"
             title="Home details"
             description="Start with the basic property details. If the customer does not know a technical answer, use the unknown option where available."
@@ -887,11 +970,41 @@ export default function AssessmentPage() {
                     ...current,
                     country: value,
                     unit_rate: defaults.electricity_price,
+                    ...(value === "US"
+                      ? {}
+                      : { zip_code: "", state: "", climate_context: "" }),
                   }));
 
                   clearAiReport();
                 }}
               />
+
+              {answers.country === "US" && (
+                <>
+                  <TextField
+                    label="ZIP code"
+                    value={answers.zip_code ?? ""}
+                    placeholder="e.g. 58201"
+                    onChange={updateZip}
+                  />
+                  <div className="rounded-xl border border-[#dbe8f2] bg-[#f7fbff] px-4 py-3">
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                      State
+                    </p>
+                    <p className="mt-1 font-black text-[#17356f]">
+                      {zipClimate.state || "Enter ZIP"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[#bde8ff] bg-[#e9f6fe] px-4 py-3">
+                    <p className="text-xs font-black uppercase tracking-wide text-[#17356f]/70">
+                      Local climate
+                    </p>
+                    <p className="mt-1 font-black text-[#17356f]">
+                      {zipClimate.climate_context || "Enter ZIP"}
+                    </p>
+                  </div>
+                </>
+              )}
 
               <SelectField
   label="Property type"
@@ -1005,6 +1118,7 @@ export default function AssessmentPage() {
 
           {!isApartment && (
   <SectionShell
+    id="solar-suitability"
     number="2"
     title="Solar suitability"
             description="Solar should not be recommended by default. These details help the app judge whether solar PV is a strong candidate, a possible option, or not the first priority."
@@ -1101,6 +1215,7 @@ export default function AssessmentPage() {
           )}
 
           <SectionShell
+            id="energy-costs"
             number={isApartment ? "2" : "3"}
             title="Electricity, Gas and Oil costs"
             description="Save Your EGO means Electricity, Gas and Oil. Add what is known. Unknown values can be left at zero."
@@ -1291,6 +1406,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="fabric-details"
             number={isApartment ? "3" : "4"}
             title="Advanced home fabric details"
             description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
@@ -1400,6 +1516,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="appliances-usage"
             number={isApartment ? "4" : "5"}
             title="Appliances and usage"
             description="Select the appliances in the home, or add another appliance if it is not listed."
@@ -1527,6 +1644,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="assessment-preview"
             number={isApartment ? "5" : "6"}
             title="Assessment preview"
             description="This is the rule-based assessment view before the AI report is generated."
@@ -1589,6 +1707,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="ai-assessment"
             number={isApartment ? "6" : "7"}
             title="AI assessment"
             description={
