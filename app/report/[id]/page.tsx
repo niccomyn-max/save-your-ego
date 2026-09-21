@@ -53,6 +53,7 @@ type AiReport = {
   contractor_questions?: string[];
   what_to_check_next?: string[];
   important_assumptions?: string[];
+  general_energy_saving_tips?: string[];
 };
 
 export default function ReportPage(props: ReportPageProps) {
@@ -1000,6 +1001,12 @@ const solarSuitability = isApartment
                   items={aiReport.important_assumptions}
                   accent="black"
                 />
+
+                <ReportList
+                  title="General energy-saving tips"
+                  items={aiReport.general_energy_saving_tips}
+                  accent="yellow"
+                />
               </>
             ) : (
               <>
@@ -1015,6 +1022,12 @@ const solarSuitability = isApartment
                   title="Extra insights"
                   items={aiReport.extra_insights}
                   accent="blue"
+                />
+
+                <ReportList
+                  title="General energy-saving tips"
+                  items={aiReport.general_energy_saving_tips}
+                  accent="yellow"
                 />
               </>
             )}
