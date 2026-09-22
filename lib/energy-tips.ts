@@ -157,7 +157,7 @@ export const ENERGY_TIP_CATEGORIES: EnergyTipCategory[] = [
       { title: "Do a seasonal energy walk-through twice a year", why: "A quick check can catch drafts, dirty filters, outdoor-light schedules and unused equipment.", effort: "No cost" },
       { title: "Review the biggest loads before worrying about tiny ones", why: "Heating, cooling, hot water, EVs, pools and major appliances usually matter more than very small devices.", effort: "No cost" },
       { title: "Use smart plugs to investigate uncertain loads", why: "Measuring a suspicious appliance can be more useful than guessing.", effort: "Low cost" },
-      { title: "Replace equipment for a reason, not just because it is old", why: "Good maintenance, controls and usage changes can sometimes deliver value before a major purchase is needed.", effort: "Check first" },
+      { title: "Compare repair, running cost and replacement options when equipment starts causing problems", why: "Looking at the full picture can help you choose the most sensible next step instead of making a rushed purchase.", effort: "Check first" },
     ],
   },
 ];
