@@ -3,6 +3,114 @@ import {
   ENERGY_TIP_COUNT,
 } from "@/lib/energy-tips";
 
+type SavingPotential = "Small" | "Moderate" | "High" | "Variable";
+
+function savingPotentialForTip(
+  category: string,
+  title: string,
+  effort: string
+): SavingPotential {
+  const text = title.toLowerCase();
+
+  const highSignals = [
+    "heating or cooling schedule",
+    "set back the thermostat",
+    "shorter showers",
+    "efficient showerheads",
+    "water heater",
+    "air-dry clothes",
+    "replace failed bulbs with efficient leds",
+    "electricity plan",
+    "competing electricity suppliers",
+    "time-of-use",
+    "expensive peak periods",
+    "hot-tub or spa cover",
+    "spa hotter",
+    "pool-pump",
+    "pool cover",
+    "garage refrigerators",
+    "portable heaters",
+    "insulation upgrades",
+  ];
+
+  const smallSignals = [
+    "unplug rarely used chargers",
+    "switch off unused monitors",
+    "screen brightness",
+    "clean dusty light fittings",
+    "use daylight",
+    "read your meter",
+    "keep a simple record",
+    "close exterior doors promptly",
+  ];
+
+  if (highSignals.some((signal) => text.includes(signal))) return "High";
+  if (smallSignals.some((signal) => text.includes(signal))) return "Small";
+
+  if (
+    effort === "When replacing" ||
+    text.includes("serviced") ||
+    text.includes("placement") ||
+    text.includes("check visible insulation") ||
+    text.includes("look for sudden") ||
+    text.includes("compare repair")
+  ) {
+    return "Variable";
+  }
+
+  if (
+    category === "Bills, Tariffs & Metering" ||
+    category === "Heating & Cooling" ||
+    category === "Hot Water" ||
+    category === "Outdoor, Pool, Spa & Garage"
+  ) {
+    return "Moderate";
+  }
+
+  return "Moderate";
+}
+
+function savingPossibility(
+  category: string,
+  potential: SavingPotential
+) {
+  const categoryContext: Record<string, string> = {
+    "Heating & Cooling":
+      "Heating and cooling can run for many hours, so savings grow quickly when a change reduces unnecessary runtime.",
+    "Hot Water":
+      "The opportunity becomes larger in homes with more people, longer showers or frequent hot-water use.",
+    "Kitchen & Refrigeration":
+      "Refrigeration runs every day, so even modest efficiency improvements repeat all year.",
+    "Laundry & Dishwashing":
+      "The benefit is greater in households running many wash, dry or dishwasher cycles each week.",
+    Lighting:
+      "Lighting savings are greatest where older bulbs run for long hours or many rooms are lit at once.",
+    "Electronics & Standby":
+      "Individual devices are often small loads, but several always-on devices can add up over a full year.",
+    "Windows, Doors & Insulation":
+      "The benefit rises in very hot, very cold or drafty homes where heating and cooling demand is already high.",
+    "Bills, Tariffs & Metering":
+      "This can reduce the bill without reducing comfort; the value depends on local tariffs, suppliers and how much energy you use.",
+    "Outdoor, Pool, Spa & Garage":
+      "Pools, spas, pumps and secondary refrigeration can be large background loads, so operating changes can matter.",
+    "Everyday & Seasonal Habits":
+      "These changes are usually free, and their value comes from repeating them consistently through the year.",
+  };
+
+  const potentialContext: Record<SavingPotential, string> = {
+    Small:
+      "Usually a smaller individual saving, but worthwhile when the action is free and easy to repeat.",
+    Moderate:
+      "Can produce a noticeable recurring saving when the appliance, system or habit is used regularly.",
+    High:
+      "Can have a meaningful effect on bills when this is a major load or a frequent source of waste.",
+    Variable:
+      "The saving can range from small to significant depending on the existing equipment, usage pattern, climate or tariff.",
+  };
+
+  return `${potentialContext[potential]} ${categoryContext[category] ?? ""}`;
+}
+
 export function EnergyTipsLibrary() {
   return (
     <section className="mt-6 print:hidden">
@@ -17,7 +125,8 @@ export function EnergyTipsLibrary() {
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               This fixed library is separate from your personalised findings.
-              Open any category for practical ideas you can check around the home.
+              Each idea shows why it helps, how much saving potential it may have,
+              and how much effort it usually takes.
             </p>
           </div>
 
@@ -27,6 +136,14 @@ export function EnergyTipsLibrary() {
         </summary>
 
         <div className="border-t border-[#dbe8f2] p-4 sm:p-6">
+          <div className="mb-5 rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-4 text-sm leading-6 text-slate-700">
+            <strong className="text-black">About the saving potential:</strong>{" "}
+            Small, Moderate and High are relative guides, not guaranteed percentages.
+            Actual savings depend on your home, usage, climate, equipment and energy prices.
+            Variable means the idea can be very worthwhile, but it should be checked against
+            your own situation before spending money.
+          </div>
+
           <div className="grid gap-3 lg:grid-cols-2">
             {ENERGY_TIP_CATEGORIES.map((category) => (
               <details
@@ -48,24 +165,51 @@ export function EnergyTipsLibrary() {
                 </summary>
 
                 <div className="space-y-3 border-t border-[#dbe8f2] p-4">
-                  {category.tips.map((tip, index) => (
-                    <article
-                      key={`${category.category}-${index}-${tip.title}`}
-                      className="rounded-2xl border border-[#dbe8f2] bg-white p-4"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <h4 className="max-w-2xl font-black leading-6 text-black">
+                  {category.tips.map((tip, index) => {
+                    const savingPotential = savingPotentialForTip(
+                      category.category,
+                      tip.title,
+                      tip.effort
+                    );
+
+                    return (
+                      <article
+                        key={`${category.category}-${index}-${tip.title}`}
+                        className="rounded-2xl border border-[#dbe8f2] bg-white p-4"
+                      >
+                        <h4 className="font-black leading-6 text-black">
                           {tip.title}
                         </h4>
-                        <span className="rounded-full bg-[#fff6bf] px-3 py-1 text-[11px] font-black text-[#6b5200]">
-                          {tip.effort}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        {tip.why}
-                      </p>
-                    </article>
-                  ))}
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="rounded-full bg-[#fff6bf] px-3 py-1 text-[11px] font-black text-[#6b5200]">
+                            Effort: {tip.effort}
+                          </span>
+                          <span className="rounded-full bg-[#e9f6fe] px-3 py-1 text-[11px] font-black text-[#17356f]">
+                            Saving potential: {savingPotential}
+                          </span>
+                        </div>
+
+                        <div className="mt-4">
+                          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
+                            Why it helps
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-700">
+                            {tip.why}
+                          </p>
+                        </div>
+
+                        <div className="mt-3 rounded-xl bg-[#f7fbff] p-3">
+                          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#17356f]/60">
+                            Saving possibility
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            {savingPossibility(category.category, savingPotential)}
+                          </p>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               </details>
             ))}
