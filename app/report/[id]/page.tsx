@@ -644,6 +644,10 @@ const solarSuitability = isApartment
   return (
     <main className="report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
       <style>{`
+        @page {
+          margin: 9mm;
+        }
+
         @media print {
           body {
             background: white !important;
@@ -658,7 +662,34 @@ const solarSuitability = isApartment
           .report-cover,
           .report-disclaimer {
             box-shadow: none !important;
-            page-break-inside: avoid;
+          }
+
+          .report-section {
+            padding: 16px !important;
+            margin-top: 10px !important;
+            break-inside: auto;
+          }
+
+          .report-section h2 {
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+          }
+
+          .report-section h3 {
+            line-height: 1.3 !important;
+          }
+
+          .report-section p,
+          .report-section li {
+            line-height: 1.45 !important;
+          }
+
+          .report-cover {
+            break-after: page;
+          }
+
+          article {
+            break-inside: avoid;
           }
 
           .print-break-before {
@@ -716,7 +747,7 @@ const solarSuitability = isApartment
                 <div className="rounded-2xl bg-[#f7fbff] p-4">
                   <p className="font-bold text-slate-500">Report type</p>
                   <p className="mt-1 font-black text-[#17356f]">
-                    AI-assisted home energy assessment
+                    Personalised home energy assessment
                   </p>
                 </div>
               </div>
@@ -856,8 +887,9 @@ const solarSuitability = isApartment
               {usesOil && (
                 <>
                   <p>
-                    Litres/year:{" "}
-                    {displayValue(answers.oil_litres_per_year, "0")}
+                    {String(answers.country ?? "") === "US"
+                      ? `Gallons/year: ${Math.round(Number(answers.oil_litres_per_year ?? 0) / 3.78541)}`
+                      : `Litres/year: ${displayValue(answers.oil_litres_per_year, "0")}`}
                   </p>
                   <p>Boiler age: {displayValue(answers.oil_boiler_age)}</p>
                 </>
@@ -1035,11 +1067,11 @@ const solarSuitability = isApartment
         ) : (
           <section className="mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
             <h2 className="text-2xl font-black text-[#17356f]">
-              Generate AI report
+              Create personalised report
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Generate the customer-facing Save Your EGO report to add the AI
+              Create the full Save Your EGO report with your personalised
               assessment, action plan and practical recommendations.
             </p>
 
