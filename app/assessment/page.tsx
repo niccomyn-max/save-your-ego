@@ -402,7 +402,7 @@ export default function AssessmentPage() {
       { id: "home-details", label: "Home" },
       ...(!isApartment ? [{ id: "solar-suitability", label: "Solar" }] : []),
       { id: "energy-costs", label: "Bills & Fuels" },
-      { id: "fabric-details", label: "Home Fabric" },
+      { id: "fabric-details", label: "Insulation" },
       { id: "appliances-usage", label: "Appliances" },
       { id: "assessment-preview", label: "Preview" },
       { id: "ai-assessment", label: "Report" },
@@ -1474,7 +1474,7 @@ export default function AssessmentPage() {
           <SectionShell
             id="fabric-details"
             number={isApartment ? "3" : "4"}
-            title="Advanced home fabric details"
+            title="Home insulation & heat-loss details"
             description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
             accent="blue"
           >
@@ -1778,8 +1778,8 @@ export default function AssessmentPage() {
             title="Create your report"
             description={
   isApartment
-    ? "Create your personalised Save Your EGO report using the home details, bills, fabric inputs, appliance estimates and optional photos."
-    : "Create your personalised Save Your EGO report using the home details, bills, fabric inputs, appliance estimates, solar details and optional photos."
+    ? "Create your personalised Save Your EGO report using the home details, bills, insulation and heat-loss inputs, appliance estimates and optional photos."
+    : "Create your personalised Save Your EGO report using the home details, bills, insulation and heat-loss inputs, appliance estimates, solar details and optional photos."
 }
             accent="blue"
           >
