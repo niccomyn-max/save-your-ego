@@ -165,6 +165,7 @@ export const APPLIANCE_LIBRARY: Record<string, string[]> = {
     "Router / network gear",
   ],
   "Personal care and fitness": [
+    "Hair Dryer",
     "Hair straighteners",
     "Clothes iron",
     "Treadmill",
@@ -275,6 +276,10 @@ export const APPLIANCE_PROFILES: Record<
   "Router / network gear": {
     kwh_year: { Low: 70, Medium: 110, High: 180 },
     notes: "Always-on background load.",
+  },
+  "Hair Dryer": {
+    kwh_year: { Low: 20, Medium: 45, High: 90 },
+    notes: "High power, but usually used for short periods.",
   },
   "EV charger": {
     kwh_year: { Low: 1200, Medium: 2500, High: 4500 },
