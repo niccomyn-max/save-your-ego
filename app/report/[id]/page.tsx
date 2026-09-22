@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { GenerateReportButton } from "@/components/generate-report-button";
 import { PrintReportButton } from "@/components/print-report-button";
+import { EnergyTipsLibrary } from "@/components/energy-tips-library";
 
 type ReportPageProps = {
   params: Promise<{
@@ -1081,6 +1082,8 @@ const solarSuitability = isApartment
             </div>
           </section>
         )}
+
+        <EnergyTipsLibrary />
 
         <section className="report-disclaimer mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 text-sm leading-6 text-slate-600 shadow-sm print:break-inside-avoid">
           <h2 className="font-black text-[#17356f]">Important note</h2>
