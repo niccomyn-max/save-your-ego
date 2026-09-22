@@ -421,7 +421,8 @@ Create a useful, customer-facing home energy report that feels valuable enough t
 Important:
 - The figures must be indicative ranges, not guarantees.
 - Use the user's country, currency and energy context where available.
-- If the country is US, use dollars.
+- If the country is US, use dollars and US homeowner terminology. Treat floor area as square feet when describing it to the customer, heating-oil quantities as gallons, and temperatures as Fahrenheit where temperature values are mentioned.
+- The stored assessment may contain metric base values for internal calculation. Do not expose litres or square metres in US customer-facing prose when an equivalent US unit is appropriate.
 - If the country is Ireland or EU, use euros.
 - If the country is UK, use pounds.
 - If currency is unclear, write the ranges in a currency-neutral way.
@@ -434,6 +435,7 @@ Important:
 - If inputs are incomplete, unknown, zero or sparse, do not leave the report empty or repetitive. Give useful general household energy-saving guidance in general_energy_saving_tips while clearly presenting it as general guidance, not as a diagnosis of this specific home.
 - General tips should be practical and broadly applicable: thermostat scheduling, heating/cooling filters and maintenance, hot-water habits, laundry and dishwasher efficiency, standby loads, lighting, draft checks, utility tariff/plan reviews and seasonal energy habits where relevant.
 - Do not claim that a general tip is a confirmed problem in this home unless the entered answers support it.
+- Proofread all customer-facing text before returning JSON. Correct spelling, obvious typos, awkward fragments and accidental characters.
 
 Usage warning rules:
 - If estimated annual electricity use is above 12,000 kWh, unusual_usage_warning must clearly say this is unusually high and should be checked.
@@ -454,10 +456,13 @@ Solar repetition rules:
 
 Prioritisation rules:
 - Prioritise recommendations that match the actual inputs, not generic advice.
+- The ordering must be consistent throughout the report.
+- top_5_priorities must use the same first five actions, in the same order, as priority_action_plan.
+- top_recommended_actions should reflect the leading priority_action_plan items rather than introducing a competing order.
 - If insulation and glazing are already good, do not push fabric upgrades unless clearly justified.
 - If a heat pump is already present, do not treat heating replacement as a priority.
 - Use appliance estimates and bill anchor to judge what is most likely driving use.
-- If appliance photos reveal useful details, use them only as supporting evidence.
+- If home or equipment photos reveal useful details, use them only as supporting evidence.
 - Do not invent exact model numbers, ratings, ages or faults if they are unclear from photos.
 - Focus on the most likely savings first.
 - Respect existing strengths such as solar, battery or strong fabric performance where present.
@@ -480,7 +485,7 @@ Cost and saving rules:
 - If the saving depends heavily on usage, tariffs, climate or behaviour, say so.
 
 Photo analysis rules:
-- If no useful appliance photos are provided, set photo_summary to "No appliance photos analysed."
+- If no useful home or equipment photos are provided, set photo_summary to "No home or equipment photos analysed."
 - If photos are provided, briefly describe what they appear to show.
 - Use cautious wording such as appears, may, likely or should be checked.
 - Do not diagnose electrical, gas, mould, damp, wiring or safety issues from images as fact.
@@ -637,6 +642,20 @@ if (photos.length > 0) {
     });
 
     const report = JSON.parse(response.output_text) as Record<string, unknown>;
+
+    const priorityPlan = Array.isArray(report.priority_action_plan)
+      ? (report.priority_action_plan as Array<Record<string, unknown>>)
+      : [];
+
+    const priorityHeadlines = priorityPlan
+      .slice(0, 5)
+      .map((item) => String(item.action ?? "").trim())
+      .filter(Boolean);
+
+    if (priorityHeadlines.length > 0) {
+      report.top_5_priorities = priorityHeadlines;
+      report.top_recommended_actions = priorityHeadlines.slice(0, 3);
+    }
 
     // Financial totals and high-usage warnings are calculated from the entered
     // figures so the customer never receives contradictory arithmetic.
