@@ -404,7 +404,7 @@ export default function AssessmentPage() {
       { id: "fabric-details", label: "Home Fabric" },
       { id: "appliances-usage", label: "Appliances" },
       { id: "assessment-preview", label: "Preview" },
-      { id: "ai-assessment", label: "AI Report" },
+      { id: "ai-assessment", label: "Report" },
     ],
     [isApartment]
   );
@@ -626,7 +626,7 @@ export default function AssessmentPage() {
     );
 
     if (invalidFile) {
-      setPhotoErrorMessage("Please upload JPG or PNG appliance photos only.");
+      setPhotoErrorMessage("Please upload JPG or PNG home or equipment photos only.");
       return;
     }
 
@@ -1061,11 +1061,25 @@ export default function AssessmentPage() {
               />
 
               <NumberField
-                label="Approx. floor area, m²"
-                value={answers.floor_area}
-                min={20}
-                max={1000}
-                onChange={(value) => updateAnswer("floor_area", value)}
+                label={
+                  answers.country === "US"
+                    ? "Approx. floor area, sq ft"
+                    : "Approx. floor area, m²"
+                }
+                value={
+                  answers.country === "US"
+                    ? Math.round(answers.floor_area * 10.7639)
+                    : answers.floor_area
+                }
+                min={answers.country === "US" ? 200 : 20}
+                max={answers.country === "US" ? 12000 : 1000}
+                step={answers.country === "US" ? 50 : 10}
+                onChange={(value) =>
+                  updateAnswer(
+                    "floor_area",
+                    answers.country === "US" ? value / 10.7639 : value
+                  )
+                }
               />
 
               <SelectField
@@ -1367,22 +1381,44 @@ export default function AssessmentPage() {
               {answers.uses_oil && (
                 <div className="mt-4 grid gap-5 md:grid-cols-3">
                   <NumberField
-                    label="Oil litres used per year if known"
-                    value={answers.oil_litres_per_year}
+                    label={
+                      answers.country === "US"
+                        ? "Heating oil used per year if known (gallons)"
+                        : "Oil litres used per year if known"
+                    }
+                    value={
+                      answers.country === "US"
+                        ? Math.round(answers.oil_litres_per_year / 3.78541)
+                        : answers.oil_litres_per_year
+                    }
                     min={0}
-                    step={50}
+                    step={answers.country === "US" ? 25 : 50}
                     onChange={(value) =>
-                      updateAnswer("oil_litres_per_year", value)
+                      updateAnswer(
+                        "oil_litres_per_year",
+                        answers.country === "US" ? value * 3.78541 : value
+                      )
                     }
                   />
 
                   <NumberField
-                    label={`Oil price per litre if known (${countryDefaults.currency})`}
-                    value={answers.oil_price_per_litre}
+                    label={
+                      answers.country === "US"
+                        ? `Heating-oil price per gallon if known (${countryDefaults.currency})`
+                        : `Oil price per litre if known (${countryDefaults.currency})`
+                    }
+                    value={
+                      answers.country === "US"
+                        ? Number((answers.oil_price_per_litre * 3.78541).toFixed(2))
+                        : answers.oil_price_per_litre
+                    }
                     min={0}
                     step={0.01}
                     onChange={(value) =>
-                      updateAnswer("oil_price_per_litre", value)
+                      updateAnswer(
+                        "oil_price_per_litre",
+                        answers.country === "US" ? value / 3.78541 : value
+                      )
                     }
                   />
 
@@ -1722,24 +1758,23 @@ export default function AssessmentPage() {
           <SectionShell
             id="ai-assessment"
             number={isApartment ? "6" : "7"}
-            title="AI assessment"
+            title="Create your report"
             description={
   isApartment
-    ? "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, optional photos and rule-based findings."
-    : "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
+    ? "Create your personalised Save Your EGO report using the home details, bills, fabric inputs, appliance estimates and optional photos."
+    : "Create your personalised Save Your EGO report using the home details, bills, fabric inputs, appliance estimates, solar details and optional photos."
 }
             accent="blue"
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
               <h3 className="font-black text-[#17356f]">
-                Optional appliance photos
+                Optional home or equipment photos
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Upload up to 3 appliance photos, rating plates, labels or
-                controls. The photos are compressed before analysis so they
-                work better on mobile connections. These photos are used for
-                this AI assessment only and are not stored permanently yet.
+                Upload up to 3 useful photos of the home, roof, heating equipment,
+                appliances, rating plates, labels or controls. Photos are used as
+                supporting evidence for this report and are not stored permanently yet.
               </p>
 
               <input
@@ -1786,13 +1821,13 @@ export default function AssessmentPage() {
 
             <div className="mt-5 rounded-3xl border border-[#ffd600] bg-[#fff6bf] p-5">
               <h3 className="text-xl font-black text-black">
-                Step 1: Generate the AI assessment
+                Create your personalised report
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-700">
-                This creates the detailed recommendations used in the final
-                report, including likely costs, savings, payback guidance and
-                next steps.
+                We’ll use the information you entered to build the detailed
+                recommendations, likely costs, savings guidance and practical
+                next steps in your report.
               </p>
 
               <button
@@ -1802,10 +1837,10 @@ export default function AssessmentPage() {
                 className="mt-4 rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {generatingAi
-                  ? "Generating AI assessment..."
+                  ? "Creating your report..."
                   : aiReportText
-                    ? "Regenerate AI assessment"
-                    : "Generate AI assessment"}
+                    ? "Update my report"
+                    : "Create my report"}
               </button>
             </div>
 
@@ -1871,8 +1906,8 @@ export default function AssessmentPage() {
               </h2>
 
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                Generate the AI assessment first for the strongest report, then
-                save the assessment to open the full Save Your EGO results page.
+                Create your personalised report first, then save the assessment
+                to open the full Save Your EGO results page.
               </p>
             </div>
 
