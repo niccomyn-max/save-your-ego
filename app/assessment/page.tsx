@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { deriveUSClimateFromZip } from "@/lib/assessment/us-climate";
+import { EnergyTipsLibrary } from "@/components/energy-tips-library";
 import {
   AGE_BANDS,
   APPLIANCE_LIBRARY,
@@ -657,10 +658,10 @@ export default function AssessmentPage() {
     }
   }
 
-  async function handleGenerateAiAssessment() {
+  async function generatePersonalisedReport() {
     if (!hasPaidAccess) {
-      setAiErrorMessage("Paid access is required to generate an AI assessment.");
-      return;
+      setAiErrorMessage("Paid access is required to create a personalised report.");
+      return null;
     }
 
     setGeneratingAi(true);
@@ -682,17 +683,22 @@ export default function AssessmentPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setGeneratingAi(false);
-        setAiErrorMessage(result.error || "Failed to generate AI assessment.");
-        return;
+        setAiErrorMessage(result.error || "Failed to create your personalised report.");
+        return null;
       }
 
       setAiReportText(result.reportText);
       setAiReport(result.report);
-      setGeneratingAi(false);
+
+      return {
+        reportText: String(result.reportText ?? ""),
+        report: result.report as AiAssessment,
+      };
     } catch {
+      setAiErrorMessage("Failed to create your personalised report.");
+      return null;
+    } finally {
       setGeneratingAi(false);
-      setAiErrorMessage("Failed to generate AI assessment.");
     }
   }
 
@@ -714,10 +720,10 @@ export default function AssessmentPage() {
   }
 
   async function handleSubmit() {
-    if (saving) return;
+    if (saving || generatingAi) return;
 
     if (!hasPaidAccess) {
-      setErrorMessage("Paid access is required to save and view a report.");
+      setErrorMessage("Paid access is required to create and view a report.");
       return;
     }
 
@@ -725,6 +731,19 @@ export default function AssessmentPage() {
     setErrorMessage("");
 
     try {
+      let reportTextToSave = aiReportText;
+
+      if (!reportTextToSave) {
+        const generated = await generatePersonalisedReport();
+
+        if (!generated?.reportText) {
+          setErrorMessage("We could not create the report. Please try again.");
+          return;
+        }
+
+        reportTextToSave = generated.reportText;
+      }
+
       const {
         data: { user },
         error: userError,
@@ -753,17 +772,15 @@ export default function AssessmentPage() {
         return;
       }
 
-      if (aiReportText) {
-        const { error: reportError } = await supabase.from("reports").insert({
-          user_id: user.id,
-          assessment_id: savedAssessment.id,
-          report_text: aiReportText,
-        });
+      const { error: reportError } = await supabase.from("reports").insert({
+        user_id: user.id,
+        assessment_id: savedAssessment.id,
+        report_text: reportTextToSave,
+      });
 
-        if (reportError) {
-          setErrorMessage(reportError.message);
-          return;
-        }
+      if (reportError) {
+        setErrorMessage(reportError.message);
+        return;
       }
 
       const reportPath = `/report/${savedAssessment.id}`;
@@ -1821,27 +1838,34 @@ export default function AssessmentPage() {
 
             <div className="mt-5 rounded-3xl border border-[#ffd600] bg-[#fff6bf] p-5">
               <h3 className="text-xl font-black text-black">
-                Create your personalised report
+                Ready to create your personalised report?
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-700">
-                We’ll use the information you entered to build the detailed
-                recommendations, likely costs, savings guidance and practical
-                next steps in your report.
+                One click will create your personalised recommendations, save
+                this assessment and open the full report.
               </p>
 
-              <button
-                type="button"
-                disabled={generatingAi}
-                onClick={handleGenerateAiAssessment}
-                className="mt-4 rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {generatingAi
-                  ? "Creating your report..."
-                  : aiReportText
-                    ? "Update my report"
-                    : "Create my report"}
-              </button>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="rounded-full border border-[#dbe8f2] bg-white px-6 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
+                >
+                  Back to dashboard
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving || generatingAi}
+                  onClick={handleSubmit}
+                  className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saving || generatingAi
+                    ? "Creating your personalised report..."
+                    : "Create & View My Report"}
+                </button>
+              </div>
             </div>
 
             {aiReport && (
@@ -1888,53 +1912,14 @@ export default function AssessmentPage() {
           </SectionShell>
         </div>
 
+        <EnergyTipsLibrary />
+
         {errorMessage && (
           <p className="mt-6 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
             {errorMessage}
           </p>
         )}
 
-        <section className="mt-8 rounded-[1.75rem] border border-[#ffd600] bg-[#fff6bf] p-6 shadow-lg shadow-[#17356f]/10">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
-                Final step
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black text-black">
-                Ready to view the customer report?
-              </h2>
-
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                Create your personalised report first, then save the assessment
-                to open the full Save Your EGO results page.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-full border border-[#dbe8f2] bg-white px-6 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
-              >
-                Back to dashboard
-              </button>
-
-              <button
-                type="button"
-                disabled={saving}
-                onClick={handleSubmit}
-                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving
-                  ? "Saving..."
-                  : aiReportText
-                    ? "Save AI report and view results"
-                    : "Save assessment and view report"}
-              </button>
-            </div>
-          </div>
-        </section>
       </div>
     </main>
   );
