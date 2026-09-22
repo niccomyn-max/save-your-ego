@@ -864,13 +864,13 @@ export default function AssessmentPage() {
               </div>
 
               <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-black sm:text-5xl">
-                Build your Save Your EGO report
+                Understand where your home is using energy — and what you can do about it
               </h1>
 
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                A practical home energy analyser for identifying likely energy
-                drains, reducing waste and improving household efficiency
-                across Electricity, Gas and Oil.
+                Answer a few questions about your home, bills and energy use.
+                Save Your EGO will turn your answers into a practical report with
+                personalised findings, useful checks and ways to reduce waste.
               </p>
 
               <p className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
@@ -880,40 +880,53 @@ export default function AssessmentPage() {
 
             <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
-                Assessment focus
+                How it works
               </p>
 
               <div className="mt-8 grid gap-4">
-                
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
                     <p className="text-xs font-black uppercase opacity-70">
-                      Sections
+                      Guided check
                     </p>
                     <p className="mt-2 text-3xl font-black">
-  {isApartment ? "6" : "7"}
-</p>
+                      {isApartment ? "6" : "7"} sections
+                    </p>
+                    <p className="mt-2 text-sm font-semibold leading-5 text-black/75">
+                      Work through your home, bills, fabric and appliances at your own pace.
+                    </p>
                   </div>
 
                   <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
                     <p className="text-xs font-black uppercase opacity-70">
-                      Output
+                      Personalised report
                     </p>
-                    <p className="mt-2 text-lg font-black">AI report</p>
+                    <p className="mt-2 text-xl font-black">
+                      See what deserves attention first
+                    </p>
+                    <p className="mt-2 text-sm font-semibold leading-5 text-[#17356f]/75">
+                      Get practical findings, useful checks and ways to reduce energy waste.
+                    </p>
                   </div>
                 </div>
 
-                {!isApartment && (
-  <div className="rounded-[1.5rem] bg-white p-5 text-black">
-    <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-      Solar review
-    </p>
-    <p className="mt-2 text-xl font-black">
-      Diagnostic, not default
-    </p>
-  </div>
-)}
+                <div className="rounded-[1.5rem] bg-white p-5 text-black">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+                    Local context
+                  </p>
+                  <p className="mt-2 text-xl font-black">
+                    {answers.country === "US"
+                      ? zipClimate.climate_context
+                        ? `Matched to ${zipClimate.climate_context}`
+                        : "Your ZIP helps tailor the advice"
+                      : "Matched to your country and energy inputs"}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-5 text-slate-600">
+                    {answers.country === "US"
+                      ? "Enter your ZIP code and we’ll use the local climate as extra context in your assessment."
+                      : "Your country, fuel types, bills and home details help shape the guidance in your report."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
