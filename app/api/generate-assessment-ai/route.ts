@@ -317,6 +317,89 @@ export async function POST(request: Request) {
       );
     }
 
+    const frequencyMultiplier: Record<string, number> = {
+      Monthly: 12,
+      "Bi-monthly": 6,
+      Quarterly: 4,
+      Annual: 1,
+    };
+
+    const currency =
+      answers.country === "US"
+        ? "$"
+        : answers.country === "UK"
+          ? "£"
+          : answers.country === "Ireland" || answers.country === "Other EU"
+            ? "€"
+            : "";
+
+    const formatMoney = (value: number) =>
+      `${currency}${Math.round(value).toLocaleString("en-US")}`;
+
+    const electricitySpend =
+      Number(answers.annual_bill_override ?? 0) > 0
+        ? Number(answers.annual_bill_override)
+        : Number(answers.avg_electricity_bill ?? 0) *
+          (frequencyMultiplier[String(answers.bill_frequency)] ?? 12);
+
+    const gasSpend = answers.uses_gas
+      ? Number(answers.annual_gas_spend ?? 0) > 0
+        ? Number(answers.annual_gas_spend)
+        : Number(answers.avg_gas_bill ?? 0) *
+          (frequencyMultiplier[String(answers.gas_bill_frequency)] ?? 12)
+      : 0;
+
+    const oilSpend = answers.uses_oil
+      ? Number(answers.annual_oil_spend ?? 0) > 0
+        ? Number(answers.annual_oil_spend)
+        : Number(answers.oil_litres_per_year ?? 0) *
+          Number(answers.oil_price_per_litre ?? 0)
+      : 0;
+
+    const spendParts = [
+      electricitySpend > 0 ? `${formatMoney(electricitySpend)} electricity` : "",
+      gasSpend > 0 ? `${formatMoney(gasSpend)} gas` : "",
+      oilSpend > 0 ? `${formatMoney(oilSpend)} oil` : "",
+    ].filter(Boolean);
+
+    const totalKnownSpend = electricitySpend + gasSpend + oilSpend;
+    const estimatedBillKwh = Number(scores.estimatedBillKwh ?? 0);
+    const applianceKwh = Number(scores.applianceKwh ?? 0);
+
+    let deterministicCostProfile =
+      spendParts.length > 0
+        ? `Based on the figures entered, the estimated annual energy spend is about ${formatMoney(totalKnownSpend)} across ${spendParts.join(", ")}. These figures are indicative and depend on the bill periods, rates and fuel quantities entered.`
+        : "There is not enough bill or fuel-spend information to estimate an annual energy cost yet.";
+
+    if (
+      estimatedBillKwh > 0 &&
+      applianceKwh > 0 &&
+      applianceKwh < estimatedBillKwh * 0.45
+    ) {
+      deterministicCostProfile += ` The electricity bill implies roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year, while the selected appliances account for roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kWh/year, so there are likely additional household loads or assumptions worth checking.`;
+    }
+
+    let deterministicUsageWarning =
+      "No major usage warning is triggered by the entered figures, although the bill and appliance estimates are still indicative.";
+
+    if (estimatedBillKwh > 20000) {
+      deterministicUsageWarning =
+        `The electricity estimate is very high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year. Check bill frequency, tariff inputs and major loads such as electric heating, hot water, EV charging, hot tubs, pools or other equipment before treating this as normal household use.`;
+    } else if (estimatedBillKwh > 12000) {
+      deterministicUsageWarning =
+        `The electricity estimate is unusually high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year. It is worth checking the bill inputs and looking for major or unlisted electrical loads.`;
+    } else if (applianceKwh > 8000) {
+      deterministicUsageWarning =
+        `The selected appliances add up to a high estimated load of roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kWh/year. Review the largest appliances and their usage first.`;
+    } else if (
+      estimatedBillKwh > 0 &&
+      applianceKwh > 0 &&
+      applianceKwh < estimatedBillKwh * 0.45
+    ) {
+      deterministicUsageWarning =
+        "The bill-based electricity estimate is much higher than the selected appliance total. Check for unlisted major loads and confirm the bill frequency, rate and annual-spend inputs.";
+    }
+
     const client = new OpenAI({
       apiKey,
     });
@@ -386,6 +469,8 @@ Prioritisation rules:
 Cost and saving rules:
 - Use broad, realistic ranges.
 - Do not promise exact savings.
+- Do not invent or recalculate the household's total annual energy spend in narrative sections. The application calculates that total from the entered bill and fuel figures.
+- If discussing cost components elsewhere, never state arithmetic that conflicts with the supplied figures.
 - Do not include made-up grant amounts.
 - Do not recommend a specific contractor, brand or product.
 - For low-cost actions, give ranges such as "$0-$100", "$20-$250" or "low/no cost" where suitable.
@@ -551,9 +636,16 @@ if (photos.length > 0) {
       },
     });
 
+    const report = JSON.parse(response.output_text) as Record<string, unknown>;
+
+    // Financial totals and high-usage warnings are calculated from the entered
+    // figures so the customer never receives contradictory arithmetic.
+    report.estimated_annual_energy_cost_profile = deterministicCostProfile;
+    report.unusual_usage_warning = deterministicUsageWarning;
+
     return NextResponse.json({
-      reportText: response.output_text,
-      report: JSON.parse(response.output_text),
+      reportText: JSON.stringify(report),
+      report,
     });
   } catch (error) {
     console.error("Generate assessment AI error:", error);
