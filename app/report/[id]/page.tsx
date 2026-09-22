@@ -951,13 +951,6 @@ const solarSuitability = isApartment
             />
 
             <ActionPlanSection
-              title="Priority action plan"
-              description="These are the most useful actions to consider first, with indicative cost, saving, effort and payback guidance."
-              actions={aiReport.priority_action_plan}
-              accent="navy"
-            />
-
-            <ActionPlanSection
               title="Low-cost quick wins"
               description="Lower-cost actions that are usually easier to test before committing to larger upgrades."
               actions={aiReport.low_cost_quick_wins}
@@ -976,6 +969,14 @@ const solarSuitability = isApartment
               description="Larger upgrades that may improve comfort and efficiency but should usually be checked with a qualified professional."
               actions={aiReport.higher_cost_upgrades}
               accent="black"
+            />
+
+
+            <ActionPlanSection
+              title="Your priority action plan"
+              description="Now that you’ve seen the main opportunities, this brings the most useful next steps together in the order we would look at them."
+              actions={aiReport.priority_action_plan}
+              accent="navy"
             />
 
             {hasDetailedReport ? (
