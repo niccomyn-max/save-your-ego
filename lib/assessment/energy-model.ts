@@ -330,6 +330,9 @@ export type SolarSuitability = {
 
 export type EnergyAssessmentAnswers = {
   country: string;
+  zip_code?: string;
+  state?: string;
+  climate_context?: string;
   property_type: string;
   bedrooms: number;
   year_built: number;

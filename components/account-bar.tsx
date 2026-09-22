@@ -6,9 +6,10 @@ import { createClient } from "@/lib/supabase/client";
 
 type AccountBarProps = {
   email: string;
+  compact?: boolean;
 };
 
-export function AccountBar({ email }: AccountBarProps) {
+export function AccountBar({ email, compact = false }: AccountBarProps) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -73,13 +74,22 @@ export function AccountBar({ email }: AccountBarProps) {
   }
 
   return (
-    <div className="fixed right-5 top-5 z-50 sm:right-8">
+    <div className={compact ? "fixed right-4 top-4 z-50 sm:right-6" : "fixed right-5 top-5 z-50 sm:right-8"}>
       <details className="group relative">
-        <summary className="flex cursor-pointer list-none items-center justify-center rounded-full border border-[#17356f] bg-white px-5 py-3 text-sm font-black text-[#17356f] shadow-lg shadow-[#17356f]/10 transition hover:bg-[#f5f8ff]">
-          Settings
-          <span className="ml-2 inline-block text-xs transition group-open:rotate-180">
-            ▼
-          </span>
+        <summary
+          aria-label="Account settings"
+          className={`flex cursor-pointer list-none items-center justify-center rounded-full border border-[#17356f] bg-white font-black text-[#17356f] shadow-lg shadow-[#17356f]/10 transition hover:bg-[#f5f8ff] ${compact ? "h-11 w-11 px-0 py-0 text-base" : "px-5 py-3 text-sm"}`}
+        >
+          {compact ? (
+            <span aria-hidden="true">⚙</span>
+          ) : (
+            <>
+              Settings
+              <span className="ml-2 inline-block text-xs transition group-open:rotate-180">
+                ▼
+              </span>
+            </>
+          )}
         </summary>
 
         <div className="absolute right-0 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-[1.5rem] border border-[#dbe8f2] bg-white p-4 text-left shadow-2xl shadow-[#17356f]/20">

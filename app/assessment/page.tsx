@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { deriveUSClimateFromZip } from "@/lib/assessment/us-climate";
+import { EnergyTipsLibrary } from "@/components/energy-tips-library";
 import {
   AGE_BANDS,
   APPLIANCE_LIBRARY,
@@ -28,6 +30,9 @@ import {
 
 const defaultAnswers: EnergyAssessmentAnswers = {
   country: "US",
+  zip_code: "",
+  state: "",
+  climate_context: "",
   property_type: "Detached",
   bedrooms: 3,
   year_built: 1995,
@@ -141,12 +146,14 @@ function AiList({
 }
 
 function SectionShell({
+  id,
   number,
   title,
   description,
   children,
   accent = "blue",
 }: {
+  id: string;
   number: string;
   title: string;
   description?: string;
@@ -164,7 +171,8 @@ function SectionShell({
 
   return (
     <section
-      className={`rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
+      id={id}
+      className={`scroll-mt-28 rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
@@ -378,13 +386,65 @@ export default function AssessmentPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<UploadedPhoto[]>([]);
   const [photoErrorMessage, setPhotoErrorMessage] = useState("");
   const [otherApplianceName, setOtherApplianceName] = useState("");
+  const [activeSection, setActiveSection] = useState("home-details");
 
   const analysis = useMemo(() => analyseEnergyAssessment(answers), [answers]);
+  const zipClimate = useMemo(
+    () => deriveUSClimateFromZip(answers.zip_code ?? ""),
+    [answers.zip_code]
+  );
   const countryDefaults =
     COUNTRY_DEFAULTS[answers.country] ?? COUNTRY_DEFAULTS.US;
 
   const isApartment = answers.property_type === "Apartment";
-    function clearAiReport() {
+  const assessmentSections = useMemo(
+    () => [
+      { id: "home-details", label: "Home" },
+      ...(!isApartment ? [{ id: "solar-suitability", label: "Solar" }] : []),
+      { id: "energy-costs", label: "Bills & Fuels" },
+      { id: "fabric-details", label: "Home Fabric" },
+      { id: "appliances-usage", label: "Appliances" },
+      { id: "assessment-preview", label: "Preview" },
+      { id: "ai-assessment", label: "Report" },
+    ],
+    [isApartment]
+  );
+
+  useEffect(() => {
+    const sections = assessmentSections
+      .map((section) => document.getElementById(section.id))
+      .filter((section): section is HTMLElement => Boolean(section));
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visible) setActiveSection(visible.target.id);
+      },
+      { rootMargin: "-20% 0px -65% 0px", threshold: [0.05, 0.2, 0.5] }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, [assessmentSections]);
+
+  function updateZip(value: string) {
+    const cleaned = value.replace(/\D/g, "").slice(0, 5);
+    const climate = deriveUSClimateFromZip(cleaned);
+
+    setAnswers((current) => ({
+      ...current,
+      zip_code: cleaned,
+      state: climate.state,
+      climate_context: climate.climate_context,
+    }));
+
+    clearAiReport();
+  }
+
+  function clearAiReport() {
     setAiReport(null);
     setAiReportText("");
     setAiErrorMessage("");
@@ -567,7 +627,7 @@ export default function AssessmentPage() {
     );
 
     if (invalidFile) {
-      setPhotoErrorMessage("Please upload JPG or PNG appliance photos only.");
+      setPhotoErrorMessage("Please upload JPG or PNG home or equipment photos only.");
       return;
     }
 
@@ -598,10 +658,10 @@ export default function AssessmentPage() {
     }
   }
 
-  async function handleGenerateAiAssessment() {
+  async function generatePersonalisedReport() {
     if (!hasPaidAccess) {
-      setAiErrorMessage("Paid access is required to generate an AI assessment.");
-      return;
+      setAiErrorMessage("Paid access is required to create a personalised report.");
+      return null;
     }
 
     setGeneratingAi(true);
@@ -623,17 +683,22 @@ export default function AssessmentPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setGeneratingAi(false);
-        setAiErrorMessage(result.error || "Failed to generate AI assessment.");
-        return;
+        setAiErrorMessage(result.error || "Failed to create your personalised report.");
+        return null;
       }
 
       setAiReportText(result.reportText);
       setAiReport(result.report);
-      setGeneratingAi(false);
+
+      return {
+        reportText: String(result.reportText ?? ""),
+        report: result.report as AiAssessment,
+      };
     } catch {
+      setAiErrorMessage("Failed to create your personalised report.");
+      return null;
+    } finally {
       setGeneratingAi(false);
-      setAiErrorMessage("Failed to generate AI assessment.");
     }
   }
 
@@ -655,10 +720,10 @@ export default function AssessmentPage() {
   }
 
   async function handleSubmit() {
-    if (saving) return;
+    if (saving || generatingAi) return;
 
     if (!hasPaidAccess) {
-      setErrorMessage("Paid access is required to save and view a report.");
+      setErrorMessage("Paid access is required to create and view a report.");
       return;
     }
 
@@ -666,6 +731,19 @@ export default function AssessmentPage() {
     setErrorMessage("");
 
     try {
+      let reportTextToSave = aiReportText;
+
+      if (!reportTextToSave) {
+        const generated = await generatePersonalisedReport();
+
+        if (!generated?.reportText) {
+          setErrorMessage("We could not create the report. Please try again.");
+          return;
+        }
+
+        reportTextToSave = generated.reportText;
+      }
+
       const {
         data: { user },
         error: userError,
@@ -694,17 +772,15 @@ export default function AssessmentPage() {
         return;
       }
 
-      if (aiReportText) {
-        const { error: reportError } = await supabase.from("reports").insert({
-          user_id: user.id,
-          assessment_id: savedAssessment.id,
-          report_text: aiReportText,
-        });
+      const { error: reportError } = await supabase.from("reports").insert({
+        user_id: user.id,
+        assessment_id: savedAssessment.id,
+        report_text: reportTextToSave,
+      });
 
-        if (reportError) {
-          setErrorMessage(reportError.message);
-          return;
-        }
+      if (reportError) {
+        setErrorMessage(reportError.message);
+        return;
       }
 
       const reportPath = `/report/${savedAssessment.id}`;
@@ -805,13 +881,13 @@ export default function AssessmentPage() {
               </div>
 
               <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-black sm:text-5xl">
-                Build your Save Your EGO report
+                Understand where your home is using energy — and what you can do about it
               </h1>
 
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-                A practical home energy analyser for identifying likely energy
-                drains, reducing waste and improving household efficiency
-                across Electricity, Gas and Oil.
+                Answer a few questions about your home, bills and energy use.
+                Save Your EGO will turn your answers into a practical report with
+                personalised findings, useful checks and ways to reduce waste.
               </p>
 
               <p className="mt-5 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
@@ -821,44 +897,80 @@ export default function AssessmentPage() {
 
             <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
-                Assessment focus
+                How it works
               </p>
 
               <div className="mt-8 grid gap-4">
-                
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
                     <p className="text-xs font-black uppercase opacity-70">
-                      Sections
+                      Guided check
                     </p>
                     <p className="mt-2 text-3xl font-black">
-  {isApartment ? "6" : "7"}
-</p>
+                      {isApartment ? "6" : "7"} sections
+                    </p>
+                    <p className="mt-2 text-sm font-semibold leading-5 text-black/75">
+                      Work through your home, bills, fabric and appliances at your own pace.
+                    </p>
                   </div>
 
                   <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
                     <p className="text-xs font-black uppercase opacity-70">
-                      Output
+                      Personalised report
                     </p>
-                    <p className="mt-2 text-lg font-black">AI report</p>
+                    <p className="mt-2 text-xl font-black">
+                      See what deserves attention first
+                    </p>
+                    <p className="mt-2 text-sm font-semibold leading-5 text-[#17356f]/75">
+                      Get practical findings, useful checks and ways to reduce energy waste.
+                    </p>
                   </div>
                 </div>
 
-                {!isApartment && (
-  <div className="rounded-[1.5rem] bg-white p-5 text-black">
-    <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-      Solar review
-    </p>
-    <p className="mt-2 text-xl font-black">
-      Diagnostic, not default
-    </p>
-  </div>
-)}
+                <div className="rounded-[1.5rem] bg-white p-5 text-black">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+                    Local context
+                  </p>
+                  <p className="mt-2 text-xl font-black">
+                    {answers.country === "US"
+                      ? zipClimate.climate_context
+                        ? `Matched to ${zipClimate.climate_context}`
+                        : "Your ZIP helps tailor the advice"
+                      : "Matched to your country and energy inputs"}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-5 text-slate-600">
+                    {answers.country === "US"
+                      ? "Enter your ZIP code and we’ll use the local climate as extra context in your assessment."
+                      : "Your country, fuel types, bills and home details help shape the guidance in your report."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </section>
+
+        <nav
+          aria-label="Assessment sections"
+          className="sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#dbe8f2] bg-white/95 p-2 shadow-lg shadow-[#17356f]/10 backdrop-blur"
+        >
+          <div className="flex min-w-max gap-2">
+            {assessmentSections.map((section, index) => {
+              const isActive = activeSection === section.id;
+              return (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition ${isActive ? "bg-[#17356f] text-white shadow-sm" : "text-[#17356f] hover:bg-[#e9f6fe]"}`}
+                >
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] ${isActive ? "bg-white text-[#17356f]" : "bg-[#e9f6fe] text-[#17356f]"}`}>
+                    {index + 1}
+                  </span>
+                  {section.label}
+                </a>
+              );
+            })}
+          </div>
+        </nav>
 
         <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
           This tool provides an indicative home energy assessment only. It is
@@ -869,6 +981,7 @@ export default function AssessmentPage() {
 
         <div className="mt-6 space-y-6">
           <SectionShell
+            id="home-details"
             number="1"
             title="Home details"
             description="Start with the basic property details. If the customer does not know a technical answer, use the unknown option where available."
@@ -887,11 +1000,41 @@ export default function AssessmentPage() {
                     ...current,
                     country: value,
                     unit_rate: defaults.electricity_price,
+                    ...(value === "US"
+                      ? {}
+                      : { zip_code: "", state: "", climate_context: "" }),
                   }));
 
                   clearAiReport();
                 }}
               />
+
+              {answers.country === "US" && (
+                <>
+                  <TextField
+                    label="ZIP code"
+                    value={answers.zip_code ?? ""}
+                    placeholder="e.g. 58201"
+                    onChange={updateZip}
+                  />
+                  <div className="rounded-xl border border-[#dbe8f2] bg-[#f7fbff] px-4 py-3">
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                      State
+                    </p>
+                    <p className="mt-1 font-black text-[#17356f]">
+                      {zipClimate.state || "Enter ZIP"}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-[#bde8ff] bg-[#e9f6fe] px-4 py-3">
+                    <p className="text-xs font-black uppercase tracking-wide text-[#17356f]/70">
+                      Local climate
+                    </p>
+                    <p className="mt-1 font-black text-[#17356f]">
+                      {zipClimate.climate_context || "Enter ZIP"}
+                    </p>
+                  </div>
+                </>
+              )}
 
               <SelectField
   label="Property type"
@@ -935,11 +1078,25 @@ export default function AssessmentPage() {
               />
 
               <NumberField
-                label="Approx. floor area, m²"
-                value={answers.floor_area}
-                min={20}
-                max={1000}
-                onChange={(value) => updateAnswer("floor_area", value)}
+                label={
+                  answers.country === "US"
+                    ? "Approx. floor area, sq ft"
+                    : "Approx. floor area, m²"
+                }
+                value={
+                  answers.country === "US"
+                    ? Math.round(answers.floor_area * 10.7639)
+                    : answers.floor_area
+                }
+                min={answers.country === "US" ? 200 : 20}
+                max={answers.country === "US" ? 12000 : 1000}
+                step={answers.country === "US" ? 50 : 10}
+                onChange={(value) =>
+                  updateAnswer(
+                    "floor_area",
+                    answers.country === "US" ? value / 10.7639 : value
+                  )
+                }
               />
 
               <SelectField
@@ -1005,6 +1162,7 @@ export default function AssessmentPage() {
 
           {!isApartment && (
   <SectionShell
+    id="solar-suitability"
     number="2"
     title="Solar suitability"
             description="Solar should not be recommended by default. These details help the app judge whether solar PV is a strong candidate, a possible option, or not the first priority."
@@ -1101,6 +1259,7 @@ export default function AssessmentPage() {
           )}
 
           <SectionShell
+            id="energy-costs"
             number={isApartment ? "2" : "3"}
             title="Electricity, Gas and Oil costs"
             description="Save Your EGO means Electricity, Gas and Oil. Add what is known. Unknown values can be left at zero."
@@ -1239,22 +1398,44 @@ export default function AssessmentPage() {
               {answers.uses_oil && (
                 <div className="mt-4 grid gap-5 md:grid-cols-3">
                   <NumberField
-                    label="Oil litres used per year if known"
-                    value={answers.oil_litres_per_year}
+                    label={
+                      answers.country === "US"
+                        ? "Heating oil used per year if known (gallons)"
+                        : "Oil litres used per year if known"
+                    }
+                    value={
+                      answers.country === "US"
+                        ? Math.round(answers.oil_litres_per_year / 3.78541)
+                        : answers.oil_litres_per_year
+                    }
                     min={0}
-                    step={50}
+                    step={answers.country === "US" ? 25 : 50}
                     onChange={(value) =>
-                      updateAnswer("oil_litres_per_year", value)
+                      updateAnswer(
+                        "oil_litres_per_year",
+                        answers.country === "US" ? value * 3.78541 : value
+                      )
                     }
                   />
 
                   <NumberField
-                    label={`Oil price per litre if known (${countryDefaults.currency})`}
-                    value={answers.oil_price_per_litre}
+                    label={
+                      answers.country === "US"
+                        ? `Heating-oil price per gallon if known (${countryDefaults.currency})`
+                        : `Oil price per litre if known (${countryDefaults.currency})`
+                    }
+                    value={
+                      answers.country === "US"
+                        ? Number((answers.oil_price_per_litre * 3.78541).toFixed(2))
+                        : answers.oil_price_per_litre
+                    }
                     min={0}
                     step={0.01}
                     onChange={(value) =>
-                      updateAnswer("oil_price_per_litre", value)
+                      updateAnswer(
+                        "oil_price_per_litre",
+                        answers.country === "US" ? value / 3.78541 : value
+                      )
                     }
                   />
 
@@ -1291,6 +1472,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="fabric-details"
             number={isApartment ? "3" : "4"}
             title="Advanced home fabric details"
             description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
@@ -1400,6 +1582,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="appliances-usage"
             number={isApartment ? "4" : "5"}
             title="Appliances and usage"
             description="Select the appliances in the home, or add another appliance if it is not listed."
@@ -1527,6 +1710,7 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="assessment-preview"
             number={isApartment ? "5" : "6"}
             title="Assessment preview"
             description="This is the rule-based assessment view before the AI report is generated."
@@ -1589,25 +1773,25 @@ export default function AssessmentPage() {
           </SectionShell>
 
           <SectionShell
+            id="ai-assessment"
             number={isApartment ? "6" : "7"}
-            title="AI assessment"
+            title="Create your report"
             description={
   isApartment
-    ? "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, optional photos and rule-based findings."
-    : "Generate a personalised Save Your EGO AI assessment before saving. This uses the home details, bills, fabric inputs, appliance estimates, solar suitability, optional photos and rule-based findings."
+    ? "Create your personalised Save Your EGO report using the home details, bills, fabric inputs, appliance estimates and optional photos."
+    : "Create your personalised Save Your EGO report using the home details, bills, fabric inputs, appliance estimates, solar details and optional photos."
 }
             accent="blue"
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
               <h3 className="font-black text-[#17356f]">
-                Optional appliance photos
+                Optional home or equipment photos
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Upload up to 3 appliance photos, rating plates, labels or
-                controls. The photos are compressed before analysis so they
-                work better on mobile connections. These photos are used for
-                this AI assessment only and are not stored permanently yet.
+                Upload up to 3 useful photos of the home, roof, heating equipment,
+                appliances, rating plates, labels or controls. Photos are used as
+                supporting evidence for this report and are not stored permanently yet.
               </p>
 
               <input
@@ -1654,27 +1838,34 @@ export default function AssessmentPage() {
 
             <div className="mt-5 rounded-3xl border border-[#ffd600] bg-[#fff6bf] p-5">
               <h3 className="text-xl font-black text-black">
-                Step 1: Generate the AI assessment
+                Ready to create your personalised report?
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-700">
-                This creates the detailed recommendations used in the final
-                report, including likely costs, savings, payback guidance and
-                next steps.
+                One click will create your personalised recommendations, save
+                this assessment and open the full report.
               </p>
 
-              <button
-                type="button"
-                disabled={generatingAi}
-                onClick={handleGenerateAiAssessment}
-                className="mt-4 rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {generatingAi
-                  ? "Generating AI assessment..."
-                  : aiReportText
-                    ? "Regenerate AI assessment"
-                    : "Generate AI assessment"}
-              </button>
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard")}
+                  className="rounded-full border border-[#dbe8f2] bg-white px-6 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
+                >
+                  Back to dashboard
+                </button>
+
+                <button
+                  type="button"
+                  disabled={saving || generatingAi}
+                  onClick={handleSubmit}
+                  className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saving || generatingAi
+                    ? "Creating your personalised report..."
+                    : "Create & View My Report"}
+                </button>
+              </div>
             </div>
 
             {aiReport && (
@@ -1721,53 +1912,14 @@ export default function AssessmentPage() {
           </SectionShell>
         </div>
 
+        <EnergyTipsLibrary />
+
         {errorMessage && (
           <p className="mt-6 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
             {errorMessage}
           </p>
         )}
 
-        <section className="mt-8 rounded-[1.75rem] border border-[#ffd600] bg-[#fff6bf] p-6 shadow-lg shadow-[#17356f]/10">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
-                Final step
-              </p>
-
-              <h2 className="mt-2 text-2xl font-black text-black">
-                Ready to view the customer report?
-              </h2>
-
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-                Generate the AI assessment first for the strongest report, then
-                save the assessment to open the full Save Your EGO results page.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
-              <button
-                type="button"
-                onClick={() => router.push("/dashboard")}
-                className="rounded-full border border-[#dbe8f2] bg-white px-6 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
-              >
-                Back to dashboard
-              </button>
-
-              <button
-                type="button"
-                disabled={saving}
-                onClick={handleSubmit}
-                className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {saving
-                  ? "Saving..."
-                  : aiReportText
-                    ? "Save AI report and view results"
-                    : "Save assessment and view report"}
-              </button>
-            </div>
-          </div>
-        </section>
       </div>
     </main>
   );

@@ -192,6 +192,13 @@ const reportSchema = {
       minItems: 3,
       maxItems: 5,
     },
+
+    general_energy_saving_tips: {
+      type: "array",
+      items: { type: "string" },
+      minItems: 5,
+      maxItems: 8,
+    },
   },
   required: [
     "photo_summary",
@@ -217,6 +224,7 @@ const reportSchema = {
     "contractor_questions",
     "what_to_check_next",
     "important_assumptions",
+    "general_energy_saving_tips",
   ],
   additionalProperties: false,
 };
@@ -309,6 +317,89 @@ export async function POST(request: Request) {
       );
     }
 
+    const frequencyMultiplier: Record<string, number> = {
+      Monthly: 12,
+      "Bi-monthly": 6,
+      Quarterly: 4,
+      Annual: 1,
+    };
+
+    const currency =
+      answers.country === "US"
+        ? "$"
+        : answers.country === "UK"
+          ? "£"
+          : answers.country === "Ireland" || answers.country === "Other EU"
+            ? "€"
+            : "";
+
+    const formatMoney = (value: number) =>
+      `${currency}${Math.round(value).toLocaleString("en-US")}`;
+
+    const electricitySpend =
+      Number(answers.annual_bill_override ?? 0) > 0
+        ? Number(answers.annual_bill_override)
+        : Number(answers.avg_electricity_bill ?? 0) *
+          (frequencyMultiplier[String(answers.bill_frequency)] ?? 12);
+
+    const gasSpend = answers.uses_gas
+      ? Number(answers.annual_gas_spend ?? 0) > 0
+        ? Number(answers.annual_gas_spend)
+        : Number(answers.avg_gas_bill ?? 0) *
+          (frequencyMultiplier[String(answers.gas_bill_frequency)] ?? 12)
+      : 0;
+
+    const oilSpend = answers.uses_oil
+      ? Number(answers.annual_oil_spend ?? 0) > 0
+        ? Number(answers.annual_oil_spend)
+        : Number(answers.oil_litres_per_year ?? 0) *
+          Number(answers.oil_price_per_litre ?? 0)
+      : 0;
+
+    const spendParts = [
+      electricitySpend > 0 ? `${formatMoney(electricitySpend)} electricity` : "",
+      gasSpend > 0 ? `${formatMoney(gasSpend)} gas` : "",
+      oilSpend > 0 ? `${formatMoney(oilSpend)} oil` : "",
+    ].filter(Boolean);
+
+    const totalKnownSpend = electricitySpend + gasSpend + oilSpend;
+    const estimatedBillKwh = Number(scores.estimatedBillKwh ?? 0);
+    const applianceKwh = Number(scores.applianceKwh ?? 0);
+
+    let deterministicCostProfile =
+      spendParts.length > 0
+        ? `Based on the figures entered, the estimated annual energy spend is about ${formatMoney(totalKnownSpend)} across ${spendParts.join(", ")}. These figures are indicative and depend on the bill periods, rates and fuel quantities entered.`
+        : "There is not enough bill or fuel-spend information to estimate an annual energy cost yet.";
+
+    if (
+      estimatedBillKwh > 0 &&
+      applianceKwh > 0 &&
+      applianceKwh < estimatedBillKwh * 0.45
+    ) {
+      deterministicCostProfile += ` The electricity bill implies roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year, while the selected appliances account for roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kWh/year, so there are likely additional household loads or assumptions worth checking.`;
+    }
+
+    let deterministicUsageWarning =
+      "No major usage warning is triggered by the entered figures, although the bill and appliance estimates are still indicative.";
+
+    if (estimatedBillKwh > 20000) {
+      deterministicUsageWarning =
+        `The electricity estimate is very high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year. Check bill frequency, tariff inputs and major loads such as electric heating, hot water, EV charging, hot tubs, pools or other equipment before treating this as normal household use.`;
+    } else if (estimatedBillKwh > 12000) {
+      deterministicUsageWarning =
+        `The electricity estimate is unusually high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year. It is worth checking the bill inputs and looking for major or unlisted electrical loads.`;
+    } else if (applianceKwh > 8000) {
+      deterministicUsageWarning =
+        `The selected appliances add up to a high estimated load of roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kWh/year. Review the largest appliances and their usage first.`;
+    } else if (
+      estimatedBillKwh > 0 &&
+      applianceKwh > 0 &&
+      applianceKwh < estimatedBillKwh * 0.45
+    ) {
+      deterministicUsageWarning =
+        "The bill-based electricity estimate is much higher than the selected appliance total. Check for unlisted major loads and confirm the bill frequency, rate and annual-spend inputs.";
+    }
+
     const client = new OpenAI({
       apiKey,
     });
@@ -330,7 +421,8 @@ Create a useful, customer-facing home energy report that feels valuable enough t
 Important:
 - The figures must be indicative ranges, not guarantees.
 - Use the user's country, currency and energy context where available.
-- If the country is US, use dollars.
+- If the country is US, use dollars and US homeowner terminology. Treat floor area as square feet when describing it to the customer, heating-oil quantities as gallons, and temperatures as Fahrenheit where temperature values are mentioned.
+- The stored assessment may contain metric base values for internal calculation. Do not expose litres or square metres in US customer-facing prose when an equivalent US unit is appropriate.
 - If the country is Ireland or EU, use euros.
 - If the country is UK, use pounds.
 - If currency is unclear, write the ranges in a currency-neutral way.
@@ -339,6 +431,11 @@ Important:
 - Do not repeat the same idea across multiple sections unless it genuinely belongs there.
 - Do not make the report feel thin.
 - Do not overstate certainty.
+- Separate personalised findings from broadly useful general guidance.
+- If inputs are incomplete, unknown, zero or sparse, do not leave the report empty or repetitive. Give useful general household energy-saving guidance in general_energy_saving_tips while clearly presenting it as general guidance, not as a diagnosis of this specific home.
+- General tips should be practical and broadly applicable: thermostat scheduling, heating/cooling filters and maintenance, hot-water habits, laundry and dishwasher efficiency, standby loads, lighting, draft checks, utility tariff/plan reviews and seasonal energy habits where relevant.
+- Do not claim that a general tip is a confirmed problem in this home unless the entered answers support it.
+- Proofread all customer-facing text before returning JSON. Correct spelling, obvious typos, awkward fragments and accidental characters.
 
 Usage warning rules:
 - If estimated annual electricity use is above 12,000 kWh, unusual_usage_warning must clearly say this is unusually high and should be checked.
@@ -359,10 +456,13 @@ Solar repetition rules:
 
 Prioritisation rules:
 - Prioritise recommendations that match the actual inputs, not generic advice.
+- The ordering must be consistent throughout the report.
+- top_5_priorities must use the same first five actions, in the same order, as priority_action_plan.
+- top_recommended_actions should reflect the leading priority_action_plan items rather than introducing a competing order.
 - If insulation and glazing are already good, do not push fabric upgrades unless clearly justified.
 - If a heat pump is already present, do not treat heating replacement as a priority.
 - Use appliance estimates and bill anchor to judge what is most likely driving use.
-- If appliance photos reveal useful details, use them only as supporting evidence.
+- If home or equipment photos reveal useful details, use them only as supporting evidence.
 - Do not invent exact model numbers, ratings, ages or faults if they are unclear from photos.
 - Focus on the most likely savings first.
 - Respect existing strengths such as solar, battery or strong fabric performance where present.
@@ -374,6 +474,8 @@ Prioritisation rules:
 Cost and saving rules:
 - Use broad, realistic ranges.
 - Do not promise exact savings.
+- Do not invent or recalculate the household's total annual energy spend in narrative sections. The application calculates that total from the entered bill and fuel figures.
+- If discussing cost components elsewhere, never state arithmetic that conflicts with the supplied figures.
 - Do not include made-up grant amounts.
 - Do not recommend a specific contractor, brand or product.
 - For low-cost actions, give ranges such as "$0-$100", "$20-$250" or "low/no cost" where suitable.
@@ -383,7 +485,7 @@ Cost and saving rules:
 - If the saving depends heavily on usage, tariffs, climate or behaviour, say so.
 
 Photo analysis rules:
-- If no useful appliance photos are provided, set photo_summary to "No appliance photos analysed."
+- If no useful home or equipment photos are provided, set photo_summary to "No home or equipment photos analysed."
 - If photos are provided, briefly describe what they appear to show.
 - Use cautious wording such as appears, may, likely or should be checked.
 - Do not diagnose electrical, gas, mould, damp, wiring or safety issues from images as fact.
@@ -476,6 +578,9 @@ Exactly 3 detailed low-cost action objects with the same fields.
 23. important_assumptions:
 3 to 5 assumptions or caveats used in the analysis.
 
+24. general_energy_saving_tips:
+5 to 8 concise, useful household energy-saving tips. These must still be useful when the homeowner has provided very little information. Keep them clearly general unless the assessment answers support personalising one.
+
 Assessment answers:
 ${JSON.stringify(answers, null, 2)}
 
@@ -536,9 +641,30 @@ if (photos.length > 0) {
       },
     });
 
+    const report = JSON.parse(response.output_text) as Record<string, unknown>;
+
+    const priorityPlan = Array.isArray(report.priority_action_plan)
+      ? (report.priority_action_plan as Array<Record<string, unknown>>)
+      : [];
+
+    const priorityHeadlines = priorityPlan
+      .slice(0, 5)
+      .map((item) => String(item.action ?? "").trim())
+      .filter(Boolean);
+
+    if (priorityHeadlines.length > 0) {
+      report.top_5_priorities = priorityHeadlines;
+      report.top_recommended_actions = priorityHeadlines.slice(0, 3);
+    }
+
+    // Financial totals and high-usage warnings are calculated from the entered
+    // figures so the customer never receives contradictory arithmetic.
+    report.estimated_annual_energy_cost_profile = deterministicCostProfile;
+    report.unusual_usage_warning = deterministicUsageWarning;
+
     return NextResponse.json({
-      reportText: response.output_text,
-      report: JSON.parse(response.output_text),
+      reportText: JSON.stringify(report),
+      report,
     });
   } catch (error) {
     console.error("Generate assessment AI error:", error);

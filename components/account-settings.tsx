@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { AccountBar } from "@/components/account-bar";
 import { createClient } from "@/lib/supabase/client";
 
 export function AccountSettings() {
   const supabase = createClient();
+  const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
   const [hasCheckedUser, setHasCheckedUser] = useState(false);
 
@@ -44,5 +46,10 @@ export function AccountSettings() {
     return null;
   }
 
-  return <AccountBar email={email} />;
+  return (
+    <AccountBar
+      email={email}
+      compact={pathname?.startsWith("/report/") ?? false}
+    />
+  );
 }

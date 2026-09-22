@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { GenerateReportButton } from "@/components/generate-report-button";
 import { PrintReportButton } from "@/components/print-report-button";
+import { EnergyTipsLibrary } from "@/components/energy-tips-library";
 
 type ReportPageProps = {
   params: Promise<{
@@ -53,6 +54,7 @@ type AiReport = {
   contractor_questions?: string[];
   what_to_check_next?: string[];
   important_assumptions?: string[];
+  general_energy_saving_tips?: string[];
 };
 
 export default function ReportPage(props: ReportPageProps) {
@@ -643,6 +645,10 @@ const solarSuitability = isApartment
   return (
     <main className="report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
       <style>{`
+        @page {
+          margin: 9mm;
+        }
+
         @media print {
           body {
             background: white !important;
@@ -657,7 +663,34 @@ const solarSuitability = isApartment
           .report-cover,
           .report-disclaimer {
             box-shadow: none !important;
-            page-break-inside: avoid;
+          }
+
+          .report-section {
+            padding: 16px !important;
+            margin-top: 10px !important;
+            break-inside: auto;
+          }
+
+          .report-section h2 {
+            font-size: 18px !important;
+            line-height: 1.25 !important;
+          }
+
+          .report-section h3 {
+            line-height: 1.3 !important;
+          }
+
+          .report-section p,
+          .report-section li {
+            line-height: 1.45 !important;
+          }
+
+          .report-cover {
+            break-after: page;
+          }
+
+          article {
+            break-inside: avoid;
           }
 
           .print-break-before {
@@ -715,7 +748,7 @@ const solarSuitability = isApartment
                 <div className="rounded-2xl bg-[#f7fbff] p-4">
                   <p className="font-bold text-slate-500">Report type</p>
                   <p className="mt-1 font-black text-[#17356f]">
-                    AI-assisted home energy assessment
+                    Personalised home energy assessment
                   </p>
                 </div>
               </div>
@@ -855,8 +888,9 @@ const solarSuitability = isApartment
               {usesOil && (
                 <>
                   <p>
-                    Litres/year:{" "}
-                    {displayValue(answers.oil_litres_per_year, "0")}
+                    {String(answers.country ?? "") === "US"
+                      ? `Gallons/year: ${Math.round(Number(answers.oil_litres_per_year ?? 0) / 3.78541)}`
+                      : `Litres/year: ${displayValue(answers.oil_litres_per_year, "0")}`}
                   </p>
                   <p>Boiler age: {displayValue(answers.oil_boiler_age)}</p>
                 </>
@@ -918,13 +952,6 @@ const solarSuitability = isApartment
             />
 
             <ActionPlanSection
-              title="Priority action plan"
-              description="These are the most useful actions to consider first, with indicative cost, saving, effort and payback guidance."
-              actions={aiReport.priority_action_plan}
-              accent="navy"
-            />
-
-            <ActionPlanSection
               title="Low-cost quick wins"
               description="Lower-cost actions that are usually easier to test before committing to larger upgrades."
               actions={aiReport.low_cost_quick_wins}
@@ -943,6 +970,14 @@ const solarSuitability = isApartment
               description="Larger upgrades that may improve comfort and efficiency but should usually be checked with a qualified professional."
               actions={aiReport.higher_cost_upgrades}
               accent="black"
+            />
+
+
+            <ActionPlanSection
+              title="Your priority action plan"
+              description="Now that you’ve seen the main opportunities, this brings the most useful next steps together in the order we would look at them."
+              actions={aiReport.priority_action_plan}
+              accent="navy"
             />
 
             {hasDetailedReport ? (
@@ -1000,6 +1035,12 @@ const solarSuitability = isApartment
                   items={aiReport.important_assumptions}
                   accent="black"
                 />
+
+                <ReportList
+                  title="General energy-saving tips"
+                  items={aiReport.general_energy_saving_tips}
+                  accent="yellow"
+                />
               </>
             ) : (
               <>
@@ -1016,17 +1057,23 @@ const solarSuitability = isApartment
                   items={aiReport.extra_insights}
                   accent="blue"
                 />
+
+                <ReportList
+                  title="General energy-saving tips"
+                  items={aiReport.general_energy_saving_tips}
+                  accent="yellow"
+                />
               </>
             )}
           </div>
         ) : (
           <section className="mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
             <h2 className="text-2xl font-black text-[#17356f]">
-              Generate AI report
+              Create personalised report
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Generate the customer-facing Save Your EGO report to add the AI
+              Create the full Save Your EGO report with your personalised
               assessment, action plan and practical recommendations.
             </p>
 
@@ -1035,6 +1082,8 @@ const solarSuitability = isApartment
             </div>
           </section>
         )}
+
+        <EnergyTipsLibrary />
 
         <section className="report-disclaimer mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 text-sm leading-6 text-slate-600 shadow-sm print:break-inside-avoid">
           <h2 className="font-black text-[#17356f]">Important note</h2>

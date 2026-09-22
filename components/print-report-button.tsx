@@ -1,27 +1,43 @@
 "use client";
 
+import { useState } from "react";
+
 export function PrintReportButton() {
+  const [isPreparing, setIsPreparing] = useState(false);
+
   function handlePrint() {
-    const originalTitle = document.title;
+    if (isPreparing) return;
 
-    document.title = "Save Your EGO Home Energy Report";
+    setIsPreparing(true);
 
-    const restoreTitle = () => {
-      document.title = originalTitle;
-      window.removeEventListener("afterprint", restoreTitle);
-    };
+    // Let the click interaction complete and paint the feedback state before
+    // opening the browser's synchronous print dialog.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          const originalTitle = document.title;
 
-    window.addEventListener("afterprint", restoreTitle);
-    window.print();
+          document.title = "Save Your EGO Home Energy Report";
+
+          try {
+            window.print();
+          } finally {
+            document.title = originalTitle;
+            setIsPreparing(false);
+          }
+        }, 0);
+      });
+    });
   }
 
   return (
     <button
       type="button"
       onClick={handlePrint}
-      className="rounded-md bg-black px-5 py-3 text-sm font-medium text-white print:hidden"
+      disabled={isPreparing}
+      className="rounded-md bg-black px-5 py-3 text-sm font-medium text-white transition disabled:cursor-wait disabled:opacity-70 print:hidden"
     >
-      Download / Save PDF report
+      {isPreparing ? "Preparing PDF..." : "Download / Save PDF report"}
     </button>
   );
 }
