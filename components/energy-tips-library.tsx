@@ -5,6 +5,49 @@ import {
 
 type SavingPotential = "Small" | "Moderate" | "High" | "Variable";
 
+function friendlyText(text: string) {
+  return text
+    .replaceAll("HVAC", "heating and cooling")
+    .replaceAll("tariffs", "energy plans")
+    .replaceAll("tariff", "energy plan")
+    .replaceAll("standing charge", "fixed daily charge")
+    .replaceAll("unit rate", "price per unit")
+    .replaceAll("conditioning", "heating or cooling")
+    .replaceAll("Conditioning", "Heating or cooling")
+    .replaceAll("conditioned air", "heated or cooled air")
+    .replaceAll("conditioned space", "rooms you heat or cool")
+    .replaceAll("runtime", "running time")
+    .replaceAll("consumption", "energy use")
+    .replaceAll("refrigeration", "fridges and freezers")
+    .replaceAll("service penetrations", "gaps around pipes and cables")
+    .replaceAll("recirculation", "hot-water circulation")
+    .replaceAll("passive heat", "free warmth from the sun")
+    .replaceAll("solar heat gain", "heat from the sun")
+    .replaceAll("integrated fixtures", "built-in light fittings")
+    .replaceAll("resistance heaters", "electric heaters");
+}
+
+function friendlyCategory(category: string) {
+  if (category === "Bills, Tariffs & Metering") return "Bills, Plans & Meter Checks";
+  if (category === "Kitchen & Refrigeration") return "Kitchen, Fridge & Freezer";
+  if (category === "Electronics & Standby") return "TVs, Computers & Standby";
+  return category;
+}
+
+function friendlyEffort(effort: string) {
+  if (effort === "No cost") return "Free fix";
+  if (effort === "Check first") return "Check before you spend";
+  if (effort === "When replacing") return "Only when replacing";
+  return effort;
+}
+
+function friendlySavingPotential(potential: SavingPotential) {
+  if (potential === "Moderate") return "Medium";
+  if (potential === "High") return "Bigger";
+  if (potential === "Variable") return "Depends on your home";
+  return potential;
+}
+
 function savingPotentialForTip(
   category: string,
   title: string,
@@ -216,8 +259,11 @@ export function EnergyTipsLibrary() {
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 sm:px-8">
           <div>
             <h2 className="text-2xl font-black text-black">
-              {ENERGY_TIP_COUNT} Ways to Save Energy Around Your Home
+              {ENERGY_TIP_COUNT} Simple Ways to Save Energy Around Your Home
             </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Small changes add up. Start with free fixes first. Pick the ideas that fit your home.
+            </p>
           </div>
 
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-xl font-black text-white transition group-open:rotate-180">
@@ -229,13 +275,13 @@ export function EnergyTipsLibrary() {
           <div className="grid gap-3 lg:grid-cols-2">
             {ENERGY_TIP_CATEGORIES.map((category) => (
               <details
-                key={category.category}
+                key={friendlyCategory(category.category)}
                 className="group/category rounded-2xl border border-[#dbe8f2] bg-[#f7fbff]"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4">
                   <div>
                     <h3 className="font-black text-[#17356f]">
-                      {category.category}
+                      {friendlyCategory(category.category)}
                     </h3>
                     <p className="mt-1 text-xs font-semibold text-slate-500">
                       {category.tips.length} ideas
@@ -256,40 +302,42 @@ export function EnergyTipsLibrary() {
 
                     return (
                       <article
-                        key={`${category.category}-${index}-${tip.title}`}
+                        key={`${friendlyCategory(category.category)}-${index}-${friendlyText(tip.title)}`}
                         className="rounded-2xl border border-[#dbe8f2] bg-white p-4"
                       >
                         <h4 className="font-black leading-6 text-black">
-                          {tip.title}
+                          {friendlyText(tip.title)}
                         </h4>
 
                         <div className="mt-3 flex flex-wrap gap-2">
                           <span className="rounded-full bg-[#fff6bf] px-3 py-1 text-[11px] font-black text-[#6b5200]">
-                            Effort: {tip.effort}
+                            What it takes: {friendlyEffort(tip.effort)}
                           </span>
                           <span className="rounded-full bg-[#e9f6fe] px-3 py-1 text-[11px] font-black text-[#17356f]">
-                            Could save: {savingPotential}
+                            Could save: {friendlySavingPotential(savingPotential)}
                           </span>
                         </div>
 
                         <div className="mt-4">
                           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-                            Why it works
+                            This is why
                           </p>
                           <p className="mt-1 text-sm leading-6 text-slate-700">
-                            {tip.why}
+                            {friendlyText(tip.why)}
                           </p>
                         </div>
 
                         <div className="mt-3 rounded-xl bg-[#f7fbff] p-3">
                           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#17356f]/60">
-                            How it can save you money
+                            How this may help your bill
                           </p>
                           <p className="mt-1 text-sm leading-6 text-slate-600">
-                            {savingInsightForTip(
-                              category.category,
-                              index,
-                              savingPotential
+                            {friendlyText(
+                              savingInsightForTip(
+                                category.category,
+                                index,
+                                savingPotential
+                              )
                             )}
                           </p>
                         </div>
