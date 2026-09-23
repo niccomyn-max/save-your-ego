@@ -1713,7 +1713,7 @@ export default function AssessmentPage() {
             id="assessment-preview"
             number={isApartment ? "5" : "6"}
             title="Assessment preview"
-            description="This is the rule-based assessment view before the AI report is generated."
+            description="A quick look at the main things we have picked up before creating your full report."
             accent="yellow"
           >
             <div
@@ -1763,7 +1763,7 @@ export default function AssessmentPage() {
             </div>
 
             <div className="mt-6 rounded-2xl border border-[#dbe8f2] bg-white p-5">
-              <h3 className="font-black text-[#17356f]">Rule-based view</h3>
+              <h3 className="font-black text-[#17356f]">What stands out so far</h3>
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
                 {analysis.recommendations.slice(0, 6).map((item) => (
                   <li key={item}>{item}</li>
@@ -1775,11 +1775,11 @@ export default function AssessmentPage() {
           <SectionShell
             id="ai-assessment"
             number={isApartment ? "6" : "7"}
-            title="Create your report"
+            title="Create your personalised report"
             description={
   isApartment
-    ? "Create your personalised Save Your EGO report using the home details, bills, insulation and heat-loss inputs, appliance estimates and optional photos."
-    : "Create your personalised Save Your EGO report using the home details, bills, insulation and heat-loss inputs, appliance estimates, solar details and optional photos."
+    ? "Create your personalised Save Your EGO report using the information you entered about your home, bills, insulation, appliances and optional photos."
+    : "Create your personalised Save Your EGO report using the information you entered about your home, bills, insulation, appliances, solar and optional photos."
 }
             accent="blue"
           >
