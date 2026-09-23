@@ -215,17 +215,9 @@ export function EnergyTipsLibrary() {
       <details className="group rounded-[2rem] border border-[#dbe8f2] bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 sm:px-8">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]">
-              Extra home energy library
-            </p>
-            <h2 className="mt-1 text-2xl font-black text-black">
+            <h2 className="text-2xl font-black text-black">
               {ENERGY_TIP_COUNT} Ways to Save Energy Around Your Home
             </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              This fixed library is separate from your personalised findings.
-              Each idea shows why it helps, where the saving actually comes from,
-              how much potential it may have, and how much effort it usually takes.
-            </p>
           </div>
 
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-xl font-black text-white transition group-open:rotate-180">
@@ -234,14 +226,6 @@ export function EnergyTipsLibrary() {
         </summary>
 
         <div className="border-t border-[#dbe8f2] p-4 sm:p-6">
-          <div className="mb-5 rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-4 text-sm leading-6 text-slate-700">
-            <strong className="text-black">About the saving potential:</strong>{" "}
-            Small, Moderate and High are relative guides, not guaranteed percentages.
-            Actual savings depend on your home, usage, climate, equipment and energy prices.
-            Variable means the idea can be very worthwhile, but it should be checked against
-            your own situation before spending money.
-          </div>
-
           <div className="grid gap-3 lg:grid-cols-2">
             {ENERGY_TIP_CATEGORIES.map((category) => (
               <details
@@ -254,7 +238,7 @@ export function EnergyTipsLibrary() {
                       {category.category}
                     </h3>
                     <p className="mt-1 text-xs font-semibold text-slate-500">
-                      {category.tips.length} practical ideas
+                      {category.tips.length} ideas
                     </p>
                   </div>
                   <span className="text-lg font-black text-[#17356f] transition group-open/category:rotate-180">
@@ -284,13 +268,13 @@ export function EnergyTipsLibrary() {
                             Effort: {tip.effort}
                           </span>
                           <span className="rounded-full bg-[#e9f6fe] px-3 py-1 text-[11px] font-black text-[#17356f]">
-                            Saving potential: {savingPotential}
+                            Could save: {savingPotential}
                           </span>
                         </div>
 
                         <div className="mt-4">
                           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-                            Why it helps
+                            Why it works
                           </p>
                           <p className="mt-1 text-sm leading-6 text-slate-700">
                             {tip.why}
@@ -299,7 +283,7 @@ export function EnergyTipsLibrary() {
 
                         <div className="mt-3 rounded-xl bg-[#f7fbff] p-3">
                           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#17356f]/60">
-                            Where the saving comes from
+                            How it can save you money
                           </p>
                           <p className="mt-1 text-sm leading-6 text-slate-600">
                             {savingInsightForTip(
