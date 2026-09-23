@@ -353,7 +353,7 @@ function ActionPlanSection({
   description?: string;
   actions?: DetailedAction[];
   accent?: "yellow" | "blue" | "black" | "navy";
-  costMarker?: "$" | "$" | "$$";
+  costMarker?: "$" | "$$" | "$$$";
   ranked?: boolean;
 }) {
   if (!actions || actions.length === 0) {
