@@ -30,6 +30,9 @@ const actionSchema = {
     suggested_next_step: {
       type: "string",
     },
+    question_to_ask: {
+      type: "string",
+    },
   },
   required: [
     "action",
@@ -40,6 +43,7 @@ const actionSchema = {
     "likely_payback",
     "priority",
     "suggested_next_step",
+    "question_to_ask",
   ],
   additionalProperties: false,
 };
@@ -119,22 +123,22 @@ const reportSchema = {
     low_cost_quick_wins: {
       type: "array",
       items: actionSchema,
-      minItems: 3,
-      maxItems: 3,
+      minItems: 6,
+      maxItems: 6,
     },
 
     medium_cost_improvements: {
       type: "array",
       items: actionSchema,
-      minItems: 2,
-      maxItems: 3,
+      minItems: 4,
+      maxItems: 4,
     },
 
     higher_cost_upgrades: {
       type: "array",
       items: actionSchema,
-      minItems: 2,
-      maxItems: 3,
+      minItems: 4,
+      maxItems: 4,
     },
 
     electricity_specific_advice: {
@@ -427,6 +431,9 @@ Important:
 - If the country is UK, use pounds.
 - If currency is unclear, write the ranges in a currency-neutral way.
 - Use ordinary homeowner language.
+- Write for someone with no energy-industry knowledge. Prefer short, natural words over technical terms.
+- If a technical term is unavoidable, explain it immediately in plain English.
+- Never use internal developer notes, implementation language or wording that sounds like instructions between the app builders.
 - Be specific to the answers and calculated scores.
 - Do not repeat the same idea across multiple sections unless it genuinely belongs there.
 - Do not make the report feel thin.
@@ -544,15 +551,18 @@ Exactly 3 short items. These should be larger or more involved improvements.
 - likely_payback
 - priority
 - suggested_next_step
+- question_to_ask
+
+For question_to_ask, include one useful plain-English question to ask a contractor, installer, supplier or assessor when professional help is relevant. If the action does not need professional help, return an empty string. Do not create a separate contractor-question section for these same actions.
 
 13. low_cost_quick_wins:
-Exactly 3 detailed low-cost action objects with the same fields.
+Exactly 6 detailed low-cost action objects with the same fields. These should be practical, simple actions and checks. Avoid six versions of the same idea.
 
 14. medium_cost_improvements:
-2 to 3 detailed medium-cost action objects with the same fields.
+Exactly 4 detailed medium-cost action objects with the same fields.
 
 15. higher_cost_upgrades:
-2 to 3 detailed higher-cost action objects with the same fields.
+Exactly 4 detailed higher-cost action objects with the same fields.
 
 16. electricity_specific_advice:
 3 to 5 specific items.
@@ -570,7 +580,7 @@ Exactly 3 detailed low-cost action objects with the same fields.
 3 to 5 specific behaviour changes.
 
 21. contractor_questions:
-3 to 5 questions the homeowner could ask a contractor or assessor.
+3 to 5 questions only for important professional checks that do not fit naturally into one of the detailed actions. Avoid repeating questions already included with an action.
 
 22. what_to_check_next:
 3 to 5 specific checks the homeowner can do next.
