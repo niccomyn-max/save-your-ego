@@ -542,9 +542,9 @@ export function calculateScores(input: {
   }
 
   return {
-    "Heat loss risk": convertScore(heatLossPoints),
-    "Running cost risk": convertScore(runningCostPoints),
-    "Efficiency improvement potential": convertScore(improvementPoints),
+    "Chance heat is escaping": convertScore(heatLossPoints),
+    "Chance bills are higher than needed": convertScore(runningCostPoints),
+    "Room to save": convertScore(improvementPoints),
   };
 }
 
@@ -584,10 +584,10 @@ export function calculateSolarSuitability(input: {
       suggested_system_size:
         "Existing solar is already installed. Review monitoring, export, self-consumption and battery value before adding more capacity.",
       battery_view: input.hasBattery
-        ? "A battery is already installed, so the priority is to check charging settings, tariff alignment and actual self-consumption."
+        ? "A battery is already installed, so the priority is to check charging settings, energy plan timing and actual self-consumption."
         : "A battery may be worth reviewing if evening use is high, but it should be priced separately from any PV expansion.",
       reason:
-        "The home already has solar PV, so the next step is optimisation rather than treating solar as a new default recommendation.",
+        "You already have solar panels. Check how well the system is working before adding anything else.",
       installer_questions: [
         "What annual generation is the existing system actually producing?",
         "How much of the generated electricity is used in the home versus exported?",
@@ -595,7 +595,7 @@ export function calculateSolarSuitability(input: {
       ],
       cautions: [
         "Do not assume extra solar capacity is worthwhile without checking inverter limits, export limits, roof space and usage pattern.",
-        "Battery value depends heavily on tariffs, evening demand and export rates.",
+        "Battery value depends heavily on energy plans, evening demand and export rates.",
         "Any roof or electrical work should be checked by a qualified installer.",
       ],
     };
@@ -674,18 +674,18 @@ export function calculateSolarSuitability(input: {
       suggested_system_size:
         "Not estimated until roof orientation, shading and usable roof area are known.",
       battery_view: input.hasBattery
-        ? "A battery is already installed, so its settings and tariff alignment can be reviewed separately."
+        ? "A battery is already installed, so its settings and energy plan timing can be reviewed separately."
         : "Battery value cannot be judged reliably until the solar opportunity and household usage pattern are clearer.",
       reason:
-        "There is not enough roof information to give a useful solar suitability rating yet. Check orientation, shading and usable roof area first.",
+        "We need a little more roof information first. Check the roof direction, shade and usable space.",
       installer_questions: [
         "What usable roof area is available after allowing for shading, setbacks and roof obstructions?",
         "What are the roof orientation and pitch?",
         "What annual generation would the exact roof layout be expected to produce?",
       ],
       cautions: [
-        "Do not size or price a solar PV system from electricity use alone.",
-        "Roof condition, structure, shading, electrical capacity, export limits and local rules should be checked before making a decision.",
+        "Don’t choose a solar system from your electricity use alone.",
+        "Check the roof, shade, electrics and local rules before spending money.",
       ],
     };
   }
@@ -733,14 +733,14 @@ if (rating === "Strong" || rating === "Possible") {
     rating,
     suggested_system_size: suggestedSize,
     battery_view: input.hasBattery
-      ? "A battery is already installed, so the priority is checking settings, charge/discharge timing and tariff alignment."
+      ? "A battery is already installed, so the priority is checking settings, charge/discharge timing and energy plan timing."
       : batteryView,
     reason:
   rating === "Strong"
     ? "The electricity use, likely demand profile and roof details suggest solar PV could be a strong candidate for review."
     : rating === "Not first priority"
-      ? "Solar PV does not appear to be the first priority from the current inputs. Reducing demand or resolving roof constraints may matter more first."
-      : "Solar PV may be worth reviewing, but the value depends on roof orientation, shading, usable roof area, tariffs and daytime electricity use.",
+      ? "Solar panels does not appear to be the first priority from the current inputs. Reducing demand or resolving roof constraints may matter more first."
+      : "Solar panels may be worth reviewing, but the value depends on roof orientation, shading, usable roof area, energy plans and daytime electricity use.",
     installer_questions: [
       "What system size fits the usable roof area after allowing for shading, setbacks and roof obstructions?",
       "What is the estimated annual generation based on the exact roof orientation and pitch?",
@@ -749,10 +749,10 @@ if (rating === "Strong" || rating === "Possible") {
       "Are there any panel, inverter, export, planning, roof condition or electrical upgrade constraints?",
     ],
     cautions: [
-      "This is an indicative sizing guide only, not a solar design.",
+      "This is only a rough guide. It is not a solar design.",
       "Roof structure, shading, electrical capacity, export limits and local rules must be checked by a qualified installer.",
-      "Battery payback depends heavily on tariffs, usage pattern, evening demand and export rates.",
-      "The best first step is usually to reduce avoidable electricity demand before oversizing generation.",
+      "Battery payback depends heavily on energy plans, usage pattern, evening demand and export rates.",
+      "Free fixes first. Cut easy waste before paying for a bigger solar system.",
     ],
   };
 }
@@ -898,7 +898,7 @@ export function analyseEnergyAssessment(answers: EnergyAssessmentAnswers) {
   const priorityRows = [
     {
       area: biggestLossArea,
-      why_it_matters: "Highest estimated fabric U-value among the entered elements.",
+      why_it_matters: "This looks like the weakest area for keeping heat in your home.",
     },
     ...topAppliances.slice(0, 4).map((row) => ({
       area: row.appliance,
@@ -948,19 +948,19 @@ function buildRecommendations(input: {
     input.windowU > 2.5
   ) {
     recommendations.push(
-      "Glazing looks like a likely heat-loss weak point. Fabric-first action on windows should come before chasing small plug-load savings."
+      "Your windows look like a likely place for heat to escape. Start with simple window and draft checks first."
     );
   }
 
   if (input.biggestLossArea === "Roof" && input.roofU && input.roofU > 0.3) {
     recommendations.push(
-      "Roof heat loss looks material. Attic or roof insulation is likely to beat most appliance upgrades for overall impact."
+      "Your roof may be letting out a useful amount of heat. Check the attic or roof insulation first."
     );
   }
 
   if (input.biggestLossArea === "Walls" && input.wallU && input.wallU > 0.6) {
     recommendations.push(
-      "Walls look like a notable weakness. Wall insulation detail and retrofit options deserve attention before fine-tuning gadgets."
+      "Your walls may be one of the weaker areas. Check the insulation before spending money on smaller gadgets."
     );
   }
 
@@ -972,7 +972,7 @@ function buildRecommendations(input: {
     )
   ) {
     recommendations.push(
-      "Immersion heater use may be driving a disproportionate share of consumption. Timers, controls and hot water strategy should be checked early."
+      "Your immersion heater may be using a lot of electricity. Check its timer and hot-water settings early."
     );
   }
 
@@ -982,7 +982,7 @@ function buildRecommendations(input: {
     )
   ) {
     recommendations.push(
-      "Heavy electric shower use can materially raise bills. Shower duration and flow rate matter as much as the appliance itself."
+      "Frequent electric showers can push bills up. Shower length and water flow both matter."
     );
   }
 
@@ -994,7 +994,7 @@ function buildRecommendations(input: {
     )
   ) {
     recommendations.push(
-      "EV charging is likely one of the dominant electrical loads. Smart charging and tariff timing will matter."
+      "Charging an electric car may be one of your biggest uses. Check charging times and your energy plan."
     );
   }
 
@@ -1007,7 +1007,7 @@ function buildRecommendations(input: {
     )
   ) {
     recommendations.push(
-      "One or more high-load appliances are in heavy use. These may be the biggest quick-win area after obvious fabric issues."
+      "One or more large appliances are used a lot. They may be a good place to look after the obvious heat-loss fixes."
     );
   }
 
@@ -1017,7 +1017,7 @@ function buildRecommendations(input: {
       input.solarSuitability.rating === "Possible")
   ) {
     recommendations.push(
-      `Solar PV is a ${input.solarSuitability.rating.toLowerCase()} candidate for review. ${input.solarSuitability.suggested_system_size}`
+      `Solar panels is a ${input.solarSuitability.rating.toLowerCase()} candidate for review. ${input.solarSuitability.suggested_system_size}`
     );
   }
 
@@ -1026,7 +1026,7 @@ function buildRecommendations(input: {
     input.applianceKwh > input.estimatedBillKwh * 0.9
   ) {
     recommendations.push(
-      "Your selected appliance profile is close to the full bill estimate, which suggests either a very appliance-heavy home or that some tariff assumptions need refining."
+      "Your appliance estimate is close to your full electricity estimate. Check the appliance list and bill details first."
     );
   }
 
@@ -1035,13 +1035,13 @@ function buildRecommendations(input: {
     input.applianceKwh < input.estimatedBillKwh * 0.45
   ) {
     recommendations.push(
-      "There is a sizeable gap between appliance estimates and the bill-based estimate. That usually points to heating, hot water, cooking, EV charging, tariff effects or missing appliances."
+      "There is a big gap between the appliance list and the bill estimate. Check heating, hot water, cooking, car charging and any appliances you may have missed."
     );
   }
 
   if (recommendations.length === 0) {
     recommendations.push(
-      "The home looks fairly balanced on the inputs provided. The next improvement step is to sharpen the fabric details and fill out all major appliances for a more confident breakdown."
+      "Nothing stands out as a major problem yet. Add any missing insulation details and big appliances for a clearer picture."
     );
   }
 
