@@ -359,7 +359,7 @@ function ActionPlanSection({
   description?: string;
   actions?: DetailedAction[];
   accent?: "yellow" | "blue" | "black" | "navy";
-  costMarker?: "$" | "$" | "$$";
+  costMarker?: "$" | "$$" | "$$$";
 }) {
   if (!actions || actions.length === 0) {
     return null;
@@ -990,7 +990,7 @@ const solarSuitability = isApartment
               description="Useful next steps that may need some spending, products or professional help."
               actions={aiReport.medium_cost_improvements}
               accent="blue"
-              costMarker="$"
+              costMarker="$$"
             />
 
             <ActionPlanSection
@@ -998,7 +998,7 @@ const solarSuitability = isApartment
               description="Bigger improvements that need more planning and should usually be checked by a qualified professional."
               actions={aiReport.higher_cost_upgrades}
               accent="black"
-              costMarker="$$"
+              costMarker="$$$"
             />
 
 
