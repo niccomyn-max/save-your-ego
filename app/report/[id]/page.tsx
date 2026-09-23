@@ -347,12 +347,14 @@ function ActionPlanSection({
   actions,
   accent = "blue",
   costMarker,
+  ranked = false,
 }: {
   title: string;
   description?: string;
   actions?: DetailedAction[];
   accent?: "yellow" | "blue" | "black" | "navy";
-  costMarker?: "$" | "$$" | "$$$";
+  costMarker?: "$" | "$" | "$$";
+  ranked?: boolean;
 }) {
   if (!actions || actions.length === 0) {
     return null;
@@ -381,13 +383,13 @@ function ActionPlanSection({
         {actions.map((item, index) => (
           <article
             key={`${title}-${index}-${item.action}`}
-            className="rounded-3xl border border-[#dbe8f2] bg-[#f7fbff] p-4 print:break-inside-avoid"
+            className={`rounded-3xl border p-4 print:break-inside-avoid ${ranked && index < 3 ? "border-[#ffe76a] bg-[#fffdf0]" : "border-[#dbe8f2] bg-[#f7fbff]"}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                    Action {index + 1}
+                    {ranked ? `Priority ${index + 1} of ${actions.length}` : `Action ${index + 1}`}
                   </p>
                   {costMarker && (
                     <span className="rounded-full bg-[#fff6bf] px-2 py-0.5 text-[11px] font-black text-black">
@@ -995,11 +997,42 @@ const solarSuitability = isApartment
             />
 
 
+            <section className="report-section overflow-hidden rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
+              <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
+                    Ranked for this home
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black text-[#17356f]">
+                    Your 14 actions, in the order we would tackle them
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-700">
+                    We balance likely savings, relevance to your answers, urgency, ease, comfort and sensible payback. The first action is the strongest place to start, but every item below can still be worthwhile.
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
+                    <span className="rounded-full bg-[#fff6bf] px-3 py-2 text-[#6b5200]">Savings</span>
+                    <span className="rounded-full bg-[#e9f6fe] px-3 py-2 text-[#17356f]">Cost</span>
+                    <span className="rounded-full bg-slate-100 px-3 py-2 text-black">Ease</span>
+                    <span className="rounded-full bg-[#eef7ef] px-3 py-2 text-[#285f36]">Comfort</span>
+                  </div>
+                </div>
+
+                <Image
+                  src="/priority-roadmap.svg"
+                  alt="A visual roadmap showing the Save Your EGO actions ranked from the best place to start through all fourteen priorities"
+                  width={900}
+                  height={440}
+                  className="h-auto w-full rounded-2xl"
+                />
+              </div>
+            </section>
+
             <ActionPlanSection
               title="Your priority action plan"
-              description="These are the actions we would look at first, based on the information you entered."
+              description="All 14 recommended actions are ranked from the strongest opportunity to the least important one for this home."
               actions={aiReport.priority_action_plan}
               accent="navy"
+              ranked
             />
 
             <SolarPVSection solar={solarSuitability} />
