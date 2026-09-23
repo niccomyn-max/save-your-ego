@@ -392,9 +392,16 @@ function ActionPlanSection({
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
-                  Action {index + 1}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">
+                    Action {index + 1}
+                  </p>
+                  {costMarker && (
+                    <span className="rounded-full bg-[#fff6bf] px-2 py-0.5 text-[11px] font-black text-black">
+                      {costMarker}
+                    </span>
+                  )}
+                </div>
 
                 <h3 className="mt-1 text-lg font-black leading-6 text-black">
                   {displayValue(item.action, "Recommended action")}
