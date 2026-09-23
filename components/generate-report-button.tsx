@@ -50,7 +50,7 @@ export function GenerateReportButton({
       }
 
       if (!response.ok) {
-        setErrorMessage(result.error || "Failed to generate report. Please try again.");
+        setErrorMessage("Something went wrong on our end. Try again in a moment.");
         return;
       }
 
@@ -65,12 +65,12 @@ export function GenerateReportButton({
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         setErrorMessage(
-          "The report took too long to generate. Please refresh the page and try again.",
+          "This is taking longer than expected. Try again in a moment.",
         );
         return;
       }
 
-      setErrorMessage("Something went wrong while generating the report. Please try again.");
+      setErrorMessage("Something went wrong on our end. Try again in a moment.");
     } finally {
       setLoading(false);
     }
@@ -78,11 +78,10 @@ export function GenerateReportButton({
 
   return (
     <div className="rounded-lg border bg-white p-5">
-      <h2 className="text-xl font-semibold">Personalised energy report</h2>
+      <h2 className="text-xl font-semibold">Your personalised report</h2>
 
       <p className="mt-2 text-sm text-gray-600">
-        Create your Save Your EGO report using the home details, bills,
-        appliances and other information you have provided.
+        We’ll use the answers you already gave us and build your plan.
       </p>
 
       {errorMessage && (
@@ -97,7 +96,7 @@ export function GenerateReportButton({
         onClick={handleGenerateReport}
         className="mt-4 rounded-md bg-black px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? "Creating report..." : "Create my report"}
+        {loading ? "Looking at your answers now…" : "Get my report"}
       </button>
     </div>
   );
