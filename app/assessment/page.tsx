@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ClipboardCheck, FileText, House, PlugZap, ReceiptText, ShieldCheck, SunMedium } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -152,6 +153,7 @@ function SectionShell({
   description,
   children,
   accent = "blue",
+  icon,
 }: {
   id: string;
   number: string;
@@ -159,6 +161,7 @@ function SectionShell({
   description?: string;
   children: React.ReactNode;
   accent?: "yellow" | "blue" | "navy" | "black";
+  icon?: React.ReactNode;
 }) {
   const accentClass =
     accent === "yellow"
@@ -169,27 +172,44 @@ function SectionShell({
           ? "border-t-[#17356f]"
           : "border-t-[#59b9ec]";
 
+  const iconClass =
+    accent === "yellow"
+      ? "bg-[#fff6bf] text-[#6b5200]"
+      : accent === "black"
+        ? "bg-slate-100 text-black"
+        : accent === "navy"
+          ? "bg-[#17356f] text-white"
+          : "bg-[#e9f6fe] text-[#17356f]";
+
   return (
     <section
       id={id}
       className={`scroll-mt-28 rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
-          {number}
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
+            {number}
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-[#17356f]">
+              {title}
+            </h2>
+
+            {description && (
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                {description}
+              </p>
+            )}
+          </div>
         </div>
 
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-[#17356f]">
-            {title}
-          </h2>
-
-          {description && (
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              {description}
-            </p>
-          )}
-        </div>
+        {icon && (
+          <div className={`hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl sm:flex ${iconClass}`}>
+            {icon}
+          </div>
+        )}
       </div>
 
       <div className="mt-6">{children}</div>
@@ -400,10 +420,10 @@ export default function AssessmentPage() {
   const assessmentSections = useMemo(
     () => [
       { id: "home-details", label: "Home" },
-      ...(!isApartment ? [{ id: "solar-suitability", label: "Solar" }] : []),
       { id: "energy-costs", label: "Bills & Fuels" },
       { id: "fabric-details", label: "Insulation" },
       { id: "appliances-usage", label: "Appliances" },
+      ...(!isApartment ? [{ id: "solar-suitability", label: "Solar" }] : []),
       { id: "assessment-preview", label: "Preview" },
       { id: "ai-assessment", label: "Report" },
     ],
@@ -903,19 +923,25 @@ export default function AssessmentPage() {
               <div className="mt-8 grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
-                    <p className="text-xs font-black uppercase opacity-70">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70">
+                      <ClipboardCheck className="h-6 w-6" aria-hidden="true" />
+                    </div>
+                    <p className="mt-4 text-xs font-black uppercase opacity-70">
                       Guided check
                     </p>
                     <p className="mt-2 text-3xl font-black">
                       {isApartment ? "6" : "7"} sections
                     </p>
                     <p className="mt-2 text-sm font-semibold leading-5 text-black/75">
-                      Work through your home, bills, fabric and appliances at your own pace.
+                      Work through your home, bills, insulation and appliances at your own pace.
                     </p>
                   </div>
 
                   <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
-                    <p className="text-xs font-black uppercase opacity-70">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70">
+                      <FileText className="h-6 w-6" aria-hidden="true" />
+                    </div>
+                    <p className="mt-4 text-xs font-black uppercase opacity-70">
                       Personalised report
                     </p>
                     <p className="mt-2 text-xl font-black">
@@ -928,7 +954,10 @@ export default function AssessmentPage() {
                 </div>
 
                 <div className="rounded-[1.5rem] bg-white p-5 text-black">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e9f6fe] text-[#17356f]">
+                    <House className="h-6 w-6" aria-hidden="true" />
+                  </div>
+                  <p className="mt-4 text-xs font-black uppercase tracking-wide text-slate-500">
                     Local context
                   </p>
                   <p className="mt-2 text-xl font-black">
@@ -984,8 +1013,9 @@ export default function AssessmentPage() {
             id="home-details"
             number="1"
             title="Home details"
-            description="Start with the basic property details. If the customer does not know a technical answer, use the unknown option where available."
+            description="Start with the basics about your home. If you do not know an answer, choose Unknown where available."
             accent="navy"
+            icon={<House className="h-8 w-8" aria-hidden="true" />}
           >
             <div className="grid gap-5 md:grid-cols-3">
               <SelectField
@@ -1160,110 +1190,13 @@ export default function AssessmentPage() {
             </label>
           </SectionShell>
 
-          {!isApartment && (
-  <SectionShell
-    id="solar-suitability"
-    number="2"
-    title="Solar suitability"
-            description="Solar should not be recommended by default. These details help the app judge whether solar PV is a strong candidate, a possible option, or not the first priority."
-            accent="blue"
-          >
-            <div className="grid gap-5 md:grid-cols-3">
-              <SelectField
-                label="Roof orientation"
-                value={answers.solar_roof_orientation}
-                options={SOLAR_ROOF_ORIENTATIONS}
-                onChange={(value) =>
-                  updateAnswer("solar_roof_orientation", value)
-                }
-              />
-
-              <SelectField
-                label="Roof shading"
-                value={answers.solar_roof_shading}
-                options={SOLAR_ROOF_SHADING}
-                onChange={(value) => updateAnswer("solar_roof_shading", value)}
-              />
-
-              <SelectField
-                label="Available roof space"
-                value={answers.solar_roof_space}
-                options={SOLAR_ROOF_SPACE}
-                onChange={(value) => updateAnswer("solar_roof_space", value)}
-              />
-
-              <SelectField
-                label="Main daytime electricity use"
-                value={answers.solar_daytime_use}
-                options={SOLAR_DAYTIME_USE}
-                onChange={(value) => updateAnswer("solar_daytime_use", value)}
-              />
-
-              <SelectField
-                label="EV status"
-                value={answers.solar_ev_status}
-                options={SOLAR_EV_STATUS}
-                onChange={(value) => updateAnswer("solar_ev_status", value)}
-              />
-
-              <SelectField
-                label="Interested in solar?"
-                value={answers.solar_interest}
-                options={SOLAR_INTEREST}
-                onChange={(value) => updateAnswer("solar_interest", value)}
-              />
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#17356f]/70">
-                    Solar preview
-                  </p>
-
-                  <h3 className="mt-1 text-2xl font-black text-[#17356f]">
-                    {analysis.solarSuitability.rating}
-                  </h3>
-                </div>
-
-                <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-[#17356f]">
-                  Indicative only
-                </span>
-              </div>
-
-              <p className="mt-4 text-sm leading-7 text-slate-700">
-                {analysis.solarSuitability.reason}
-              </p>
-
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Suggested system size
-                  </p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    {analysis.solarSuitability.suggested_system_size}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Battery view
-                  </p>
-                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
-                    {analysis.solarSuitability.battery_view}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </SectionShell>
-          )}
-
           <SectionShell
             id="energy-costs"
-            number={isApartment ? "2" : "3"}
+            number="2"
             title="Electricity, Gas and Oil costs"
-            description="Save Your EGO means Electricity, Gas and Oil. Add what is known. Unknown values can be left at zero."
+            description="Add the bill and fuel details you know. If you do not know a figure, you can leave it at zero."
             accent="yellow"
+            icon={<ReceiptText className="h-8 w-8" aria-hidden="true" />}
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#fffdf0] p-5">
               <h3 className="text-lg font-black text-black">Electricity</h3>
@@ -1473,10 +1406,11 @@ export default function AssessmentPage() {
 
           <SectionShell
             id="fabric-details"
-            number={isApartment ? "3" : "4"}
+            number="3"
             title="Home insulation & heat-loss details"
-            description="Keep this simple with Poor, Medium, Good or Unknown. Manual U-values can be added where known."
+            description="Tell us what you know about the walls, windows, floors and roof. Unknown is completely fine."
             accent="blue"
+            icon={<ShieldCheck className="h-8 w-8" aria-hidden="true" />}
           >
             <div className="grid gap-5 md:grid-cols-2">
               {Object.entries(FABRIC_TYPES).map(([label, options]) => (
@@ -1583,10 +1517,11 @@ export default function AssessmentPage() {
 
           <SectionShell
             id="appliances-usage"
-            number={isApartment ? "4" : "5"}
+            number="4"
             title="Appliances and usage"
-            description="Select the appliances in the home, or add another appliance if it is not listed."
+            description="Select the main appliances you use at home, then tell us roughly how old they are and how often you use them."
             accent="black"
+            icon={<PlugZap className="h-8 w-8" aria-hidden="true" />}
           >
             <div className="grid gap-5 md:grid-cols-2">
               {Object.entries(APPLIANCE_LIBRARY).map(
@@ -1709,12 +1644,112 @@ export default function AssessmentPage() {
             )}
           </SectionShell>
 
+          {!isApartment && (
+  <SectionShell
+    id="solar-suitability"
+    number="5"
+    title="Solar check"
+            description="If you are curious about solar, a few roof details help us tell you whether it may be worth exploring."
+            accent="yellow"
+            icon={<SunMedium className="h-8 w-8" aria-hidden="true" />}
+          >
+            <div className="grid gap-5 md:grid-cols-3">
+              <SelectField
+                label="Roof orientation"
+                value={answers.solar_roof_orientation}
+                options={SOLAR_ROOF_ORIENTATIONS}
+                onChange={(value) =>
+                  updateAnswer("solar_roof_orientation", value)
+                }
+              />
+
+              <SelectField
+                label="Roof shading"
+                value={answers.solar_roof_shading}
+                options={SOLAR_ROOF_SHADING}
+                onChange={(value) => updateAnswer("solar_roof_shading", value)}
+              />
+
+              <SelectField
+                label="Available roof space"
+                value={answers.solar_roof_space}
+                options={SOLAR_ROOF_SPACE}
+                onChange={(value) => updateAnswer("solar_roof_space", value)}
+              />
+
+              <SelectField
+                label="Main daytime electricity use"
+                value={answers.solar_daytime_use}
+                options={SOLAR_DAYTIME_USE}
+                onChange={(value) => updateAnswer("solar_daytime_use", value)}
+              />
+
+              <SelectField
+                label="EV status"
+                value={answers.solar_ev_status}
+                options={SOLAR_EV_STATUS}
+                onChange={(value) => updateAnswer("solar_ev_status", value)}
+              />
+
+              <SelectField
+                label="Interested in solar?"
+                value={answers.solar_interest}
+                options={SOLAR_INTEREST}
+                onChange={(value) => updateAnswer("solar_interest", value)}
+              />
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#17356f]/70">
+                    Solar preview
+                  </p>
+
+                  <h3 className="mt-1 text-2xl font-black text-[#17356f]">
+                    {analysis.solarSuitability.rating}
+                  </h3>
+                </div>
+
+                <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-[#17356f]">
+                  Indicative only
+                </span>
+              </div>
+
+              <p className="mt-4 text-sm leading-7 text-slate-700">
+                {analysis.solarSuitability.reason}
+              </p>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                    Suggested system size
+                  </p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                    {analysis.solarSuitability.suggested_system_size}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-400">
+                    Battery view
+                  </p>
+                  <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
+                    {analysis.solarSuitability.battery_view}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </SectionShell>
+          )}
+
           <SectionShell
             id="assessment-preview"
             number={isApartment ? "5" : "6"}
             title="Assessment preview"
             description="A quick look at the main things we have picked up before creating your full report."
             accent="yellow"
+            icon={<ClipboardCheck className="h-8 w-8" aria-hidden="true" />}
           >
             <div
   className={`grid gap-4 ${
@@ -1782,6 +1817,7 @@ export default function AssessmentPage() {
     : "Create your personalised Save Your EGO report using the information you entered about your home, bills, insulation, appliances, solar and optional photos."
 }
             accent="blue"
+            icon={<FileText className="h-8 w-8" aria-hidden="true" />}
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
               <h3 className="font-black text-[#17356f]">
