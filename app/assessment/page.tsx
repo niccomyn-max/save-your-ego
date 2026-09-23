@@ -920,7 +920,17 @@ export default function AssessmentPage() {
                 How it works
               </p>
 
-              <div className="mt-8 grid gap-4">
+              <div className="mt-6 overflow-hidden rounded-[1.5rem] bg-white p-3 shadow-lg shadow-black/10">
+                <Image
+                  src="/assessment-journey.svg"
+                  alt="The Save Your EGO assessment journey from home details through to your personalised report"
+                  width={900}
+                  height={520}
+                  className="h-auto w-full"
+                />
+              </div>
+
+              <div className="mt-5 grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70">
