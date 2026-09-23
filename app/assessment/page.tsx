@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { deriveUSClimateFromZip } from "@/lib/assessment/us-climate";
-import { EnergyTipsLibrary } from "@/components/energy-tips-library";
 import {
   AGE_BANDS,
   APPLIANCE_LIBRARY,
@@ -715,7 +714,7 @@ export default function AssessmentPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setAiErrorMessage(result.error || "Failed to create your personalised report.");
+        setAiErrorMessage("Something went wrong on our end. Try again in a moment.");
         return null;
       }
 
@@ -727,7 +726,7 @@ export default function AssessmentPage() {
         report: result.report as AiAssessment,
       };
     } catch {
-      setAiErrorMessage("Failed to create your personalised report.");
+      setAiErrorMessage("Something went wrong on our end. Try again in a moment.");
       return null;
     } finally {
       setGeneratingAi(false);
@@ -769,7 +768,7 @@ export default function AssessmentPage() {
         const generated = await generatePersonalisedReport();
 
         if (!generated?.reportText) {
-          setErrorMessage("We could not create the report. Please try again.");
+          setErrorMessage("Something went wrong on our end. Try again in a moment.");
           return;
         }
 
@@ -782,7 +781,7 @@ export default function AssessmentPage() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        setErrorMessage("You need to be signed in to save an assessment.");
+        setErrorMessage("Please sign in before saving your report.");
         return;
       }
 
@@ -800,7 +799,7 @@ export default function AssessmentPage() {
         .single();
 
       if (error || !savedAssessment) {
-        setErrorMessage(error?.message || "Failed to save assessment.");
+        setErrorMessage("Something went wrong on our end. Try again in a moment.");
         return;
       }
 
@@ -811,7 +810,7 @@ export default function AssessmentPage() {
       });
 
       if (reportError) {
-        setErrorMessage(reportError.message);
+        setErrorMessage("Something went wrong on our end. Try again in a moment.");
         return;
       }
 
@@ -824,7 +823,7 @@ export default function AssessmentPage() {
       router.refresh();
     } catch {
       setErrorMessage(
-        "Something went wrong while saving the assessment. Please refresh the page and try again."
+        "Something went wrong on our end. Try again in a moment."
       );
     } finally {
       setSaving(false);
@@ -1024,10 +1023,8 @@ export default function AssessmentPage() {
         </nav>
 
         <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-950">
-          This tool provides an indicative home energy assessment only. It is
-          not a substitute for a qualified energy assessment, electrician,
-          retrofit designer, heating engineer, structural professional, grant
-          advisor or building compliance expert.
+          This is a guide based on the answers you give us. For electrical,
+          heating, gas, oil or building work, check with a qualified expert first.
         </div>
 
         <div className="mt-6 space-y-6">
@@ -1167,9 +1164,9 @@ export default function AssessmentPage() {
               />
 
               <TextField
-                label="Energy use intensity if known"
+                label="Energy rating or yearly energy use (if you know it)"
                 value={answers.energy_rating}
-                placeholder="e.g. 227 kWh/m²/yr"
+                placeholder="Leave blank if you don’t know"
                 onChange={(value) => updateAnswer("energy_rating", value)}
               />
 
@@ -1189,7 +1186,7 @@ export default function AssessmentPage() {
 >
   {!isApartment && (
     <ToggleField
-      label="Solar PV already installed"
+      label="Solar panels already installed"
       value={answers.has_solar}
       onChange={(value) => updateAnswer("has_solar", value)}
     />
@@ -1244,7 +1241,7 @@ export default function AssessmentPage() {
                 />
 
                 <NumberField
-                  label={`Electricity unit rate (${countryDefaults.currency}/kWh)`}
+                  label={`Electricity price per kilowatt-hour (${countryDefaults.currency})`}
                   value={answers.unit_rate}
                   min={0.05}
                   max={2}
@@ -1253,7 +1250,7 @@ export default function AssessmentPage() {
                 />
 
                 <NumberField
-                  label={`Standing charge per electricity bill (${countryDefaults.currency})`}
+                  label={`Fixed charge on your electricity bill (${countryDefaults.currency})`}
                   value={answers.standing_charge}
                   min={0}
                   step={1}
@@ -1303,7 +1300,7 @@ export default function AssessmentPage() {
                   />
 
                   <NumberField
-                    label={`Gas unit rate if known (${countryDefaults.currency}/kWh)`}
+                    label={`Gas price per kilowatt-hour (${countryDefaults.currency})`}
                     value={answers.gas_unit_rate}
                     min={0}
                     step={0.01}
@@ -1431,7 +1428,7 @@ export default function AssessmentPage() {
           <SectionShell
             id="fabric-details"
             number="3"
-            title="Home insulation & heat-loss details"
+            title="How well your home holds heat"
             description="Tell us what you know about the walls, windows, floors and roof. Unknown is completely fine."
             accent="blue"
             icon={<ShieldCheck className="h-8 w-8" aria-hidden="true" />}
@@ -1712,7 +1709,7 @@ export default function AssessmentPage() {
               />
 
               <SelectField
-                label="EV status"
+                label="Electric car"
                 value={answers.solar_ev_status}
                 options={SOLAR_EV_STATUS}
                 onChange={(value) => updateAnswer("solar_ev_status", value)}
@@ -1739,7 +1736,7 @@ export default function AssessmentPage() {
                 </div>
 
                 <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-[#17356f]">
-                  Indicative only
+                  Guide only
                 </span>
               </div>
 
@@ -1750,7 +1747,7 @@ export default function AssessmentPage() {
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="rounded-2xl bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Suggested system size
+                    Possible solar size
                   </p>
                   <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
                     {analysis.solarSuitability.suggested_system_size}
@@ -1759,7 +1756,7 @@ export default function AssessmentPage() {
 
                 <div className="rounded-2xl bg-white p-4">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-400">
-                    Battery view
+                    Home battery
                   </p>
                   <p className="mt-2 text-sm font-bold leading-6 text-slate-700">
                     {analysis.solarSuitability.battery_view}
@@ -1773,7 +1770,7 @@ export default function AssessmentPage() {
           <SectionShell
             id="assessment-preview"
             number={isApartment ? "5" : "6"}
-            title="Assessment preview"
+            title="What stands out so far"
             description="A quick look at the main things we have picked up before creating your full report."
             accent="yellow"
             icon={<ClipboardCheck className="h-8 w-8" aria-hidden="true" />}
@@ -1786,26 +1783,26 @@ export default function AssessmentPage() {
 >
               {!isApartment && (
   <PreviewCard
-    label="Solar suitability"
+    label="Solar check"
     value={analysis.solarSuitability.rating}
     colour="navy"
   />
 )}
 
               <PreviewCard
-                label="Appliance estimate"
-                value={`${analysis.applianceKwh.toFixed(0)} kWh/yr`}
+                label="Appliance electricity use"
+                value={`${analysis.applianceKwh.toFixed(0)} kilowatt-hours/year`}
                 colour="blue"
               />
 
               <PreviewCard
-                label="Main heat-loss area"
+                label="Where heat may escape"
                 value={analysis.biggestLossArea}
                 colour="white"
               />
 
               <PreviewCard
-                label="Solar suitability"
+                label="Solar check"
                 value={analysis.solarSuitability.rating}
                 colour="navy"
               />
@@ -1838,11 +1835,11 @@ export default function AssessmentPage() {
           <SectionShell
             id="ai-assessment"
             number={isApartment ? "6" : "7"}
-            title="Create your personalised report"
+            title="Get your personalised report"
             description={
   isApartment
-    ? "Create your personalised Save Your EGO report using the information you entered about your home, bills, insulation, appliances and optional photos."
-    : "Create your personalised Save Your EGO report using the information you entered about your home, bills, insulation, appliances, solar and optional photos."
+    ? "We’ll use what you told us about your home, bills, insulation, appliances and photos."
+    : "We’ll use what you told us about your home, bills, insulation, appliances, solar and photos."
 }
             accent="blue"
             icon={<FileText className="h-8 w-8" aria-hidden="true" />}
@@ -1854,9 +1851,8 @@ export default function AssessmentPage() {
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Upload up to 3 useful photos of the home, roof, heating equipment,
-                appliances, rating plates, labels or controls. Photos are used as
-                supporting evidence for this report and are not stored permanently yet.
+                You can add up to 3 photos if they help. Try your roof, heating
+                controls, appliances or energy labels. We use them only to help with this report.
               </p>
 
               <input
@@ -1903,12 +1899,11 @@ export default function AssessmentPage() {
 
             <div className="mt-5 rounded-3xl border border-[#ffd600] bg-[#fff6bf] p-5">
               <h3 className="text-xl font-black text-black">
-                Ready to create your personalised report?
+                Ready to see your plan?
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-700">
-                One click will create your personalised recommendations, save
-                this assessment and open the full report.
+                We’ll look at your answers and build your report. You’ll see your best next steps first.
               </p>
 
               <div className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -1927,8 +1922,8 @@ export default function AssessmentPage() {
                   className="rounded-full bg-[#17356f] px-7 py-4 text-sm font-black text-white shadow-lg shadow-[#17356f]/20 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving || generatingAi
-                    ? "Creating your personalised report..."
-                    : "Create & View My Report"}
+                    ? "Looking at your answers now…"
+                    : "Get My Report"}
                 </button>
               </div>
             </div>
@@ -1936,7 +1931,7 @@ export default function AssessmentPage() {
             {aiReport && (
               <div className="mt-6 space-y-5">
                 <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-5">
-                  <h3 className="font-black text-black">Bottom line</h3>
+                  <h3 className="font-black text-black">The big thing to know</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-800">
                     {aiReport.bottom_line}
                   </p>
@@ -1952,24 +1947,24 @@ export default function AssessmentPage() {
                 )}
 
                 <AiList
-                  title="Top 3 likely energy drains"
+                  title="Where your energy may be going"
                   items={aiReport.top_energy_drains}
                 />
 
                 <AiList
-                  title="Top 3 recommended actions"
+                  title="Best places to start"
                   items={aiReport.top_recommended_actions}
                 />
 
                 <AiList title="Quick wins" items={aiReport.quick_wins} />
 
                 <AiList
-                  title="Bigger upgrades"
+                  title="Bigger changes to consider"
                   items={aiReport.bigger_upgrades}
                 />
 
                 <AiList
-                  title="Extra insights"
+                  title="A few more things we noticed"
                   items={aiReport.extra_insights}
                 />
               </div>
@@ -1977,7 +1972,6 @@ export default function AssessmentPage() {
           </SectionShell>
         </div>
 
-        <EnergyTipsLibrary />
 
         {errorMessage && (
           <p className="mt-6 rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-700">
