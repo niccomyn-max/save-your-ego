@@ -192,14 +192,7 @@ function TextSection({
     <section
       className={`report-section rounded-3xl border border-[#dbe8f2] border-l-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
-        {costMarker && (
-          <span className="rounded-full bg-[#fff6bf] px-3 py-1 text-sm font-black text-black">
-            {costMarker}
-          </span>
-        )}
-      </div>
+      <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
       <div className="mt-4 text-sm leading-7 text-slate-700">{children}</div>
     </section>
   );
