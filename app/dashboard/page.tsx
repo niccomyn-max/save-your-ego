@@ -64,7 +64,7 @@ function getSavingPotential(assessment: Assessment) {
     improvementPotential.includes("high")
   ) {
     return {
-      label: "High saving potential",
+      label: "More ways to save",
       className: "bg-[#ffd600] text-black border-[#ffd600]",
     };
   }
@@ -75,7 +75,7 @@ function getSavingPotential(assessment: Assessment) {
     improvementPotential.includes("medium")
   ) {
     return {
-      label: "Medium saving potential",
+      label: "Some ways to save",
       className: "bg-[#e9f6fe] text-[#17356f] border-[#59b9ec]",
     };
   }
@@ -199,14 +199,14 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
 
         <div className="rounded-2xl bg-slate-100 p-4">
           <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-            Main heat-loss area
+            Where heat may escape
           </p>
           <p className="mt-2 text-xl font-black text-black">{heatLossArea}</p>
         </div>
 
         <div className="rounded-2xl bg-[#17356f] p-4 text-white">
           <p className="text-xs font-black uppercase tracking-wide text-white/60">
-            Fabric profile
+            How well your home holds heat
           </p>
           <p className="mt-2 text-xl font-black">{fabricBand}</p>
         </div>
@@ -224,7 +224,7 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
         </div>
 
         <div>
-          <p className="font-black text-slate-400">Fuel coverage</p>
+          <p className="font-black text-slate-400">Energy used</p>
           <p className="mt-1 font-bold text-[#17356f]">{fuelCoverage}</p>
         </div>
       </div>
@@ -277,16 +277,15 @@ async function DashboardContent() {
               />
 
               <div className="mt-7 inline-flex rounded-full bg-[#17356f] px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-white">
-                Customer dashboard
+                Your Save Your EGO
               </div>
 
               <h1 className="mt-5 max-w-2xl text-4xl font-black tracking-tight text-black sm:text-5xl">
-                Your home energy reports
+                Your home energy plans
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                View saved Save Your EGO assessments, open customer reports and
-                generate a new Electricity, Gas and Oil review.
+                See your saved reports and check your home again whenever you want.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
@@ -294,7 +293,7 @@ async function DashboardContent() {
                   href="/assessment"
                   className="inline-flex items-center justify-center rounded-full bg-[#ffd600] px-6 py-4 text-sm font-black text-black shadow-sm transition hover:bg-[#ffec64]"
                 >
-                  Start new assessment
+                  Check my home
                 </Link>
 
                 {latestAssessment && (
@@ -302,7 +301,7 @@ async function DashboardContent() {
                     href={`/report/${latestAssessment.id}`}
                     className="inline-flex items-center justify-center rounded-full border border-[#dbe8f2] bg-white px-6 py-4 text-sm font-black text-[#17356f] shadow-sm transition hover:bg-[#e9f6fe]"
                   >
-                    Open latest report
+                    See my latest plan
                   </Link>
                 )}
               </div>
@@ -310,13 +309,13 @@ async function DashboardContent() {
 
             <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
-                Dashboard snapshot
+                Your snapshot
               </p>
 
               <div className="mt-8 grid gap-4">
                 <div className="rounded-[1.5rem] bg-white/10 p-5 backdrop-blur">
                   <p className="text-xs font-black uppercase tracking-wide text-white/60">
-                    Saved assessments
+                    Saved reports
                   </p>
                   <p className="mt-2 text-5xl font-black">
                     {assessmentList.length}
@@ -339,7 +338,7 @@ async function DashboardContent() {
 
                 <div className="rounded-[1.5rem] bg-white p-5 text-black">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                    App coverage
+                    We look at
                   </p>
                   <p className="mt-2 text-xl font-black">
                     Electricity. Gas. Oil.
@@ -381,22 +380,20 @@ async function DashboardContent() {
                 </h2>
 
                 <p className="mt-3 text-base leading-7 text-slate-700">
-                  Start your first Save Your EGO assessment and create a clear,
-                  customer-friendly energy report covering Electricity, Gas and
-                  Oil.
+                  Tell us about your home and bills. We’ll show you the best places to start.
                 </p>
 
                 <Link
                   href="/assessment"
                   className="mt-6 inline-flex items-center justify-center rounded-full bg-[#17356f] px-6 py-4 text-sm font-black text-white shadow-sm transition hover:bg-black"
                 >
-                  Start first assessment
+                  Start saving
                 </Link>
               </div>
 
               <div className="p-6 sm:p-8">
                 <h3 className="text-xl font-black text-black">
-                  What the report will include
+                  What you’ll get
                 </h3>
 
                 <div className="mt-5 grid gap-3">
@@ -405,26 +402,25 @@ async function DashboardContent() {
                       Energy snapshot
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
-                      A clear summary of heat loss, electricity use and likely
-                      improvement potential.
+                      A simple view of where energy may be going.
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4">
                     <p className="font-black text-[#17356f]">
-                      AI-assisted recommendations
+                      Your best next steps
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Practical actions, quick wins and bigger upgrade ideas.
+                      Free fixes first, then bigger changes only if they make sense.
                     </p>
                   </div>
 
                   <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4">
                     <p className="font-black text-[#17356f]">
-                      Browser PDF export
+                      Save or print
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-600">
-                      A polished report customers can save, print or share.
+                      Keep your plan, print it or share it.
                     </p>
                   </div>
                 </div>
@@ -439,7 +435,7 @@ async function DashboardContent() {
                   Saved reports
                 </p>
                 <h2 className="mt-1 text-3xl font-black tracking-tight text-[#17356f]">
-                  Assessment history
+                  Your saved reports
                 </h2>
               </div>
 
