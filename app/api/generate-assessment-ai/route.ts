@@ -116,8 +116,8 @@ const reportSchema = {
     priority_action_plan: {
       type: "array",
       items: actionSchema,
-      minItems: 4,
-      maxItems: 5,
+      minItems: 14,
+      maxItems: 14,
     },
 
     low_cost_quick_wins: {
@@ -464,6 +464,10 @@ Solar repetition rules:
 Prioritisation rules:
 - Prioritise recommendations that match the actual inputs, not generic advice.
 - The ordering must be consistent throughout the report.
+- The report contains 14 detailed actions in total: 6 low-cost quick wins, 4 medium-cost improvements and 4 higher-cost upgrades.
+- priority_action_plan must contain those same 14 detailed actions, with no extra actions and none missing, reordered from the strongest opportunity to the least important opportunity for this specific home.
+- Rank by likely real-world value for this household: expected saving, relevance to the entered answers, urgency, confidence, ease, comfort benefit and sensible payback. Do not automatically put cheap actions first and do not automatically put expensive actions last.
+- Avoid duplicate actions across the 14. Each action should solve a distinct issue or opportunity.
 - top_5_priorities must use the same first five actions, in the same order, as priority_action_plan.
 - top_recommended_actions should reflect the leading priority_action_plan items rather than introducing a competing order.
 - If insulation and glazing are already good, do not push fabric upgrades unless clearly justified.
@@ -542,7 +546,7 @@ Exactly 3 short items. These should be larger or more involved improvements.
 3 to 4 short items that add context without repeating the same points.
 
 12. priority_action_plan:
-4 to 5 detailed actions. Each action must include:
+Exactly 14 detailed actions, ordered from best opportunity to least important opportunity for this specific home. This must be the same 14 actions used across low_cost_quick_wins, medium_cost_improvements and higher_cost_upgrades, simply reordered into one overall priority list. Do not add a fifteenth action and do not leave any of the 14 out. Each action must include:
 - action
 - why_it_matters
 - estimated_cost_range
