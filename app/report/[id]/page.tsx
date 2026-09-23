@@ -64,7 +64,7 @@ export default function ReportPage(props: ReportPageProps) {
       fallback={
         <main className="mx-auto max-w-5xl px-6 py-10">
           <p className="text-sm font-semibold text-slate-600">
-            Loading report...
+            Opening your report...
           </p>
         </main>
       }
@@ -411,34 +411,39 @@ function ActionPlanSection({
             </div>
 
             {item.why_it_matters && (
-              <p className="mt-3 text-sm leading-6 text-slate-700">
-                {item.why_it_matters}
-              </p>
+              <div className="mt-3">
+                <p className="text-[11px] font-black uppercase tracking-wide text-[#17356f]/60">
+                  This is why
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">
+                  {item.why_it_matters}
+                </p>
+              </div>
             )}
 
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
               {shouldShowEstimatedCost(item) && (
                 <DetailPill
-                  label="Estimated cost"
+                  label="Likely cost"
                   value={item.estimated_cost_range}
                   colour="yellow"
                 />
               )}
 
               <DetailPill
-                label="Estimated saving"
+                label="Could save each year"
                 value={item.estimated_annual_saving_range}
                 colour="blue"
               />
 
               <DetailPill
-                label="Effort"
+                label="What it takes"
                 value={item.effort_level}
                 colour="black"
               />
 
               <DetailPill
-                label="Payback"
+                label="When it may pay back"
                 value={item.likely_payback}
                 colour="navy"
               />
@@ -458,7 +463,7 @@ function ActionPlanSection({
             {item.question_to_ask && (
               <div className="mt-3 rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-3">
                 <p className="text-[11px] font-black uppercase tracking-wide text-[#17356f]/60">
-                  Ask the contractor
+                  Ask the Expert
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
                   {item.question_to_ask}
@@ -527,7 +532,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
-            Solar review
+            Solar check
           </p>
 
           <div className="grid gap-4 lg:grid-cols-[1fr_230px] lg:items-center">
@@ -545,13 +550,18 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
             />
           </div>
 
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700">
-            {displayValue(solar.reason)}
-          </p>
+          <div className="mt-3 max-w-3xl">
+            <p className="text-[11px] font-black uppercase tracking-wide text-[#17356f]/60">
+              This is why
+            </p>
+            <p className="mt-1 text-sm leading-7 text-slate-700">
+              {displayValue(solar.reason)}
+            </p>
+          </div>
         </div>
 
         <div className="rounded-2xl bg-[#ffd600] px-5 py-4 text-black">
-          <p className="text-xs font-black uppercase opacity-70">Suitability</p>
+          <p className="text-xs font-black uppercase opacity-70">Our view</p>
           <p className="mt-1 text-2xl font-black">
             {customerRating}
           </p>
@@ -561,7 +571,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-5">
           <p className="text-xs font-black uppercase tracking-wide text-[#6b5200]">
-            Possible system size
+            Possible solar size
           </p>
           <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
             {needsMoreInformation
@@ -585,7 +595,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
           {installerQuestions.length > 0 && (
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
               <h3 className="font-black text-[#17356f]">
-                Questions to ask a solar installer
+                Ask the Expert about solar
               </h3>
 
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
@@ -598,7 +608,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
 
           {cautions.length > 0 && (
             <div className="rounded-2xl border border-[#dbe8f2] bg-white p-5">
-              <h3 className="font-black text-[#17356f]">Solar cautions</h3>
+              <h3 className="font-black text-[#17356f]">Before you spend money on solar</h3>
 
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
                 {cautions.slice(0, 5).map((item, index) => (
@@ -766,9 +776,7 @@ const solarSuitability = isApartment
               </h1>
 
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                A practical Save Your EGO assessment covering household energy
-                use, likely waste areas, appliance insights, improvement costs,
-                savings potential and priority actions.
+                See where your home may be using extra energy. Then see what you can do first.
               </p>
 
               <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
@@ -806,7 +814,7 @@ const solarSuitability = isApartment
               <div className="mt-5 grid gap-4">
                 <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
                   <p className="text-xs font-bold uppercase text-white/60">
-                    Main heat-loss area
+                    Where heat may escape
                   </p>
                   <p className="mt-2 text-2xl font-black">
                     {displayValue(scores.biggestLossArea)}
@@ -835,7 +843,7 @@ const solarSuitability = isApartment
 
                 <div className="rounded-3xl bg-white p-5 text-black">
                   <p className="text-xs font-bold uppercase text-slate-500">
-                    Fuel coverage
+                    Energy used in this home
                   </p>
                   <p className="mt-2 text-xl font-black">
                     Electricity{usesGas ? ", Gas" : ""}
@@ -868,25 +876,25 @@ const solarSuitability = isApartment
 
           <div className="mt-5 grid gap-4 md:grid-cols-4">
             <MetricCard
-              label="Electricity estimate"
+              label="Yearly electricity use"
               value={`${Math.round(Number(scores.estimatedBillKwh ?? 0))} kWh`}
               colour="yellow"
             />
 
             <MetricCard
-              label="Appliance use"
+              label="Appliance electricity use"
               value={`${Math.round(Number(scores.applianceKwh ?? 0))} kWh`}
               colour="blue"
             />
 
             <MetricCard
-              label="Heat-loss area"
+              label="Where heat may escape"
               value={displayValue(scores.biggestLossArea)}
               colour="navy"
             />
 
             <MetricCard
-              label="Insulation profile"
+              label="How well your home holds heat"
               value={displayValue(scores.fabricBand)}
               colour="black"
             />
@@ -913,7 +921,7 @@ const solarSuitability = isApartment
           <div className="grid gap-4 lg:grid-cols-[1fr_250px] lg:items-center">
             <div>
               <h2 className="text-2xl font-black text-[#17356f]">
-                Electricity, Gas and Oil inputs
+                What you told us about your bills
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 The figures you entered give the report its starting point.
@@ -934,9 +942,9 @@ const solarSuitability = isApartment
                 Average bill:{" "}
                 {displayValue(answers.avg_electricity_bill, "0")}
               </p>
-              <p>Unit rate: {displayValue(answers.unit_rate)}</p>
+              <p>Price per kilowatt-hour: {displayValue(answers.unit_rate)}</p>
               <p>
-                Annual spend:{" "}
+                Yearly spend:{" "}
                 {answers.annual_bill_override
                   ? displayValue(answers.annual_bill_override)
                   : "Estimated from bill"}
@@ -1046,23 +1054,25 @@ const solarSuitability = isApartment
 
             <ActionPlanSection
               title="Low-cost quick wins"
-              description="Simple actions and checks you can start with before spending more."
+              description="Start here. Free fixes first, then the low-cost wins. Small changes add up."
               actions={aiReport.low_cost_quick_wins}
               accent="yellow"
               costMarker="$"
             />
 
+            <EnergyTipsLibrary />
+
             <ActionPlanSection
               title="Medium-cost improvements"
-              description="Useful next steps that may need some spending, products or professional help."
+              description="Spend a little more only where it makes sense for your home."
               actions={aiReport.medium_cost_improvements}
               accent="blue"
-              costMarker="$$"
+              costMarker="$"
             />
 
             <ActionPlanSection
               title="Higher-cost upgrades"
-              description="Bigger improvements that need more planning and should usually be checked by a qualified professional."
+              description="Big spending later, only if it still makes sense. Ask the Expert before you commit."
               actions={aiReport.higher_cost_upgrades}
               accent="black"
               costMarker="$$$"
@@ -1079,7 +1089,7 @@ const solarSuitability = isApartment
                     Your 14 actions, in the order we would tackle them
                   </h2>
                   <p className="mt-3 text-sm leading-7 text-slate-700">
-                    We balance likely savings, relevance to your answers, urgency, ease, comfort and sensible payback. The first action is the strongest place to start, but every item below can still be worthwhile.
+                    The first win matters. It builds momentum. We rank all 14 actions by what may help your home most.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
                     <span className="rounded-full bg-[#fff6bf] px-3 py-2 text-[#6b5200]">Savings</span>
@@ -1101,7 +1111,7 @@ const solarSuitability = isApartment
 
             <ActionPlanSection
               title="Your priority action plan"
-              description="All 14 recommended actions are ranked from the strongest opportunity to the least important one for this home."
+              description="Start at number 1. Work down the list when it suits your home and your budget."
               actions={aiReport.priority_action_plan}
               accent="navy"
               ranked
@@ -1225,7 +1235,7 @@ const solarSuitability = isApartment
         ) : (
           <section className="mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
             <h2 className="text-2xl font-black text-[#17356f]">
-              Create personalised report
+              Get your personalised report
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
@@ -1239,17 +1249,11 @@ const solarSuitability = isApartment
           </section>
         )}
 
-        <EnergyTipsLibrary />
-
         <section className="report-disclaimer mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 text-sm leading-6 text-slate-600 shadow-sm print:break-inside-avoid">
           <h2 className="font-black text-[#17356f]">Important note</h2>
           <p className="mt-2">
-            This Save Your EGO report provides indicative home energy guidance
-            only. It is not a substitute for a qualified energy assessment,
-            electrician, retrofit designer, heating engineer, gas technician,
-            oil heating specialist, structural professional, grant advisor or
-            building compliance expert. Estimated costs, estimated savings and
-            payback figures should be treated as broad guidance, not guarantees.
+            This report is a guide based on the answers you gave us. It does not replace a qualified expert.
+            Costs, savings and the time to earn money back are estimates, not promises.
           </p>
         </section>
 
