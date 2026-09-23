@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+<title id="title">Save Your EGO home assessment journey</title>
+<desc id="desc">A friendly house surrounded by icons for bills, insulation, appliances, solar and a final report.</desc>
+<rect width="900" height="520" rx="48" fill="#f7fbff"/>
+<circle cx="735" cy="92" r="48" fill="#ffd600"/>
+<g fill="none" stroke="#17356f" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+<path d="M260 244 446 92l186 152v194H260z" fill="#fff"/>
+<path d="M222 250 446 67l224 183"/>
+<path d="M406 438V322h80v116"/>
+<path d="M305 280h72v72h-72zM515 280h72v72h-72z" fill="#e9f6fe"/>
+</g>
+<rect x="75" y="76" width="150" height="96" rx="26" fill="#fff6bf"/>
+<path d="M112 108h76v44h-76z" fill="none" stroke="#17356f" stroke-width="9" rx="8"/>
+<path d="M126 124h48M126 140h32" stroke="#17356f" stroke-width="7" stroke-linecap="round"/>
+<rect x="674" y="204" width="150" height="96" rx="26" fill="#e9f6fe"/>
+<circle cx="749" cy="252" r="26" fill="none" stroke="#17356f" stroke-width="9"/>
+<path d="M749 226v52M723 252h52" stroke="#17356f" stroke-width="8" stroke-linecap="round"/>
+<rect x="68" y="336" width="168" height="104" rx="26" fill="#eef7ef"/>
+<path d="M104 402c34-52 70-61 98-59-4 44-24 72-76 77" fill="#7ecb5b"/>
+<path d="M113 414c22-30 46-48 76-61" fill="none" stroke="#17356f" stroke-width="7" stroke-linecap="round"/>
+<rect x="665" y="350" width="165" height="110" rx="26" fill="#fff"/>
+<path d="M706 382h84v54h-84z" fill="none" stroke="#17356f" stroke-width="9" rx="8"/>
+<path d="M724 400h49M724 417h35" stroke="#17356f" stroke-width="7" stroke-linecap="round"/>
+<path d="M214 127h48M630 248h44M236 392h44M630 405h35" stroke="#59b9ec" stroke-width="8" stroke-linecap="round" stroke-dasharray="3 18"/>
+<text x="450" y="486" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#17356f">Home • Bills • Insulation • Appliances • Solar • Report</text>
+</svg>
