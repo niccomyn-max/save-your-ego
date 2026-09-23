@@ -530,9 +530,20 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
             Solar review
           </p>
 
-          <h2 className="mt-1 text-2xl font-black text-[#17356f]">
-            Is solar worth looking at?
-          </h2>
+          <div className="grid gap-4 lg:grid-cols-[1fr_230px] lg:items-center">
+            <div>
+              <h2 className="mt-1 text-2xl font-black text-[#17356f]">
+                Is solar worth looking at?
+              </h2>
+            </div>
+            <Image
+              src="/visual-solar.svg"
+              alt="Illustration of rooftop solar panels and a home battery"
+              width={640}
+              height={420}
+              className="mx-auto h-auto w-full max-w-[220px]"
+            />
+          </div>
 
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700">
             {displayValue(solar.reason)}
@@ -782,7 +793,17 @@ const solarSuitability = isApartment
                 Energy snapshot
               </p>
 
-              <div className="mt-8 grid gap-4">
+              <div className="mt-5 overflow-hidden rounded-3xl bg-white/95 p-3">
+                <Image
+                  src="/visual-home.svg"
+                  alt="Illustration of a more energy-efficient home"
+                  width={640}
+                  height={420}
+                  className="h-auto w-full"
+                />
+              </div>
+
+              <div className="mt-5 grid gap-4">
                 <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
                   <p className="text-xs font-bold uppercase text-white/60">
                     Main heat-loss area
@@ -827,9 +848,23 @@ const solarSuitability = isApartment
         </section>
 
         <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-[#17356f]">
-            Energy snapshot
-          </h2>
+          <div className="grid gap-5 lg:grid-cols-[1fr_280px] lg:items-center">
+            <div>
+              <h2 className="text-2xl font-black text-[#17356f]">
+                Energy snapshot
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                A quick picture of where your home appears to be using energy and where the strongest opportunities may be.
+              </p>
+            </div>
+            <Image
+              src="/visual-savings.svg"
+              alt="Illustration showing energy savings and lower household bills"
+              width={640}
+              height={420}
+              className="mx-auto h-auto w-full max-w-[260px]"
+            />
+          </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-4">
             <MetricCard
@@ -875,9 +910,23 @@ const solarSuitability = isApartment
         </section>
 
         <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-[#17356f]">
-            Electricity, Gas and Oil inputs
-          </h2>
+          <div className="grid gap-4 lg:grid-cols-[1fr_250px] lg:items-center">
+            <div>
+              <h2 className="text-2xl font-black text-[#17356f]">
+                Electricity, Gas and Oil inputs
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                The figures you entered give the report its starting point.
+              </p>
+            </div>
+            <Image
+              src="/visual-bills.svg"
+              alt="Illustration of household energy bills for electricity, gas and oil"
+              width={640}
+              height={420}
+              className="mx-auto h-auto w-full max-w-[230px]"
+            />
+          </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <InputCard title="Electricity" colour="yellow">
@@ -971,6 +1020,29 @@ const solarSuitability = isApartment
               items={aiReport.top_recommended_actions}
               accent="blue"
             />
+
+            <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
+              <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
+                    Your improvement choices
+                  </p>
+                  <h2 className="mt-1 text-2xl font-black text-[#17356f]">
+                    Start small, then build up
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-700">
+                    We have split the ideas into low, medium and higher-cost options so you can see what is realistic now and what may be worth planning for later.
+                  </p>
+                </div>
+                <Image
+                  src="/visual-action-levels.svg"
+                  alt="Illustration showing low, medium and higher-cost home energy improvements"
+                  width={760}
+                  height={430}
+                  className="h-auto w-full rounded-2xl"
+                />
+              </div>
+            </section>
 
             <ActionPlanSection
               title="Low-cost quick wins"
@@ -1070,6 +1142,29 @@ const solarSuitability = isApartment
                     </ul>
                   </section>
                 </div>
+
+                <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
+                  <div className="grid gap-5 lg:grid-cols-[240px_1fr] lg:items-center">
+                    <Image
+                      src="/visual-appliances.svg"
+                      alt="Illustration of common household appliances and energy use"
+                      width={640}
+                      height={420}
+                      className="mx-auto h-auto w-full max-w-[240px]"
+                    />
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
+                        Everyday energy
+                      </p>
+                      <h2 className="mt-1 text-2xl font-black text-[#17356f]">
+                        Appliances and daily habits
+                      </h2>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">
+                        Small appliances are not always the biggest part of the bill, but the way larger equipment is used can make a noticeable difference over a year.
+                      </p>
+                    </div>
+                  </div>
+                </section>
 
                 <div className="grid gap-5 lg:grid-cols-2">
                   <ReportList

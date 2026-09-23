@@ -154,6 +154,7 @@ function SectionShell({
   children,
   accent = "blue",
   icon,
+  visual,
 }: {
   id: string;
   number: string;
@@ -162,6 +163,7 @@ function SectionShell({
   children: React.ReactNode;
   accent?: "yellow" | "blue" | "navy" | "black";
   icon?: React.ReactNode;
+  visual?: string;
 }) {
   const accentClass =
     accent === "yellow"
@@ -205,11 +207,21 @@ function SectionShell({
           </div>
         </div>
 
-        {icon && (
+        {visual ? (
+          <div className={`flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-28 sm:w-40 ${iconClass}`}>
+            <Image
+              src={visual}
+              alt=""
+              width={320}
+              height={220}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : icon ? (
           <div className={`hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl sm:flex ${iconClass}`}>
             {icon}
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="mt-6">{children}</div>
@@ -1026,6 +1038,7 @@ export default function AssessmentPage() {
             description="Start with the basics about your home. If you do not know an answer, choose Unknown where available."
             accent="navy"
             icon={<House className="h-8 w-8" aria-hidden="true" />}
+            visual="/visual-home.svg"
           >
             <div className="grid gap-5 md:grid-cols-3">
               <SelectField
@@ -1207,6 +1220,7 @@ export default function AssessmentPage() {
             description="Add the bill and fuel details you know. If you do not know a figure, you can leave it at zero."
             accent="yellow"
             icon={<ReceiptText className="h-8 w-8" aria-hidden="true" />}
+            visual="/visual-bills.svg"
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#fffdf0] p-5">
               <h3 className="text-lg font-black text-black">Electricity</h3>
@@ -1421,6 +1435,7 @@ export default function AssessmentPage() {
             description="Tell us what you know about the walls, windows, floors and roof. Unknown is completely fine."
             accent="blue"
             icon={<ShieldCheck className="h-8 w-8" aria-hidden="true" />}
+            visual="/visual-insulation.svg"
           >
             <div className="grid gap-5 md:grid-cols-2">
               {Object.entries(FABRIC_TYPES).map(([label, options]) => (
@@ -1532,6 +1547,7 @@ export default function AssessmentPage() {
             description="Select the main appliances you use at home, then tell us roughly how old they are and how often you use them."
             accent="black"
             icon={<PlugZap className="h-8 w-8" aria-hidden="true" />}
+            visual="/visual-appliances.svg"
           >
             <div className="grid gap-5 md:grid-cols-2">
               {Object.entries(APPLIANCE_LIBRARY).map(
@@ -1662,6 +1678,7 @@ export default function AssessmentPage() {
             description="If you are curious about solar, a few roof details help us tell you whether it may be worth exploring."
             accent="yellow"
             icon={<SunMedium className="h-8 w-8" aria-hidden="true" />}
+            visual="/visual-solar.svg"
           >
             <div className="grid gap-5 md:grid-cols-3">
               <SelectField
@@ -1760,6 +1777,7 @@ export default function AssessmentPage() {
             description="A quick look at the main things we have picked up before creating your full report."
             accent="yellow"
             icon={<ClipboardCheck className="h-8 w-8" aria-hidden="true" />}
+            visual="/visual-priority.svg"
           >
             <div
   className={`grid gap-4 ${
@@ -1828,6 +1846,7 @@ export default function AssessmentPage() {
 }
             accent="blue"
             icon={<FileText className="h-8 w-8" aria-hidden="true" />}
+            visual="/visual-report.svg"
           >
             <div className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-5">
               <h3 className="font-black text-[#17356f]">

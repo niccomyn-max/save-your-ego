@@ -431,6 +431,7 @@ Important:
 - If the country is UK, use pounds.
 - If currency is unclear, write the ranges in a currency-neutral way.
 - Use ordinary homeowner language.
+- Do not use the building-industry word "fabric" in customer-facing text. Say insulation, windows, doors, roof, floor, drafts, heat loss, or how well the home holds heat instead.
 - Write for someone with no energy-industry knowledge. Prefer short, natural words over technical terms.
 - If a technical term is unavoidable, explain it immediately in plain English.
 - Never use internal developer notes, implementation language or wording that sounds like instructions between the app builders.
@@ -470,7 +471,7 @@ Prioritisation rules:
 - Avoid duplicate actions across the 14. Each action should solve a distinct issue or opportunity.
 - top_5_priorities must use the same first five actions, in the same order, as priority_action_plan.
 - top_recommended_actions should reflect the leading priority_action_plan items rather than introducing a competing order.
-- If insulation and glazing are already good, do not push fabric upgrades unless clearly justified.
+- If insulation and glazing are already good, do not push insulation or heat-loss upgrades unless clearly justified.
 - If a heat pump is already present, do not treat heating replacement as a priority.
 - Use appliance estimates and bill anchor to judge what is most likely driving use.
 - If home or equipment photos reveal useful details, use them only as supporting evidence.
