@@ -536,7 +536,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
           </p>
 
           <h2 className="mt-1 text-2xl font-black text-[#17356f]">
-            Solar PV suitability
+            Is solar worth looking at?
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-700">
@@ -555,7 +555,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-[#ffe76a] bg-[#fff6bf] p-5">
           <p className="text-xs font-black uppercase tracking-wide text-[#6b5200]">
-            Suggested system size
+            Possible system size
           </p>
           <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
             {needsMoreInformation
@@ -566,7 +566,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
 
         <div className="rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-5">
           <p className="text-xs font-black uppercase tracking-wide text-[#17356f]/70">
-            Battery view
+            Battery
           </p>
           <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
             {displayValue(solar.battery_view)}
@@ -941,14 +941,14 @@ const solarSuitability = isApartment
             )}
 
             {aiReport.executive_summary && (
-              <TextSection title="Executive summary" accent="navy">
+              <TextSection title="Your home at a glance" accent="navy">
                 <p>{aiReport.executive_summary}</p>
               </TextSection>
             )}
 
             {aiReport.estimated_annual_energy_cost_profile && (
               <TextSection
-                title="Estimated annual energy cost profile"
+                title="What your energy costs look like"
                 accent="yellow"
               >
                 <p>{aiReport.estimated_annual_energy_cost_profile}</p>
@@ -960,19 +960,19 @@ const solarSuitability = isApartment
             <TopPrioritiesSection items={aiReport.top_5_priorities} />
 
             {aiReport.photo_summary && (
-              <TextSection title="Photo notes" accent="blue">
+              <TextSection title="What we noticed in your photos" accent="blue">
                 <p>{aiReport.photo_summary}</p>
               </TextSection>
             )}
 
             <ReportList
-              title="Top likely energy drains"
+              title="Where your energy may be going"
               items={aiReport.top_energy_drains}
               accent="yellow"
             />
 
             <ReportList
-              title="Top recommended actions"
+              title="Best places to start"
               items={aiReport.top_recommended_actions}
               accent="blue"
             />
@@ -1047,13 +1047,13 @@ const solarSuitability = isApartment
 
                 <div className="grid gap-5 lg:grid-cols-2">
                   <ReportList
-                    title="Appliance findings"
+                    title="What we noticed about your appliances"
                     items={aiReport.appliance_findings}
                     accent="blue"
                   />
 
                   <ReportList
-                    title="Behaviour changes"
+                    title="Everyday changes"
                     items={aiReport.behaviour_changes}
                     accent="yellow"
                   />
@@ -1066,13 +1066,13 @@ const solarSuitability = isApartment
                 />
 
                 <ReportList
-                  title="Important assumptions"
+                  title="A few things to keep in mind"
                   items={aiReport.important_assumptions}
                   accent="black"
                 />
 
                 <ReportList
-                  title="General energy-saving tips"
+                  title="More easy ways to save energy"
                   items={aiReport.general_energy_saving_tips}
                   accent="yellow"
                 />
@@ -1094,7 +1094,7 @@ const solarSuitability = isApartment
                 />
 
                 <ReportList
-                  title="General energy-saving tips"
+                  title="More easy ways to save energy"
                   items={aiReport.general_energy_saving_tips}
                   accent="yellow"
                 />
