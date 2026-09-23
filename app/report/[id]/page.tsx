@@ -25,6 +25,7 @@ type DetailedAction = {
   likely_payback?: string;
   priority?: string;
   suggested_next_step?: string;
+  question_to_ask?: string;
 };
 
 type AiReport = {
@@ -191,7 +192,14 @@ function TextSection({
     <section
       className={`report-section rounded-3xl border border-[#dbe8f2] border-l-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
     >
-      <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
+        {costMarker && (
+          <span className="rounded-full bg-[#fff6bf] px-3 py-1 text-sm font-black text-black">
+            {costMarker}
+          </span>
+        )}
+      </div>
       <div className="mt-4 text-sm leading-7 text-slate-700">{children}</div>
     </section>
   );
@@ -345,11 +353,13 @@ function ActionPlanSection({
   description,
   actions,
   accent = "blue",
+  costMarker,
 }: {
   title: string;
   description?: string;
   actions?: DetailedAction[];
   accent?: "yellow" | "blue" | "black" | "navy";
+  costMarker?: "$" | "$" | "$$";
 }) {
   if (!actions || actions.length === 0) {
     return null;
@@ -435,10 +445,21 @@ function ActionPlanSection({
             {item.suggested_next_step && (
               <div className="mt-3 rounded-2xl border border-[#dbe8f2] bg-white p-3">
                 <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">
-                  Suggested next step
+                  What to do next
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
                   {item.suggested_next_step}
+                </p>
+              </div>
+            )}
+
+            {item.question_to_ask && (
+              <div className="mt-3 rounded-2xl border border-[#bde8ff] bg-[#e9f6fe] p-3">
+                <p className="text-[11px] font-black uppercase tracking-wide text-[#17356f]/60">
+                  Ask the contractor
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-700">
+                  {item.question_to_ask}
                 </p>
               </div>
             )}
@@ -772,7 +793,7 @@ const solarSuitability = isApartment
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-3xl bg-[#ffd600] p-5 text-black">
                     <p className="text-xs font-black uppercase opacity-70">
-                      Fabric
+                      Insulation
                     </p>
                     <p className="mt-2 text-2xl font-black">
                       {displayValue(scores.fabricBand)}
@@ -828,7 +849,7 @@ const solarSuitability = isApartment
             />
 
             <MetricCard
-              label="Fabric profile"
+              label="Insulation profile"
               value={displayValue(scores.fabricBand)}
               colour="black"
             />
@@ -931,8 +952,6 @@ const solarSuitability = isApartment
 
             <TopPrioritiesSection items={aiReport.top_5_priorities} />
 
-            <SolarPVSection solar={solarSuitability} />
-
             {aiReport.photo_summary && (
               <TextSection title="Photo notes" accent="blue">
                 <p>{aiReport.photo_summary}</p>
@@ -953,53 +972,70 @@ const solarSuitability = isApartment
 
             <ActionPlanSection
               title="Low-cost quick wins"
-              description="Lower-cost actions that are usually easier to test before committing to larger upgrades."
+              description="Simple actions and checks you can start with before spending more."
               actions={aiReport.low_cost_quick_wins}
               accent="yellow"
+              costMarker="$"
             />
 
             <ActionPlanSection
               title="Medium-cost improvements"
-              description="Moderate improvements that may need products, trades or more planning, but can still be practical."
+              description="Useful next steps that may need some spending, products or professional help."
               actions={aiReport.medium_cost_improvements}
               accent="blue"
+              costMarker="$"
             />
 
             <ActionPlanSection
               title="Higher-cost upgrades"
-              description="Larger upgrades that may improve comfort and efficiency but should usually be checked with a qualified professional."
+              description="Bigger improvements that need more planning and should usually be checked by a qualified professional."
               actions={aiReport.higher_cost_upgrades}
               accent="black"
+              costMarker="$$"
             />
 
 
             <ActionPlanSection
               title="Your priority action plan"
-              description="Now that you’ve seen the main opportunities, this brings the most useful next steps together in the order we would look at them."
+              description="These are the actions we would look at first, based on the information you entered."
               actions={aiReport.priority_action_plan}
               accent="navy"
             />
 
+            <SolarPVSection solar={solarSuitability} />
+
             {hasDetailedReport ? (
               <>
                 <div className="grid gap-5 lg:grid-cols-3">
-                  <ReportList
-                    title="Electricity-specific advice"
-                    items={aiReport.electricity_specific_advice}
-                    accent="yellow"
-                  />
+                  <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-[#ffd600] bg-white p-6 shadow-sm print:break-inside-avoid">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ffd600] text-lg font-black text-black">E</div>
+                      <h2 className="text-2xl font-black text-[#17356f]">Electricity advice</h2>
+                    </div>
+                    <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
+                      {(aiReport.electricity_specific_advice ?? []).map((item, index) => <li key={`electricity-${index}`}>{item}</li>)}
+                    </ul>
+                  </section>
 
-                  <ReportList
-                    title="Gas-specific advice"
-                    items={aiReport.gas_specific_advice}
-                    accent="blue"
-                  />
+                  <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-[#59b9ec] bg-white p-6 shadow-sm print:break-inside-avoid">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#59b9ec] text-lg font-black text-[#17356f]">G</div>
+                      <h2 className="text-2xl font-black text-[#17356f]">Gas advice</h2>
+                    </div>
+                    <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
+                      {(aiReport.gas_specific_advice ?? []).map((item, index) => <li key={`gas-${index}`}>{item}</li>)}
+                    </ul>
+                  </section>
 
-                  <ReportList
-                    title="Oil-specific advice"
-                    items={aiReport.oil_specific_advice}
-                    accent="black"
-                  />
+                  <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-black bg-white p-6 shadow-sm print:break-inside-avoid">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-lg font-black text-white">O</div>
+                      <h2 className="text-2xl font-black text-[#17356f]">Oil advice</h2>
+                    </div>
+                    <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
+                      {(aiReport.oil_specific_advice ?? []).map((item, index) => <li key={`oil-${index}`}>{item}</li>)}
+                    </ul>
+                  </section>
                 </div>
 
                 <div className="grid gap-5 lg:grid-cols-2">
@@ -1016,19 +1052,11 @@ const solarSuitability = isApartment
                   />
                 </div>
 
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <ReportList
-                    title="Questions to ask a contractor"
-                    items={aiReport.contractor_questions}
-                    accent="navy"
-                  />
-
-                  <ReportList
-                    title="What to check next"
-                    items={aiReport.what_to_check_next}
-                    accent="blue"
-                  />
-                </div>
+                <ReportList
+                  title="What to check next"
+                  items={aiReport.what_to_check_next}
+                  accent="blue"
+                />
 
                 <ReportList
                   title="Important assumptions"
