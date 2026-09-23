@@ -78,12 +78,11 @@ export function GenerateReportButton({
 
   return (
     <div className="rounded-lg border bg-white p-5">
-      <h2 className="text-xl font-semibold">AI energy report</h2>
+      <h2 className="text-xl font-semibold">Personalised energy report</h2>
 
       <p className="mt-2 text-sm text-gray-600">
-        Generate a personalised Save Your EGO report using the saved home
-        details, bills, heat-loss inputs, appliance estimates and rule-based
-        analysis.
+        Create your Save Your EGO report using the home details, bills,
+        appliances and other information you have provided.
       </p>
 
       {errorMessage && (
@@ -98,7 +97,7 @@ export function GenerateReportButton({
         onClick={handleGenerateReport}
         className="mt-4 rounded-md bg-black px-5 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? "Generating report..." : "Generate AI report"}
+        {loading ? "Creating report..." : "Create my report"}
       </button>
     </div>
   );
