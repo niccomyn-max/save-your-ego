@@ -372,7 +372,7 @@ export async function POST(request: Request) {
 
     let deterministicCostProfile =
       spendParts.length > 0
-        ? `Based on the figures entered, the estimated annual energy spend is about ${formatMoney(totalKnownSpend)} across ${spendParts.join(", ")}. These figures are indicative and depend on the bill periods, rates and fuel quantities entered.`
+        ? `Based on the figures entered, the estimated annual energy spend is about ${formatMoney(totalKnownSpend)} across ${spendParts.join(", ")}. These figures are a guide and depend on the bill periods, prices and fuel amounts entered.`
         : "There is not enough bill or fuel-spend information to estimate an annual energy cost yet.";
 
     if (
@@ -380,21 +380,21 @@ export async function POST(request: Request) {
       applianceKwh > 0 &&
       applianceKwh < estimatedBillKwh * 0.45
     ) {
-      deterministicCostProfile += ` The electricity bill implies roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year, while the selected appliances account for roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kWh/year, so there are likely additional household loads or assumptions worth checking.`;
+      deterministicCostProfile += ` The electricity bill implies roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kilowatt-hours/year, while the selected appliances account for roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kilowatt-hours/year, so there are likely additional household loads or assumptions worth checking.`;
     }
 
     let deterministicUsageWarning =
-      "No major usage warning is triggered by the entered figures, although the bill and appliance estimates are still indicative.";
+      "No major usage warning is triggered by the entered figures, although the bill and appliance estimates are still a guide.";
 
     if (estimatedBillKwh > 20000) {
       deterministicUsageWarning =
-        `The electricity estimate is very high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year. Check bill frequency, tariff inputs and major loads such as electric heating, hot water, EV charging, hot tubs, pools or other equipment before treating this as normal household use.`;
+        `The electricity estimate is very high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kilowatt-hours/year. Check bill frequency, energy plan details and major loads such as electric heating, hot water, EV charging, hot tubs, pools or other equipment before treating this as normal household use.`;
     } else if (estimatedBillKwh > 12000) {
       deterministicUsageWarning =
-        `The electricity estimate is unusually high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kWh/year. It is worth checking the bill inputs and looking for major or unlisted electrical loads.`;
+        `The electricity estimate is unusually high at roughly ${Math.round(estimatedBillKwh).toLocaleString("en-US")} kilowatt-hours/year. It is worth checking the bill inputs and looking for major or unlisted electrical loads.`;
     } else if (applianceKwh > 8000) {
       deterministicUsageWarning =
-        `The selected appliances add up to a high estimated load of roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kWh/year. Review the largest appliances and their usage first.`;
+        `The selected appliances add up to a high estimated load of roughly ${Math.round(applianceKwh).toLocaleString("en-US")} kilowatt-hours/year. Review the largest appliances and their usage first.`;
     } else if (
       estimatedBillKwh > 0 &&
       applianceKwh > 0 &&
@@ -423,7 +423,7 @@ Main objective:
 Create a useful, customer-facing home energy report that feels valuable enough to pay for. The report must explain likely issues, estimated costs, estimated savings, effort levels, payback guidance and practical next steps.
 
 Important:
-- The figures must be indicative ranges, not guarantees.
+- The figures must be a guide ranges, not guarantees.
 - Use the user's country, currency and energy context where available.
 - If the country is US, use dollars and US homeowner terminology. Treat floor area as square feet when describing it to the customer, heating-oil quantities as gallons, and temperatures as Fahrenheit where temperature values are mentioned.
 - The stored assessment may contain metric base values for internal calculation. Do not expose litres or square metres in US customer-facing prose when an equivalent US unit is appropriate.
@@ -445,7 +445,7 @@ Important:
 - Do not use the building-industry word "fabric" in customer-facing text. Say insulation, windows, doors, roof, floor, drafts, heat loss, or how well the home holds heat instead.
 - Avoid corporate or sales words such as optimise, optimize, retrofit, leverage, holistic, solution, purchase or utilise.
 - Do not use "contractor" in customer-facing text. Say "expert", "installer", "electrician" or "heating expert" where suitable.
-- Avoid kWh in customer-facing text. If it is unavoidable, write "kilowatt-hours" first.
+- Avoid kilowatt-hours in customer-facing text. If it is unavoidable, write "kilowatt-hours" first.
 - Avoid "tariff", "standing charge" and "unit rate" unless you explain them in plain English. Prefer "energy plan", "fixed daily charge" and "price per unit".
 - Write for someone with no energy-industry knowledge. Prefer short, natural words over technical terms.
 - If a technical term is unavoidable, explain it immediately in plain English.
@@ -461,10 +461,10 @@ Important:
 - Proofread all customer-facing text before returning JSON. Correct spelling, obvious typos, awkward fragments and accidental characters.
 
 Usage warning rules:
-- If estimated annual electricity use is above 12,000 kWh, unusual_usage_warning must clearly say this is unusually high and should be checked.
-- If estimated annual electricity use is above 20,000 kWh, unusual_usage_warning must strongly flag this as very high and likely driven by EV charging, hot tub, electric heating, hot water, incorrect bill frequency, annual bill override, tariff assumptions or missing/incorrect inputs.
-- If appliance estimate is above 8,000 kWh/year, unusual_usage_warning must flag this as a high appliance load and recommend checking major loads.
-- If nothing appears unusual, unusual_usage_warning should say no major usage warning is triggered, while still noting that bill and appliance inputs are indicative.
+- If estimated annual electricity use is above 12,000 kilowatt-hours, unusual_usage_warning must clearly say this is unusually high and should be checked.
+- If estimated annual electricity use is above 20,000 kilowatt-hours, unusual_usage_warning must strongly flag this as very high and likely driven by EV charging, hot tub, electric heating, hot water, incorrect bill frequency, annual bill override, energy plan details or missing/incorrect inputs.
+- If appliance estimate is above 8,000 kilowatt-hours/year, unusual_usage_warning must flag this as a high appliance load and recommend checking major loads.
+- If nothing appears unusual, unusual_usage_warning should say no major usage warning is triggered, while still noting that bill and appliance inputs are a guide.
 
 Solar repetition rules:
 - The app has a dedicated Solar panels suitability section outside this AI text for applicable property types.
