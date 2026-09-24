@@ -1182,7 +1182,7 @@ const solarSuitability = isApartment
               description="Spend a little more only where it makes sense for your home."
               actions={aiReport.medium_cost_improvements}
               accent="blue"
-              costMarker="$"
+              costMarker="$$"
             />
 
             <ActionPlanSection
