@@ -106,6 +106,30 @@ function displayValue(value: unknown, fallback = "Unknown") {
   return String(value);
 }
 
+function customerText(value: unknown, fallback = "Unknown") {
+  return displayValue(value, fallback)
+    .replace(/\bsolar PV\b/gi, "solar panels")
+    .replace(/\bkWh\/year\b/gi, "kilowatt-hours a year")
+    .replace(/\bkWh\b/gi, "kilowatt-hours")
+    .replace(/\bindicative\b/gi, "a guide")
+    .replace(/\btariffs?\b/gi, "energy plans")
+    .replace(/\bstanding charge\b/gi, "fixed daily charge")
+    .replace(/\bunit rate\b/gi, "price per unit")
+    .replace(/\bcontractors?\b/gi, "experts")
+    .replace(/\bqualified installer\b/gi, "qualified expert")
+    .replace(/\bannual generation\b/gi, "electricity it may make each year")
+    .replace(/\blikely demand profile\b/gi, "how and when you use electricity")
+    .replace(/\binverter limits\b/gi, "equipment limits")
+    .replace(/\bexport limits\b/gi, "limits on sending spare power back to the grid")
+    .replace(/\bexport rules\b/gi, "rules for sending spare power back to the grid")
+    .replace(/\busable roof area\b/gi, "roof space that can be used")
+    .replace(/\broof orientation\b/gi, "the direction your roof faces")
+    .replace(/\busage pattern\b/gi, "when and how you use electricity")
+    .replace(/\bself-consumption\b/gi, "how much solar power you use at home")
+    .replace(/\bPV expansion\b/gi, "adding more solar panels")
+    .replace(/\bpayback\b/gi, "time to earn the cost back");
+}
+
 function shouldShowEstimatedCost(item: DetailedAction) {
   const costText = item.estimated_cost_range?.trim();
 
@@ -215,7 +239,7 @@ function ReportList({
     <TextSection title={title} accent={accent}>
       <ul className="list-disc space-y-2 pl-5">
         {items.map((item, index) => (
-          <li key={`${title}-${index}-${item}`}>{item}</li>
+          <li key={`${title}-${index}-${item}`}>{customerText(item)}</li>
         ))}
       </ul>
     </TextSection>
@@ -248,7 +272,7 @@ function TopPrioritiesSection({ items }: { items?: string[] }) {
             </div>
 
             <p className="text-sm font-semibold leading-6 text-slate-700">
-              {item}
+              {customerText(item)}
             </p>
           </div>
         ))}
@@ -273,7 +297,7 @@ function UsageWarningSection({ warning }: { warning?: string }) {
       </h2>
 
       <p className="mt-4 text-sm font-semibold leading-7 text-slate-800">
-        {warning}
+        {customerText(warning)}
       </p>
     </section>
   );
@@ -399,7 +423,7 @@ function ActionPlanSection({
                 </div>
 
                 <h3 className="mt-1 text-lg font-black leading-6 text-black">
-                  {displayValue(item.action, "Recommended action")}
+                  {customerText(item.action, "Recommended action")}
                 </h3>
               </div>
 
@@ -416,7 +440,7 @@ function ActionPlanSection({
                   This is why
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
-                  {item.why_it_matters}
+                  {customerText(item.why_it_matters)}
                 </p>
               </div>
             )}
@@ -455,7 +479,7 @@ function ActionPlanSection({
                   What to do next
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
-                  {item.suggested_next_step}
+                  {customerText(item.suggested_next_step)}
                 </p>
               </div>
             )}
@@ -466,12 +490,103 @@ function ActionPlanSection({
                   Ask the Expert
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
-                  {item.question_to_ask}
+                  {customerText(item.question_to_ask)}
                 </p>
               </div>
             )}
           </article>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function CompactPriorityPlan({
+  actions,
+  lowCostActions,
+  mediumCostActions,
+  higherCostActions,
+}: {
+  actions?: DetailedAction[];
+  lowCostActions?: DetailedAction[];
+  mediumCostActions?: DetailedAction[];
+  higherCostActions?: DetailedAction[];
+}) {
+  if (!actions || actions.length === 0) {
+    return null;
+  }
+
+  const normalise = (value?: string) => (value ?? "").trim().toLowerCase();
+  const low = new Set((lowCostActions ?? []).map((item) => normalise(item.action)));
+  const medium = new Set((mediumCostActions ?? []).map((item) => normalise(item.action)));
+  const higher = new Set((higherCostActions ?? []).map((item) => normalise(item.action)));
+
+  function costLevel(item: DetailedAction) {
+    const key = normalise(item.action);
+    if (higher.has(key)) return { marker: "$$", label: "Higher cost", className: "bg-[#ffe8eb] text-[#9f1239]" };
+    if (medium.has(key)) return { marker: "$", label: "Medium cost", className: "bg-[#fff6bf] text-[#6b5200]" };
+    if (low.has(key)) return { marker: "$", label: "Low cost", className: "bg-[#eef7ef] text-[#285f36]" };
+    return { marker: "", label: "", className: "bg-slate-100 text-slate-600" };
+  }
+
+  return (
+    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm">
+      <h2 className="text-2xl font-black text-[#17356f]">Your priority action plan</h2>
+      <p className="mt-2 text-sm leading-6 text-slate-600">
+        Start at number 1. Work down the list when it suits your home and your budget.
+      </p>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2 print:grid-cols-2">
+        {actions.map((item, index) => {
+          const level = costLevel(item);
+
+          return (
+            <article
+              key={`compact-priority-${index}-${item.action}`}
+              className={`rounded-2xl border p-4 print:break-inside-avoid ${
+                index < 3 ? "border-[#ffe76a] bg-[#fffdf0]" : "border-[#dbe8f2] bg-[#f7fbff]"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
+                  {index + 1}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {level.marker && (
+                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${level.className}`}>
+                        {level.marker} {level.label}
+                      </span>
+                    )}
+                    {item.priority && (
+                      <span className="rounded-full bg-[#ffd600] px-2.5 py-1 text-[11px] font-black text-black">
+                        {item.priority}
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="mt-2 text-base font-black leading-5 text-black">
+                    {customerText(item.action, "Recommended action")}
+                  </h3>
+
+                  {item.why_it_matters && (
+                    <p className="mt-2 text-xs leading-5 text-slate-600">
+                      <span className="font-black text-[#17356f]">This is why: </span>
+                      {customerText(item.why_it_matters)}
+                    </p>
+                  )}
+
+                  {item.estimated_annual_saving_range && (
+                    <p className="mt-2 text-xs font-bold text-[#17356f]">
+                      Could save each year: {customerText(item.estimated_annual_saving_range)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
@@ -555,7 +670,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
               This is why
             </p>
             <p className="mt-1 text-sm leading-7 text-slate-700">
-              {displayValue(solar.reason)}
+              {customerText(solar.reason)}
             </p>
           </div>
         </div>
@@ -576,7 +691,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
           <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
             {needsMoreInformation
   ? "Not estimated until roof orientation, shading and usable roof area are confirmed."
-  : displayValue(solar.suggested_system_size)}
+  : customerText(solar.suggested_system_size)}
           </p>
         </div>
 
@@ -585,7 +700,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
             Battery
           </p>
           <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
-            {displayValue(solar.battery_view)}
+            {customerText(solar.battery_view)}
           </p>
         </div>
       </div>
@@ -600,7 +715,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
 
               <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-700">
                 {installerQuestions.slice(0, 5).map((item, index) => (
-                  <li key={`solar-question-${index}`}>{String(item)}</li>
+                  <li key={`solar-question-${index}`}>{customerText(item)}</li>
                 ))}
               </ul>
             </div>
@@ -836,7 +951,7 @@ const solarSuitability = isApartment
                       Appliances
                     </p>
                     <p className="mt-2 text-2xl font-black">
-                      {Math.round(Number(scores.applianceKwh ?? 0))} kWh
+                      {Math.round(Number(scores.applianceKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year
                     </p>
                   </div>
                 </div>
@@ -877,13 +992,13 @@ const solarSuitability = isApartment
           <div className="mt-5 grid gap-4 md:grid-cols-4">
             <MetricCard
               label="Yearly electricity use"
-              value={`${Math.round(Number(scores.estimatedBillKwh ?? 0))} kWh`}
+              value={`${Math.round(Number(scores.estimatedBillKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year`}
               colour="yellow"
             />
 
             <MetricCard
               label="Appliance electricity use"
-              value={`${Math.round(Number(scores.applianceKwh ?? 0))} kWh`}
+              value={`${Math.round(Number(scores.applianceKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year`}
               colour="blue"
             />
 
@@ -987,14 +1102,14 @@ const solarSuitability = isApartment
                   Bottom line
                 </h2>
                 <p className="mt-3 text-base leading-7 text-slate-800">
-                  {aiReport.bottom_line}
+                  {customerText(aiReport.bottom_line)}
                 </p>
               </section>
             )}
 
             {aiReport.executive_summary && (
               <TextSection title="Your home at a glance" accent="navy">
-                <p>{aiReport.executive_summary}</p>
+                <p>{customerText(aiReport.executive_summary)}</p>
               </TextSection>
             )}
 
@@ -1003,7 +1118,7 @@ const solarSuitability = isApartment
                 title="What your energy costs look like"
                 accent="yellow"
               >
-                <p>{aiReport.estimated_annual_energy_cost_profile}</p>
+                <p>{customerText(aiReport.estimated_annual_energy_cost_profile)}</p>
               </TextSection>
             )}
 
@@ -1013,7 +1128,7 @@ const solarSuitability = isApartment
 
             {aiReport.photo_summary && (
               <TextSection title="What we noticed in your photos" accent="blue">
-                <p>{aiReport.photo_summary}</p>
+                <p>{customerText(aiReport.photo_summary)}</p>
               </TextSection>
             )}
 
@@ -1109,12 +1224,11 @@ const solarSuitability = isApartment
               </div>
             </section>
 
-            <ActionPlanSection
-              title="Your priority action plan"
-              description="Start at number 1. Work down the list when it suits your home and your budget."
+            <CompactPriorityPlan
               actions={aiReport.priority_action_plan}
-              accent="navy"
-              ranked
+              lowCostActions={aiReport.low_cost_quick_wins}
+              mediumCostActions={aiReport.medium_cost_improvements}
+              higherCostActions={aiReport.higher_cost_upgrades}
             />
 
             <SolarPVSection solar={solarSuitability} />
