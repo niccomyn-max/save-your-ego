@@ -582,20 +582,20 @@ export function calculateSolarSuitability(input: {
     return {
       rating: "Not first priority",
       suggested_system_size:
-        "Existing solar is already installed. Review monitoring, export, self-consumption and battery value before adding more capacity.",
+        "You already have solar panels. Check how well they are working before adding anything else.",
       battery_view: input.hasBattery
         ? "A battery is already installed, so the priority is to check charging settings, energy plan timing and actual self-consumption."
         : "A battery may be worth reviewing if evening use is high, but it should be priced separately from any PV expansion.",
       reason:
         "You already have solar panels. Check how well the system is working before adding anything else.",
       installer_questions: [
-        "What annual generation is the existing system actually producing?",
-        "How much of the generated electricity is used in the home versus exported?",
-        "Would extra panels or a battery improve payback, or would controls and tariff changes be better first?",
+        "How much electricity are my solar panels making each year?",
+        "How much of my solar power do I use at home?",
+        "Would extra panels or a battery really save enough to be worth it?",
       ],
       cautions: [
-        "Do not assume extra solar capacity is worthwhile without checking inverter limits, export limits, roof space and usage pattern.",
-        "Battery value depends heavily on energy plans, evening demand and export rates.",
+        "Don’t add more solar until the roof, equipment and how you use electricity are checked.",
+        "A battery only makes sense if it fits when you use electricity and what your energy plan pays.",
         "Any roof or electrical work should be checked by a qualified installer.",
       ],
     };
@@ -679,9 +679,9 @@ export function calculateSolarSuitability(input: {
       reason:
         "We need a little more roof information first. Check the roof direction, shade and usable space.",
       installer_questions: [
-        "What usable roof area is available after allowing for shading, setbacks and roof obstructions?",
-        "What are the roof orientation and pitch?",
-        "What annual generation would the exact roof layout be expected to produce?",
+        "How much roof space can actually be used for panels?",
+        "Which way does my roof face, and how steep is it?",
+        "How much electricity should this roof make in a typical year?",
       ],
       cautions: [
         "Don’t choose a solar system from your electricity use alone.",
@@ -707,27 +707,27 @@ export function calculateSolarSuitability(input: {
 
 if (rating === "Strong" || rating === "Possible") {
   suggestedSize =
-    "An installer sizing review around 3-5 kW may be worth exploring as a starting point.";
+    "Ask an expert whether a smaller solar setup could suit this roof.";
 
   if (input.annualElectricityKwh >= 12000) {
     suggestedSize =
-      "An installer may review a larger system, potentially around 8-12 kW+, but only if usable roof area, inverter limits, export rules and local conditions support it.";
+      "Ask an expert whether a larger solar setup could suit this roof and your electricity use.";
   } else if (input.annualElectricityKwh >= 8000) {
     suggestedSize =
-      "An installer may review roughly 6-9 kW, particularly where EV, heat-pump or daytime demand is substantial and the roof can support it.";
+      "Ask an expert whether a medium-to-large solar setup could suit this home.";
   } else if (input.annualElectricityKwh >= 5000) {
     suggestedSize =
-      "An installer may review roughly 4-7 kW, subject to the exact roof layout, local solar resource and daytime electricity use.";
+      "Ask an expert whether a medium solar setup could suit this roof and your daytime use.";
   } else if (input.annualElectricityKwh < 3000) {
     suggestedSize =
-      "A smaller system, roughly 2-4 kW, may be worth reviewing unless future electricity demand is expected to rise.";
+      "A smaller solar setup may be enough unless you expect to use much more electricity later.";
   }
 }
 
   const batteryView =
     input.daytimeUse === "High"
       ? "A battery may be less urgent if much of the electricity can be used during daylight hours."
-      : "A battery may be useful if much of the home's electricity use happens in the evening, but it should be priced separately because payback varies widely.";
+      : "A battery may help if you use lots of electricity after dark. Check the price before deciding.";
 
   return {
     rating,
@@ -737,21 +737,21 @@ if (rating === "Strong" || rating === "Possible") {
       : batteryView,
     reason:
   rating === "Strong"
-    ? "The electricity use, likely demand profile and roof details suggest solar PV could be a strong candidate for review."
+    ? "Your roof and electricity use suggest solar panels may be worth exploring."
     : rating === "Not first priority"
-      ? "Solar panels does not appear to be the first priority from the current inputs. Reducing demand or resolving roof constraints may matter more first."
-      : "Solar panels may be worth reviewing, but the value depends on roof orientation, shading, usable roof area, energy plans and daytime electricity use.",
+      ? "Solar panels do not look like the first priority right now. Smaller changes may make more sense first."
+      : "Solar panels may be worth a look. The roof, shade and when you use electricity all matter.",
     installer_questions: [
-      "What system size fits the usable roof area after allowing for shading, setbacks and roof obstructions?",
-      "What is the estimated annual generation based on the exact roof orientation and pitch?",
-      "How much of the generation is expected to be used in the home versus exported?",
-      "What does the payback look like with and without a battery?",
-      "Are there any panel, inverter, export, planning, roof condition or electrical upgrade constraints?",
+      "What size solar setup fits the part of my roof that can actually be used?",
+      "How much electricity should this roof make in a typical year?",
+      "How much of the solar power will I use at home?",
+      "How long might it take to earn the cost back with and without a battery?",
+      "Is there anything about my roof, electrics or local rules that could add cost?",
     ],
     cautions: [
       "This is only a rough guide. It is not a solar design.",
-      "Roof structure, shading, electrical capacity, export limits and local rules must be checked by a qualified installer.",
-      "Battery payback depends heavily on energy plans, usage pattern, evening demand and export rates.",
+      "Ask a qualified expert to check the roof, shade, electrics and local rules.",
+      "A battery only makes sense if the cost fits when and how you use electricity.",
       "Free fixes first. Cut easy waste before paying for a bigger solar system.",
     ],
   };
