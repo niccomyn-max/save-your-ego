@@ -127,7 +127,8 @@ function customerText(value: unknown, fallback = "Unknown") {
     .replace(/\busage pattern\b/gi, "when and how you use electricity")
     .replace(/\bself-consumption\b/gi, "how much solar power you use at home")
     .replace(/\bPV expansion\b/gi, "adding more solar panels")
-    .replace(/\bpayback\b/gi, "time to earn the cost back");
+    .replace(/\bpayback\b/gi, "time to earn the cost back")
+    .replace(/\b(\d+(?:-\d+)?)\s*kW\+?\b/gi, "$1 kilowatts (kW)");
 }
 
 function shouldShowEstimatedCost(item: DetailedAction) {
@@ -1242,7 +1243,7 @@ const solarSuitability = isApartment
                       <h2 className="text-2xl font-black text-[#17356f]">Electricity advice</h2>
                     </div>
                     <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
-                      {(aiReport.electricity_specific_advice ?? []).map((item, index) => <li key={`electricity-${index}`}>{item}</li>)}
+                      {(aiReport.electricity_specific_advice ?? []).map((item, index) => <li key={`electricity-${index}`}>{customerText(item)}</li>)}
                     </ul>
                   </section>
 
@@ -1252,7 +1253,7 @@ const solarSuitability = isApartment
                       <h2 className="text-2xl font-black text-[#17356f]">Gas advice</h2>
                     </div>
                     <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
-                      {(aiReport.gas_specific_advice ?? []).map((item, index) => <li key={`gas-${index}`}>{item}</li>)}
+                      {(aiReport.gas_specific_advice ?? []).map((item, index) => <li key={`gas-${index}`}>{customerText(item)}</li>)}
                     </ul>
                   </section>
 
@@ -1262,7 +1263,7 @@ const solarSuitability = isApartment
                       <h2 className="text-2xl font-black text-[#17356f]">Oil advice</h2>
                     </div>
                     <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
-                      {(aiReport.oil_specific_advice ?? []).map((item, index) => <li key={`oil-${index}`}>{item}</li>)}
+                      {(aiReport.oil_specific_advice ?? []).map((item, index) => <li key={`oil-${index}`}>{customerText(item)}</li>)}
                     </ul>
                   </section>
                 </div>
