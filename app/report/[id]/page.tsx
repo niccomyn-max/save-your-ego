@@ -703,6 +703,9 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
           <p className="mt-2 text-sm font-bold leading-7 text-slate-800">
             {customerText(solar.battery_view)}
           </p>
+          <p className="mt-3 text-sm leading-6 text-slate-700">
+            A home battery stores spare electricity, often from solar panels, so you can use it later in the day. Some systems can also keep selected circuits running during a power cut, but only when backup has been included in the system design.
+          </p>
         </div>
       </div>
 
