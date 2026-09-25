@@ -161,21 +161,21 @@ async function HomeContent() {
                     <div className="rounded-2xl bg-[#ffd600] p-4 text-black">
                       <p className="text-xs font-black">Electricity</p>
                       <p className="mt-3 text-lg font-black leading-tight">
-                        Simple check
+                        Bills & appliances
                       </p>
                     </div>
 
                     <div className="rounded-2xl bg-[#59b9ec] p-4 text-[#17356f]">
                       <p className="text-xs font-black">Gas</p>
                       <p className="mt-3 text-lg font-black leading-tight">
-                        Simple check
+                        Heating & bills
                       </p>
                     </div>
 
                     <div className="rounded-2xl bg-white p-4 text-black">
                       <p className="text-xs font-black">Oil</p>
                       <p className="mt-3 text-lg font-black leading-tight">
-                        Simple check
+                        Heating & fuel
                       </p>
                     </div>
                   </div>
