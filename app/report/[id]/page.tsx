@@ -438,7 +438,7 @@ function ActionPlanSection({
             {item.why_it_matters && (
               <div className="mt-3">
                 <p className="text-[11px] font-black uppercase tracking-wide text-[#17356f]/60">
-                  This is why
+                  Why
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-700">
                   {customerText(item.why_it_matters)}
@@ -573,7 +573,7 @@ function CompactPriorityPlan({
 
                   {item.why_it_matters && (
                     <p className="mt-2 text-xs leading-5 text-slate-600">
-                      <span className="font-black text-[#17356f]">This is why: </span>
+                      <span className="font-black text-[#17356f]">Why: </span>
                       {customerText(item.why_it_matters)}
                     </p>
                   )}
@@ -668,7 +668,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
 
           <div className="mt-3 max-w-3xl">
             <p className="text-[11px] font-black uppercase tracking-wide text-[#17356f]/60">
-              This is why
+              Why
             </p>
             <p className="mt-1 text-sm leading-7 text-slate-700">
               {customerText(solar.reason)}
