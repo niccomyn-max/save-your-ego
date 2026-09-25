@@ -320,7 +320,7 @@ export function EnergyTipsLibrary() {
 
                         <div className="mt-4">
                           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-400">
-                            This is why
+                            Why
                           </p>
                           <p className="mt-1 text-sm leading-6 text-slate-700">
                             {friendlyText(tip.why)}
