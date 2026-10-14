@@ -1,0 +1,172 @@
+/* Save Your EGO cinematic homepage experiment: self-contained, reversible. */
+.ego-cinematic-home {
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.9);
+  border-radius: 2rem;
+  padding: 10px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 30px 85px rgba(11,50,116,.17), 0 8px 20px rgba(11,50,116,.07);
+}
+.ego-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.45rem;
+  background: #81cff4;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+}
+.ego-illustration { display: block; width: 100%; height: auto; }
+.ego-stage-topline {
+  position: absolute;
+  z-index: 4;
+  left: 18px;
+  right: 18px;
+  top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+.ego-stage-live {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  color: #0B3274;
+  background: rgba(255,255,255,.94);
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: 999px;
+  padding: 9px 13px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .13em;
+  box-shadow: 0 9px 24px rgba(11,50,116,.12);
+}
+.ego-live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #49be7e; box-shadow: 0 0 0 4px rgba(73,190,126,.18); }
+.ego-stage-stars { color: #fff; font-size: 26px; text-shadow: 0 2px 10px rgba(11,50,116,.26); }
+.ego-scene-story {
+  position: absolute;
+  z-index: 5;
+  left: 16px;
+  bottom: 14px;
+  width: min(56%, 265px);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid rgba(255,255,255,.93);
+  border-radius: 20px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,.95);
+  color: #17356F;
+  box-shadow: 0 17px 36px rgba(11,50,116,.17);
+  backdrop-filter: blur(12px);
+}
+.ego-scene-story-eyebrow { color: #3382aa; font-size: 9px; font-weight: 900; letter-spacing: .16em; }
+.ego-scene-story strong { font-size: clamp(15px, 1.8vw, 21px); line-height: 1.1; font-weight: 900; letter-spacing: -.02em; }
+.ego-scene-story > span:last-child { font-size: 11px; color: #3d5a70; line-height: 1.4; }
+.ego-floating-badge {
+  position: absolute;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255,255,255,.96);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-weight: 900;
+  font-size: clamp(9px, 1.1vw, 12px);
+  color: #14366f;
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 8px 24px rgba(11,50,116,.18);
+  pointer-events: none;
+}
+.ego-floating-badge span { font-size: 17px; color: #F7B600; }
+.ego-floating-badge-solar { top: 42%; right: 2%; transform: rotate(6deg); }
+.ego-floating-badge-idea { top: 66%; left: 3%; transform: rotate(-7deg); }
+.ego-scene-controls { padding: 14px 9px 5px; display: flex; flex-direction: column; gap: 9px; }
+.ego-controls-label { color: #61768b; font-size: 10px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; text-align: center; }
+.ego-control-buttons { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.ego-control-buttons button {
+  cursor: pointer;
+  border: 1px solid #dbe8f4;
+  border-radius: 13px;
+  padding: 11px 5px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+  color: #17356f;
+  background: #f4f9ff;
+  transition: background .2s, border-color .2s, box-shadow .2s, transform .2s;
+}
+.ego-control-buttons button:hover { transform: translateY(-2px); background: #e8f5ff; }
+.ego-control-buttons button:focus-visible { outline: 3px solid #3289e8; outline-offset: 3px; }
+.ego-control-buttons button.ego-mode-active { color: #0b3274; border-color: #ffd400; background: #fff3a6; box-shadow: 0 0 0 2px rgba(255,212,0,.13); }
+.ego-scene-footnote { margin: 6px 8px 5px; color: #7a8b9c; text-align: center; font-size: 10px; line-height: 1.4; }
+.ego-heat-lines { opacity: 0; transition: opacity .35s; }
+.ego-energy-route { opacity: .23; transition: opacity .35s; }
+.ego-window-glow { opacity: .86; transition: opacity .35s; }
+.ego-cinematic-home--solar .ego-energy-route { opacity: 1; }
+.ego-cinematic-home--solar .ego-solar-array { filter: drop-shadow(0 0 12px rgba(255,222,64,.85)); }
+.ego-cinematic-home--lights .ego-window-glow { opacity: 1; filter: drop-shadow(0 0 19px rgba(255,210,38,.95)); }
+.ego-cinematic-home--warmth .ego-heat-lines { opacity: 1; }
+.ego-cinematic-home--warmth .ego-window-glow { opacity: 1; filter: drop-shadow(0 0 15px rgba(255,154,88,.85)); }
+
+@keyframes ego-cloud-drift { 0%,100% { transform: translateX(-20px); } 50% { transform: translateX(30px); } }
+@keyframes ego-cloud-drift-back { 0%,100% { transform: translateX(24px); } 50% { transform: translateX(-28px); } }
+@keyframes ego-sun-dance { 0%,100% {transform: scale(1) rotate(-4deg)} 50% {transform: scale(1.08) rotate(4deg)} }
+@keyframes ego-ray-spin {to { transform: rotate(360deg);}}
+@keyframes ego-energy-dash { to { stroke-dashoffset: -224; }}
+@keyframes ego-house-arrive {from { transform: translateY(48px) scale(.94); opacity: .15; } to {transform: translateY(0) scale(1); opacity: 1;}}
+@keyframes ego-character-wave {0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-5px) rotate(2deg)}}
+@keyframes ego-flowers-dance {0%,100% {transform:rotate(-3deg)} 50%{transform:rotate(4deg)}}
+@keyframes ego-sparkle-dance {0%,100% {opacity:.15;transform:scale(.65) rotate(-8deg)} 50%{opacity:1;transform:scale(1.25) rotate(12deg)}}
+@keyframes ego-bird-flight {0%,100% {transform:translate(0,0)} 50% {transform:translate(30px,-15px)}}
+@keyframes ego-badge-bob {0%,100% {translate:0 0} 50%{translate:0 -11px}}
+@keyframes ego-window-twinkle {0%,100%{filter:brightness(.95)} 50%{filter:brightness(1.14)}}
+@keyframes ego-warm-rise {0%,100%{transform:translateY(0);opacity:.55} 50%{transform:translateY(-10px);opacity:1}}
+@keyframes ego-tree-sway {0%,100% {transform:rotate(-2deg)} 50%{transform:rotate(3deg)}}
+@keyframes ego-home-entry {from {opacity:0;transform:translateY(22px)} to {opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion: no-preference) {
+  .ego-cinematic-home { animation: ego-home-entry .75s ease-out both; }
+  .ego-cloud-one { animation: ego-cloud-drift 8s ease-in-out infinite; }
+  .ego-cloud-two { animation: ego-cloud-drift-back 11s ease-in-out infinite; }
+  .ego-sun-group { transform-origin: 143px 134px; animation: ego-sun-dance 4s ease-in-out infinite; }
+  .ego-sun-rays { transform-origin: 143px 134px; animation: ego-ray-spin 32s linear infinite; }
+  .ego-energy-flow { animation: ego-energy-dash 4s linear infinite; }
+  .ego-energy-delay {animation-duration: 3s;}
+  .ego-house-build {transform-origin: 380px 530px;animation:ego-house-arrive 1.2s ease-out both;}
+  .ego-family-people {transform-origin: 586px 567px; animation:ego-character-wave 3.5s ease-in-out infinite;}
+  .ego-flowers {transform-origin: 500px 580px;animation:ego-flowers-dance 5s ease-in-out infinite;}
+  .ego-bird {animation:ego-bird-flight 13s ease-in-out infinite;}
+  .ego-tree-sway {transform-origin:90px 550px;animation:ego-tree-sway 6s ease-in-out infinite;}
+  .ego-sparkle {transform-box:fill-box;transform-origin:center;animation:ego-sparkle-dance 3s ease-in-out infinite;}
+  .ego-sparkle-two {animation-delay:1s;}
+  .ego-sparkle-three {animation-delay:2s;}
+  .ego-window-glow {animation:ego-window-twinkle 3s ease-in-out infinite;}
+  .ego-window-right {animation-delay:1.2s;}
+  .ego-heat-lines {animation:ego-warm-rise 3s ease-in-out infinite;}
+  .ego-floating-badge {animation:ego-badge-bob 4s ease-in-out infinite;}
+  .ego-floating-badge-idea {animation-delay:1.7s;}
+  .ego-live-dot {animation:ego-window-twinkle 1.6s ease-in-out infinite;}
+}
+@media (max-width: 520px) {
+  .ego-cinematic-home {border-radius: 1.5rem; padding: 7px;}
+  .ego-stage {border-radius: 1.15rem;}
+  .ego-stage-topline {top:10px;left:9px;right:10px;}
+  .ego-stage-live {font-size:8px;padding:6px 8px;letter-spacing:.08em;}
+  .ego-stage-stars {font-size:15px;}
+  .ego-floating-badge {padding:5px 7px;font-size:8px;}
+  .ego-floating-badge span {font-size:12px;}
+  .ego-floating-badge-solar {top:35%;}
+  .ego-floating-badge-idea {top:69%;}
+  .ego-scene-story {bottom:8px;left:8px;width:58%;padding:10px;border-radius:14px;gap:2px;}
+  .ego-scene-story-eyebrow {font-size:7px;letter-spacing:.09em;}
+  .ego-scene-story strong {font-size:13px;}
+  .ego-scene-story > span:last-child {font-size:9px;}
+  .ego-control-buttons {gap:5px;}
+  .ego-control-buttons button {font-size:11px;padding:9px 3px;}
+  .ego-scene-footnote {font-size:9px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  .ego-cinematic-home *, .ego-cinematic-home *::before, .ego-cinematic-home *::after {animation:none !important;transition:none !important;}
+}
