@@ -4,6 +4,7 @@ import "../energy-motion.css";
 import "./assessment-visualizer.css";
 import Image from "next/image";
 import AssessmentEnergyVisualizer from "@/components/assessment-energy-visualizer";
+import AssessmentSectionVisual from "@/components/assessment-section-visual";
 import { ClipboardCheck, FileText, House, PlugZap, ReceiptText, ShieldCheck, SunMedium } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -211,13 +212,7 @@ function SectionShell({
 
         {visual ? (
           <div className={`sy-assessment-visual flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-28 sm:w-40 ${iconClass}`}>
-            <Image
-              src={visual}
-              alt=""
-              width={320}
-              height={220}
-              className="h-full w-full object-cover"
-            />
+            <AssessmentSectionVisual topic={id} />
           </div>
         ) : icon ? (
           <div className={`hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl sm:flex ${iconClass}`}>
