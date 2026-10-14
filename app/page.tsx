@@ -1,3 +1,4 @@
+import "./home-animation.css";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -32,7 +33,7 @@ async function HomeContent() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#f7fbff] text-[#050505]">
       <section className="relative px-5 py-6 sm:px-8 lg:px-12">
-        <div className="absolute left-[-120px] top-[-120px] h-72 w-72 rounded-full bg-[#ffd600]/30 blur-3xl" />
+        <div className="ego-sun pointer-events-none absolute left-[-120px] top-[-120px] h-72 w-72 rounded-full bg-[#ffd600]/30 blur-3xl" />
         <div className="absolute right-[-120px] top-10 h-80 w-80 rounded-full bg-[#59b9ec]/30 blur-3xl" />
         <div className="absolute bottom-[-160px] left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[#17356f]/10 blur-3xl" />
 
@@ -77,7 +78,7 @@ async function HomeContent() {
         </nav>
 
         <div className="relative z-10 mx-auto grid max-w-7xl gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-16">
-          <div>
+          <div className="ego-intro">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#ffd600]/50 bg-white/80 px-4 py-2 text-sm font-black text-[#17356f] shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-[#ffd600]" />
               Made for real homes and real bills
@@ -132,9 +133,9 @@ async function HomeContent() {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="rounded-[2rem] border border-white/80 bg-white/85 p-4 shadow-2xl shadow-[#17356f]/10 backdrop-blur-xl sm:p-6">
-              <div className="rounded-[1.5rem] bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-[#050505] p-5 text-white sm:p-6">
+          <div className="relative ego-intro-delay">
+            <div className="ego-report-float rounded-[2rem] border border-white/80 bg-white/85 p-4 shadow-2xl shadow-[#17356f]/10 backdrop-blur-xl sm:p-6">
+              <div className="ego-energy-glow rounded-[1.5rem] bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-[#050505] p-5 text-white sm:p-6">
                 <p className="text-sm font-black uppercase tracking-[0.25em] text-[#ffd600]">
                   Your report
                 </p>
@@ -192,7 +193,7 @@ async function HomeContent() {
               </div>
             </div>
 
-            <div className="absolute -bottom-5 -left-3 rounded-2xl border border-white bg-white px-5 py-4 shadow-xl sm:-left-6">
+            <div className="ego-float-tag absolute -bottom-5 -left-3 rounded-2xl border border-white bg-white px-5 py-4 shadow-xl sm:-left-6">
               <p className="text-xs font-black uppercase tracking-wide text-slate-500">
                 Built for
               </p>
@@ -202,7 +203,7 @@ async function HomeContent() {
         </div>
 
         <div className="relative z-10 mx-auto grid max-w-7xl gap-4 pb-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
+          <div className="ego-home-step rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
             <p className="text-3xl font-black text-[#ffd600]">01</p>
             <h3 className="mt-3 font-black text-slate-950">
               Tell us about your home
@@ -212,7 +213,7 @@ async function HomeContent() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
+          <div className="ego-home-step rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
             <p className="text-3xl font-black text-[#59b9ec]">02</p>
             <h3 className="mt-3 font-black text-slate-950">
               Add your appliances
@@ -222,7 +223,7 @@ async function HomeContent() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
+          <div className="ego-home-step rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
             <p className="text-3xl font-black text-[#17356f]">03</p>
             <h3 className="mt-3 font-black text-slate-950">
               See your best next steps
@@ -232,7 +233,7 @@ async function HomeContent() {
             </p>
           </div>
 
-          <div className="rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
+          <div className="ego-home-step rounded-3xl border border-white/80 bg-white/80 p-5 shadow-sm backdrop-blur">
             <p className="text-3xl font-black text-black">04</p>
             <h3 className="mt-3 font-black text-slate-950">
               Keep your plan
