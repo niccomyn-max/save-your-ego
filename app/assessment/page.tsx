@@ -2,8 +2,9 @@
 
 import "../energy-motion.css";
 import "./assessment-visualizer.css";
+import "./assessment-v2.css";
 import Image from "next/image";
-import AssessmentEnergyVisualizer from "@/components/assessment-energy-visualizer";
+import AssessmentEnergyTwinV2 from "@/components/assessment-energy-twin-v2";
 import AssessmentSectionVisual from "@/components/assessment-section-visual";
 import { ClipboardCheck, FileText, House, PlugZap, ReceiptText, ShieldCheck, SunMedium } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -930,9 +931,12 @@ export default function AssessmentPage() {
               </p>
 
               <div className="mt-6">
-                <AssessmentEnergyVisualizer
+                <AssessmentEnergyTwinV2
                   propertyType={answers.property_type}
                   heatingSystem={answers.main_heating}
+                  glazing={answers.glazing}
+                  bedrooms={answers.bedrooms}
+                  occupants={answers.occupants}
                   hasSolar={answers.has_solar}
                   usesGas={answers.uses_gas}
                   usesOil={answers.uses_oil}
