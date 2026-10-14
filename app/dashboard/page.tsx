@@ -1,4 +1,6 @@
+import "../energy-motion.css";
 import Image from "next/image";
+import { DashboardMotionGraphic } from "@/components/energy-motion-graphics";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -119,7 +121,7 @@ function DashboardStat({
           : "border-[#dbe8f2] bg-white text-[#17356f]";
 
   return (
-    <div className={`rounded-2xl border p-5 shadow-sm ${className}`}>
+    <div className={`sy-dashboard-stat rounded-2xl border p-5 shadow-sm ${className}`}>
       <p className="text-xs font-black uppercase tracking-wide opacity-70">
         {label}
       </p>
@@ -144,7 +146,7 @@ function AssessmentCard({ assessment }: { assessment: Assessment }) {
   const applianceKwh = Math.round(Number(scores.applianceKwh ?? 0));
 
   return (
-    <article className="overflow-hidden rounded-[1.75rem] border border-[#dbe8f2] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#17356f]/10">
+    <article className="sy-dashboard-reportcard overflow-hidden rounded-[1.75rem] border border-[#dbe8f2] bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#17356f]/10">
       <div className="border-b border-[#dbe8f2] bg-gradient-to-br from-white via-[#f7fbff] to-[#e9f6fe] p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -261,12 +263,12 @@ async function DashboardContent() {
   
 
   return (
-    <main className="min-h-screen bg-[#f7fbff] px-5 py-24 text-[#050505] sm:px-8 lg:px-10">
+    <main className="sy-dashboard-page min-h-screen bg-[#f7fbff] px-5 py-24 text-[#050505] sm:px-8 lg:px-10">
 
       <div className="mx-auto max-w-6xl">
-        <section className="overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
+        <section className="sy-dashboard-hero overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="p-6 sm:p-8 lg:p-10">
+            <div className="sy-dashboard-copy p-6 sm:p-8 lg:p-10">
               <Image
                 src="/save-your-ego-logo.png"
                 alt="Save Your EGO"
@@ -307,13 +309,14 @@ async function DashboardContent() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
+            <div className="sy-dashboard-panel bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
+              <DashboardMotionGraphic />
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
                 Your snapshot
               </p>
 
               <div className="mt-8 grid gap-4">
-                <div className="rounded-[1.5rem] bg-white/10 p-5 backdrop-blur">
+                <div className="sy-dashboard-snapshot-tile rounded-[1.5rem] bg-white/10 p-5 backdrop-blur">
                   <p className="text-xs font-black uppercase tracking-wide text-white/60">
                     Saved reports
                   </p>
@@ -323,7 +326,7 @@ async function DashboardContent() {
                 </div>
 
                 <div className="grid gap-4">
-                  <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
+                  <div className="sy-dashboard-snapshot-tile rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
                       
                     <p className="text-xs font-black uppercase opacity-70">
                       Latest
@@ -336,7 +339,7 @@ async function DashboardContent() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] bg-white p-5 text-black">
+                <div className="sy-dashboard-snapshot-tile rounded-[1.5rem] bg-white p-5 text-black">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">
                     We look at
                   </p>
@@ -372,7 +375,7 @@ async function DashboardContent() {
         )}
 
         {assessmentList.length === 0 ? (
-          <section className="mt-6 overflow-hidden rounded-[1.75rem] border border-[#dbe8f2] bg-white shadow-sm">
+          <section className="sy-dashboard-empty mt-6 overflow-hidden rounded-[1.75rem] border border-[#dbe8f2] bg-white shadow-sm">
             <div className="grid lg:grid-cols-[0.9fr_1.1fr]">
               <div className="bg-gradient-to-br from-[#fff6bf] to-[#e9f6fe] p-6 sm:p-8">
                 <h2 className="text-3xl font-black tracking-tight text-[#17356f]">
