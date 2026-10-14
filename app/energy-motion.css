@@ -1,0 +1,320 @@
+/*
+ * Save Your EGO motion treatment (assessment + dashboard only).
+ * Decorative CSS. Does not change inputs, calculations, redirects or reporting.
+ */
+.sy-assessment-page,
+.sy-dashboard-page { isolation: isolate; }
+
+.sy-assessment-hero {
+  position: relative;
+  isolation: isolate;
+}
+.sy-assessment-hero::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background: linear-gradient(104deg,transparent 38%,rgba(83,175,232,.06) 50%,transparent 62%);
+  background-size:280% 100%;
+}
+.sy-assessment-hero > * { position:relative;z-index:1; }
+.sy-assessment-hero-copy {position:relative;overflow:hidden;}
+.sy-assessment-hero-copy::before {
+  content:"";
+  position:absolute;
+  width:300px;height:300px;
+  border-radius:50%;
+  top:-180px;right:-150px;
+  pointer-events:none;
+  border:1px solid rgba(83,175,232,.19);
+  box-shadow:0 0 0 29px rgba(83,175,232,.035),0 0 0 70px rgba(83,175,232,.025);
+}
+.sy-assessment-how {
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+}
+.sy-assessment-how::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  background-image:
+    linear-gradient(rgba(147,215,252,.10) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(147,215,252,.10) 1px,transparent 1px);
+  background-size:43px 43px;
+  pointer-events:none;
+  mask-image:linear-gradient(to bottom,black 0%,transparent 82%);
+}
+.sy-assessment-how > :not(.sy-assessment-motion-art) {position:relative;z-index:2;}
+.sy-assessment-motion-art {
+  position:absolute;
+  pointer-events:none;
+  z-index:1;
+  width:140%;
+  height:auto;
+  top:-150px;
+  right:-42%;
+  opacity:.59;
+  filter:drop-shadow(0 0 22px rgba(83,175,232,.2));
+}
+.sy-assessment-flow-frame {
+  position:relative;
+  isolation:isolate;
+  border:1px solid rgba(180,230,255,.65);
+  box-shadow:0 16px 36px rgba(2,20,55,.23),0 0 0 1px rgba(255,212,0,.08);
+}
+.sy-assessment-flow-frame::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:3;
+  background:linear-gradient(109deg,transparent 30%,rgba(255,255,255,.03) 42%,rgba(157,221,255,.23) 50%,rgba(255,255,255,.03) 58%,transparent 71%);
+  background-size:300% 100%;
+  pointer-events:none;
+}
+.sy-assessment-flow-frame::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:3;
+  border:2px solid rgba(103,202,255,.18);
+  border-radius:inherit;
+  pointer-events:none;
+}
+.sy-assessment-flow-frame img {position:relative;z-index:1;}
+.sy-assessment-info-tile {
+  position:relative;
+  isolation:isolate;
+  transition:transform .3s ease, box-shadow .3s ease;
+}
+.sy-assessment-info-tile::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.17) 50%,transparent 80%);
+  background-size:250% 100%;
+  opacity:.6;
+}
+.sy-assessment-info-tile:hover {transform:translateY(-5px);box-shadow:0 18px 26px rgba(0,22,60,.18);}
+.sy-assessment-section {
+  position:relative;
+  isolation:isolate;
+  box-shadow:0 5px 20px rgba(11,50,116,.035);
+  transition:box-shadow .3s ease,border-color .3s ease;
+}
+.sy-assessment-section::after {
+  content:"";
+  pointer-events:none;
+  position:absolute;
+  height:2px;
+  top:0;
+  right:0;
+  width:30%;
+  border-radius:50px;
+  background:linear-gradient(90deg,transparent,rgba(83,175,232,.45),rgba(255,212,0,.65),transparent);
+  background-size:200% 100%;
+  opacity:.68;
+}
+.sy-assessment-section:hover {box-shadow:0 20px 42px rgba(11,50,116,.085);}
+.sy-assessment-section-number {box-shadow:0 0 0 5px rgba(83,175,232,.065);}
+.sy-assessment-visual {
+  position:relative;
+  isolation:isolate;
+  box-shadow:0 8px 22px rgba(11,50,116,.075);
+}
+.sy-assessment-visual::after {
+  content:"";
+  position:absolute;
+  inset:-35%;
+  z-index:2;
+  pointer-events:none;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.4) 49.5%,transparent 58%);
+  background-size:220% 100%;
+}
+.sy-assessment-visual img {transition:transform .7s cubic-bezier(.2,.8,.2,1);}
+.sy-assessment-section:hover .sy-assessment-visual img {transform:scale(1.055);}
+.sy-assessment-sticky {
+  position:sticky;
+  isolation:isolate;
+}
+.sy-assessment-sticky::after {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  left:18px;right:18px;bottom:0;height:2px;
+  background:linear-gradient(90deg,transparent,#53AFE8,#FFD400,transparent);
+  background-size:200% 100%;
+  opacity:.8;
+}
+.sy-assessment-sticky a {position:relative;isolation:isolate;}
+.sy-assessment-sticky a[aria-current="step"]::after {
+  content:"";
+  pointer-events:none;
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  border:1px solid rgba(255,212,0,.35);
+  box-shadow:0 0 20px rgba(83,175,232,.16);
+}
+.sy-assessment-badge {position:relative;overflow:hidden;}
+.sy-assessment-badge::after {
+  content:"";
+  position:absolute;
+  width:65%;
+  height:120%;
+  left:-80%;top:-10%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.32),transparent);
+  transform:skewX(-24deg);
+  pointer-events:none;
+}
+
+/* Dashboard */
+.sy-dashboard-hero {position:relative;isolation:isolate;}
+.sy-dashboard-hero::before {
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;height:3px;
+  z-index:3;
+  background:linear-gradient(90deg,#53AFE8,#FFD400,#53AFE8,#17356f);
+  background-size:300% 100%;
+  pointer-events:none;
+}
+.sy-dashboard-copy {
+  position:relative;isolation:isolate;overflow:hidden;
+}
+.sy-dashboard-copy::before {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  right:-200px;top:-190px;
+  width:440px;height:440px;border-radius:50%;
+  background:radial-gradient(circle,rgba(83,175,232,.16),rgba(83,175,232,.04) 43%,transparent 67%);
+}
+.sy-dashboard-copy > * {position:relative;z-index:1;}
+.sy-dashboard-panel {
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  background-image:linear-gradient(125deg,#123671,#0A345B 50%,#020B1D);
+}
+.sy-dashboard-panel::before {
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(125,208,255,.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(125,208,255,.045) 1px,transparent 1px);
+  background-size:36px 36px;
+}
+.sy-dashboard-panel > :not(.sy-dashboard-motion-art) {position:relative;z-index:2;}
+.sy-dashboard-motion-art {
+  position:absolute;
+  z-index:1;
+  pointer-events:none;
+  width:158%;
+  top:-10%;
+  left:-29%;
+  height:auto;
+  opacity:.68;
+  filter:drop-shadow(0 0 14px rgba(76,183,248,.12));
+}
+.sy-dashboard-snapshot-tile {
+  position:relative;isolation:isolate;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 11px 32px rgba(0,7,28,.11);
+  backdrop-filter:blur(12px);
+  transition:transform .28s ease,box-shadow .28s ease;
+}
+.sy-dashboard-snapshot-tile:hover {transform:translateY(-4px);box-shadow:0 18px 32px rgba(0,10,38,.24);}
+.sy-dashboard-snapshot-tile::after {
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  border:1px solid rgba(255,255,255,.13);
+  background:linear-gradient(120deg,transparent 35%,rgba(255,255,255,.12) 50%,transparent 65%);
+  background-size:300% 100%;
+}
+.sy-dashboard-stat {
+  position:relative;isolation:isolate;overflow:hidden;
+  transition:transform .26s ease,box-shadow .26s ease;
+}
+.sy-dashboard-stat::before {
+  content:"";
+  position:absolute;
+  width:130px;height:130px;
+  right:-62px;top:-64px;
+  border-radius:50%;
+  border:1px solid currentColor;
+  opacity:.065;pointer-events:none;
+  box-shadow:0 0 0 20px currentColor,0 0 0 41px currentColor;
+}
+.sy-dashboard-stat:hover {transform:translateY(-4px);box-shadow:0 20px 28px rgba(11,50,116,.11);}
+.sy-dashboard-reportcard {
+  position:relative;isolation:isolate;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.sy-dashboard-reportcard::before {
+  content:"";
+  pointer-events:none;position:absolute;
+  width:115px;height:3px;top:0;left:0;z-index:2;
+  background:linear-gradient(90deg,#53AFE8,#FFD400,transparent);
+  background-size:200% 100%;
+}
+.sy-dashboard-reportcard:hover {border-color:#a9d8f4;transform:translateY(-5px);box-shadow:0 25px 45px rgba(11,50,116,.15);}
+.sy-dashboard-reportcard a:hover,.sy-dashboard-cta:hover {filter:brightness(1.06);}
+.sy-dashboard-empty {position:relative;isolation:isolate;}
+
+@keyframes sy-journey-sweep {to {background-position:-200% 0;}}
+@keyframes sy-energy-orbit {to {transform:rotate(360deg);}}
+@keyframes sy-energy-orbit-reverse {to {transform:rotate(-360deg);}}
+@keyframes sy-energy-dashes {to {stroke-dashoffset:-520;}}
+@keyframes sy-energy-node {0%,100%{opacity:.4;transform:scale(.78);}50%{opacity:1;transform:scale(1.3);}}
+@keyframes sy-assess-intro {from {opacity:.45;transform:translateY(16px);}to {opacity:1;transform:translateY(0);}}
+@keyframes sy-assess-scan {0%,100%{opacity:.65;}50%{opacity:1;}}
+@keyframes sy-dash-intro {from {opacity:.45;transform:translateY(23px);}to {opacity:1;transform:translateY(0);}}
+@keyframes sy-dash-path {to{stroke-dashoffset:-520;}}
+@keyframes sy-dash-radar-spin {to{transform:rotate(360deg);}}
+@keyframes sy-dash-glow {0%,100%{opacity:.48;}50%{opacity:.85;}}
+@keyframes sy-dash-node {0%,100%{opacity:.4;}50%{opacity:1;}}
+
+@media (prefers-reduced-motion:no-preference) {
+  .sy-assessment-hero {animation:sy-assess-intro .85s ease-out both;}
+  .sy-assessment-hero::after {animation:sy-journey-sweep 12s linear infinite;}
+  .sy-assessment-ring-spin {transform-origin:330px 330px;animation:sy-energy-orbit 28s linear infinite;}
+  .sy-assessment-ring-reverse {transform-origin:330px 330px;animation:sy-energy-orbit-reverse 42s linear infinite;}
+  .sy-assessment-trace {animation:sy-energy-dashes 12s linear infinite;}
+  .sy-assessment-trace-alt {animation-duration:8s;}
+  .sy-assessment-nodes circle {transform-box:fill-box;transform-origin:center;animation:sy-energy-node 3s ease-in-out infinite;}
+  .sy-assessment-nodes circle:nth-child(2) {animation-delay:.85s;}
+  .sy-assessment-nodes circle:nth-child(3) {animation-delay:1.65s;}
+  .sy-assessment-flow-frame::before {animation:sy-journey-sweep 7s linear infinite;}
+  .sy-assessment-info-tile::after {animation:sy-journey-sweep 10s linear infinite;}
+  .sy-assessment-visual::after {animation:sy-journey-sweep 7.5s linear infinite;}
+  .sy-assessment-sticky::after {animation:sy-journey-sweep 8s linear infinite;}
+  .sy-assessment-section::after {animation:sy-journey-sweep 8s linear infinite;}
+  .sy-assessment-badge::after {animation:sy-journey-sweep 6s linear infinite;}
+  .sy-assessment-section {animation:sy-assess-scan 1s ease-out both;animation-timeline:view();animation-range:entry 0% cover 18%;}
+  .sy-dashboard-hero {animation:sy-dash-intro .9s cubic-bezier(.16,.82,.2,1) both;}
+  .sy-dashboard-hero::before {animation:sy-journey-sweep 10s linear infinite;}
+  .sy-dashboard-data-paths .sy-dashboard-flow {animation:sy-dash-path 12s linear infinite;}
+  .sy-dashboard-data-paths .sy-dashboard-flow-alt {animation-duration:9s;}
+  .sy-dashboard-data-paths .sy-dashboard-flow-third {animation-duration:14s;}
+  .sy-dashboard-radar {transform-origin:365px 340px;animation:sy-dash-radar-spin 55s linear infinite;}
+  .sy-dashboard-energy-nodes circle {animation:sy-dash-node 2.8s ease-in-out infinite;}
+  .sy-dashboard-energy-nodes circle:nth-child(2n) {animation-delay:1.2s;}
+  .sy-dashboard-motion-art {animation:sy-dash-glow 6s ease-in-out infinite;}
+  .sy-dashboard-snapshot-tile::after {animation:sy-journey-sweep 10s linear infinite;}
+  .sy-dashboard-reportcard::before {animation:sy-journey-sweep 5s linear infinite;}
+  .sy-dashboard-reportcard {animation:sy-assess-scan 1s ease-out both;animation-timeline:view();animation-range:entry 0% cover 25%;}
+}
+@media (max-width:680px) {
+  .sy-assessment-motion-art {width:190%;right:-74%;top:-90px;opacity:.33;}
+  .sy-assessment-how::before {background-size:35px 35px;}
+  .sy-dashboard-motion-art {width:170%;top:-8%;left:-37%;opacity:.58;}
+  .sy-assessment-hero-copy::before {opacity:.35;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .sy-assessment-page *, .sy-assessment-page *::before,.sy-assessment-page *::after,
+  .sy-dashboard-page *, .sy-dashboard-page *::before,.sy-dashboard-page *::after {
+    animation:none !important; transition:none !important;
+  }
+}
