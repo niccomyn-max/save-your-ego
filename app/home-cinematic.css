@@ -1,172 +1,204 @@
-/* Save Your EGO cinematic homepage experiment: self-contained, reversible. */
-.ego-cinematic-home {
+/* Cinematic energy home - premium interactive technical illustration. Only on homepage experiment. */
+.sy-tech-panel {
+  --move-x: 0px;
+  --move-y: 0px;
+  position: relative;
   isolation: isolate;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.9);
-  border-radius: 2rem;
-  padding: 10px;
-  background: rgba(255,255,255,.94);
-  box-shadow: 0 30px 85px rgba(11,50,116,.17), 0 8px 20px rgba(11,50,116,.07);
+  border-radius: 28px;
+  background: #071A39;
+  color: #F4FBFF;
+  border: 1px solid rgba(110,196,255,.32);
+  box-shadow: 0 40px 100px -30px rgba(6,31,70,.5), inset 0 1px 0 rgba(255,255,255,.16);
 }
-.ego-stage {
-  position: relative;
-  overflow: hidden;
-  border-radius: 1.45rem;
-  background: #81cff4;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
-}
-.ego-illustration { display: block; width: 100%; height: auto; }
-.ego-stage-topline {
+.sy-tech-panel::before {
+  content: "";
   position: absolute;
-  z-index: 4;
-  left: 18px;
-  right: 18px;
-  top: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  z-index: 0;
   pointer-events: none;
+  inset: -50%;
+  background: radial-gradient(ellipse at 45% 40%,rgba(38,127,207,.23),transparent 44%),
+    radial-gradient(ellipse at 70% 65%,rgba(13,75,160,.25),transparent 40%);
 }
-.ego-stage-live {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  color: #0B3274;
-  background: rgba(255,255,255,.94);
-  border: 1px solid rgba(255,255,255,.8);
-  border-radius: 999px;
-  padding: 9px 13px;
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: .13em;
-  box-shadow: 0 9px 24px rgba(11,50,116,.12);
-}
-.ego-live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #49be7e; box-shadow: 0 0 0 4px rgba(73,190,126,.18); }
-.ego-stage-stars { color: #fff; font-size: 26px; text-shadow: 0 2px 10px rgba(11,50,116,.26); }
-.ego-scene-story {
+.sy-tech-panel::after {
+  content: "";
   position: absolute;
-  z-index: 5;
-  left: 16px;
-  bottom: 14px;
-  width: min(56%, 265px);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  border: 1px solid rgba(255,255,255,.93);
-  border-radius: 20px;
-  padding: 14px 16px;
-  background: rgba(255,255,255,.95);
-  color: #17356F;
-  box-shadow: 0 17px 36px rgba(11,50,116,.17);
-  backdrop-filter: blur(12px);
-}
-.ego-scene-story-eyebrow { color: #3382aa; font-size: 9px; font-weight: 900; letter-spacing: .16em; }
-.ego-scene-story strong { font-size: clamp(15px, 1.8vw, 21px); line-height: 1.1; font-weight: 900; letter-spacing: -.02em; }
-.ego-scene-story > span:last-child { font-size: 11px; color: #3d5a70; line-height: 1.4; }
-.ego-floating-badge {
-  position: absolute;
-  z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid rgba(255,255,255,.96);
-  border-radius: 999px;
-  padding: 9px 14px;
-  font-weight: 900;
-  font-size: clamp(9px, 1.1vw, 12px);
-  color: #14366f;
-  background: rgba(255,255,255,.96);
-  box-shadow: 0 8px 24px rgba(11,50,116,.18);
+  z-index: 0;
+  inset: 0;
   pointer-events: none;
+  opacity: .18;
+  background-image: linear-gradient(135deg, transparent 45%,rgba(98,195,251,.3) 49.8%,transparent 50.4%);
+  background-size: 90px 90px;
 }
-.ego-floating-badge span { font-size: 17px; color: #F7B600; }
-.ego-floating-badge-solar { top: 42%; right: 2%; transform: rotate(6deg); }
-.ego-floating-badge-idea { top: 66%; left: 3%; transform: rotate(-7deg); }
-.ego-scene-controls { padding: 14px 9px 5px; display: flex; flex-direction: column; gap: 9px; }
-.ego-controls-label { color: #61768b; font-size: 10px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; text-align: center; }
-.ego-control-buttons { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
-.ego-control-buttons button {
-  cursor: pointer;
-  border: 1px solid #dbe8f4;
-  border-radius: 13px;
-  padding: 11px 5px;
-  font-size: 12px;
-  font-weight: 900;
-  white-space: nowrap;
-  color: #17356f;
-  background: #f4f9ff;
-  transition: background .2s, border-color .2s, box-shadow .2s, transform .2s;
+.sy-tech-grain {
+  position:absolute; inset:0; z-index:1; pointer-events:none;
+  background: radial-gradient(circle at 25% 21%,rgba(105,206,255,.1) 0 1px,transparent 2px),
+    radial-gradient(circle at 75% 62%,rgba(106,206,255,.08) 0 1px, transparent 2px);
+  background-size:26px 26px,41px 41px;
+  mask-image:linear-gradient(to bottom,transparent,black 30%,black 85%,transparent);
 }
-.ego-control-buttons button:hover { transform: translateY(-2px); background: #e8f5ff; }
-.ego-control-buttons button:focus-visible { outline: 3px solid #3289e8; outline-offset: 3px; }
-.ego-control-buttons button.ego-mode-active { color: #0b3274; border-color: #ffd400; background: #fff3a6; box-shadow: 0 0 0 2px rgba(255,212,0,.13); }
-.ego-scene-footnote { margin: 6px 8px 5px; color: #7a8b9c; text-align: center; font-size: 10px; line-height: 1.4; }
-.ego-heat-lines { opacity: 0; transition: opacity .35s; }
-.ego-energy-route { opacity: .23; transition: opacity .35s; }
-.ego-window-glow { opacity: .86; transition: opacity .35s; }
-.ego-cinematic-home--solar .ego-energy-route { opacity: 1; }
-.ego-cinematic-home--solar .ego-solar-array { filter: drop-shadow(0 0 12px rgba(255,222,64,.85)); }
-.ego-cinematic-home--lights .ego-window-glow { opacity: 1; filter: drop-shadow(0 0 19px rgba(255,210,38,.95)); }
-.ego-cinematic-home--warmth .ego-heat-lines { opacity: 1; }
-.ego-cinematic-home--warmth .ego-window-glow { opacity: 1; filter: drop-shadow(0 0 15px rgba(255,154,88,.85)); }
+.sy-tech-grid {
+  position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:linear-gradient(to right,rgba(100,180,240,.035) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(100,180,240,.035) 1px,transparent 1px);
+  background-size:42px 42px;
+}
+.sy-tech-beam {
+  position:absolute; z-index:0; pointer-events:none;
+  width:420px; height:420px; border-radius:50%; filter:blur(65px); opacity:.36;
+  background:radial-gradient(circle,rgba(20,160,239,.32),transparent 68%);
+}
+.sy-tech-beam-one {top:0;left:-200px;}
+.sy-tech-beam-two {top:180px;right:-250px;background:radial-gradient(circle,rgba(76,146,232,.34),transparent 67%);}
+.sy-tech-topbar {
+  position:relative; z-index:5;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:23px 25px 0;
+  font-size:10px; font-weight:800; letter-spacing:.14em;
+}
+.sy-tech-kicker {display:inline-flex;align-items:center;gap:9px;white-space:nowrap;color:#E1F5FF;}
+.sy-tech-kicker-muted {color:#6FA4CE;}
+.sy-tech-status-dot {
+  width:7px;height:7px;display:inline-block;flex:0 0 auto;border-radius:50%;
+  background:#FFD400;box-shadow:0 0 0 4px rgba(255,212,0,.12),0 0 15px rgba(255,212,0,.6);
+}
+.sy-tech-view-indicator {color:#88BDDE;white-space:nowrap;}
+.sy-tech-crosshair {color:#FFD400;font-size:17px;margin-left:6px;vertical-align:-2px;}
+.sy-tech-scene {position:relative;min-height:280px;z-index:2;}
+.sy-tech-halo {
+  position:absolute;z-index:0;inset:9% 12%;
+  background:radial-gradient(ellipse at center,rgba(57,171,250,.20),rgba(33,107,210,.05) 52%,transparent 68%);
+  filter:blur(12px);
+}
+.sy-tech-house-svg {
+  position:relative;z-index:2;display:block;width:100%;height:auto;
+  overflow:visible;
+  transform:translate3d(calc(var(--move-x) * .65),calc(var(--move-y) * .65),0);
+  will-change:transform;
+  filter:drop-shadow(0 18px 12px rgba(0,7,30,.15));
+}
+.sy-tech-radar {position:absolute;z-index:0;left:50%;top:56%;border:1px solid rgba(96,183,253,.12);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.sy-tech-radar-one {width:62%;aspect-ratio:1;}
+.sy-tech-radar-two {width:83%;aspect-ratio:1;}
+.sy-tech-spec {
+  position:absolute;z-index:4;pointer-events:none;
+  padding:10px 13px;border-radius:12px;
+  background:linear-gradient(125deg,rgba(13,49,91,.92),rgba(6,32,66,.72));
+  backdrop-filter:blur(13px);
+  border:1px solid rgba(99,186,246,.27);
+  box-shadow:0 12px 24px rgba(0,7,25,.23);
+  min-width:140px;
+}
+.sy-tech-spec-top {top:11%;right:4%;}
+.sy-tech-spec-bottom {bottom:13%;left:4%;}
+.sy-tech-spec-eyebrow {display:block;color:#84B5DC;letter-spacing:.17em;font-size:9px;font-weight:800;margin-bottom:7px;}
+.sy-tech-spec strong {display:block;font-size:12px;line-height:1.35;color:#F0FAFF;font-weight:800;}
+.sy-tech-spec small {display:block;color:#9CB6D4;font-size:10px;margin-top:6px;}
+.sy-tech-mini-track {display:block;height:2px;background:rgba(109,184,230,.2);margin-top:10px;overflow:hidden;border-radius:5px;}
+.sy-tech-mini-track span {display:block;height:100%;width:62%;background:#FFD400;box-shadow:0 0 8px rgba(255,212,0,.6);}
+.sy-tech-scene-axis {position:absolute;bottom:3%;right:4%;z-index:3;font-weight:800;font-size:9px;letter-spacing:.18em;color:#72A3CB;}
+.sy-tech-bottom {
+  position:relative;z-index:5;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+  align-items:center;gap:15px;padding:7px 25px 23px;
+}
+.sy-tech-description {min-width:0;}
+.sy-tech-description > span {display:block;font-size:10px;font-weight:800;letter-spacing:.2em;color:#FFD400;margin-bottom:8px;}
+.sy-tech-description > strong {display:block;font-size:clamp(17px,1.8vw,23px);font-weight:900;letter-spacing:-.035em;line-height:1.16;color:#FFF;}
+.sy-tech-description p {font-size:11px;line-height:1.55;color:#92B4D2;margin:7px 0 0;}
+.sy-tech-focus-buttons {display:flex;flex-direction:column;gap:7px;align-items:stretch;}
+.sy-tech-focus-buttons button {
+  display:flex;align-items:center;gap:12px;text-align:left;width:100%;
+  background:rgba(111,174,223,.065);border:1px solid rgba(137,196,237,.16);
+  border-radius:9px;color:#B5D0E8;padding:11px 13px;
+  cursor:pointer; font-size:12px;font-weight:800;line-height:1.1;
+  transition:border-color .22s,transform .22s,background .22s,color .22s,box-shadow .22s;
+}
+.sy-tech-focus-buttons button:hover {color:#fff;transform:translateX(-3px);background:rgba(85,159,223,.16);}
+.sy-tech-focus-buttons button:focus-visible {outline:2px solid #FFD400;outline-offset:3px;}
+.sy-tech-focus-buttons button span {font-size:10px;font-weight:800;letter-spacing:.07em;color:#6998BD;}
+.sy-tech-focus-buttons button.sy-tech-button-active {
+  color:#fff;border-color:rgba(255,212,0,.65);
+  background:linear-gradient(90deg,rgba(255,212,0,.13),rgba(102,175,237,.09));
+  box-shadow:inset 3px 0 0 #FFD400,0 0 25px rgba(255,212,0,.035);
+}
+.sy-tech-focus-buttons button.sy-tech-button-active span {color:#FFD400;}
+.sy-tech-disclaimer {
+  position:relative;z-index:2;padding:11px 25px;border-top:1px solid rgba(100,177,230,.13);
+  font-size:9px;letter-spacing:.18em;font-weight:700;color:#5C90B9;text-align:center;
+}
+.sy-tech-heating-overlay,.sy-tech-appliance-pulses {opacity:0;transition:opacity .35s ease;}
+.sy-tech-powerflow {opacity:.1;transition:opacity .4s ease;}
+.sy-tech-solar-model {transition:filter .4s ease;}
+.sy-tech-windows-model {transition:filter .4s ease;}
+.sy-tech-panel--solar .sy-tech-powerflow {opacity:1;}
+.sy-tech-panel--solar .sy-tech-solar-model {filter:drop-shadow(0 0 9px rgba(86,205,255,.7));}
+.sy-tech-panel--heating .sy-tech-heating-overlay {opacity:1;}
+.sy-tech-panel--heating .sy-tech-house-assembly {filter:drop-shadow(0 0 20px rgba(255,212,0,.18));}
+.sy-tech-panel--appliances .sy-tech-appliance-pulses {opacity:1;}
+.sy-tech-panel--appliances .sy-tech-windows-model {filter:drop-shadow(0 0 11px rgba(255,212,0,.45));}
 
-@keyframes ego-cloud-drift { 0%,100% { transform: translateX(-20px); } 50% { transform: translateX(30px); } }
-@keyframes ego-cloud-drift-back { 0%,100% { transform: translateX(24px); } 50% { transform: translateX(-28px); } }
-@keyframes ego-sun-dance { 0%,100% {transform: scale(1) rotate(-4deg)} 50% {transform: scale(1.08) rotate(4deg)} }
-@keyframes ego-ray-spin {to { transform: rotate(360deg);}}
-@keyframes ego-energy-dash { to { stroke-dashoffset: -224; }}
-@keyframes ego-house-arrive {from { transform: translateY(48px) scale(.94); opacity: .15; } to {transform: translateY(0) scale(1); opacity: 1;}}
-@keyframes ego-character-wave {0%,100%{transform:translateY(0) rotate(-1deg)} 50%{transform:translateY(-5px) rotate(2deg)}}
-@keyframes ego-flowers-dance {0%,100% {transform:rotate(-3deg)} 50%{transform:rotate(4deg)}}
-@keyframes ego-sparkle-dance {0%,100% {opacity:.15;transform:scale(.65) rotate(-8deg)} 50%{opacity:1;transform:scale(1.25) rotate(12deg)}}
-@keyframes ego-bird-flight {0%,100% {transform:translate(0,0)} 50% {transform:translate(30px,-15px)}}
-@keyframes ego-badge-bob {0%,100% {translate:0 0} 50%{translate:0 -11px}}
-@keyframes ego-window-twinkle {0%,100%{filter:brightness(.95)} 50%{filter:brightness(1.14)}}
-@keyframes ego-warm-rise {0%,100%{transform:translateY(0);opacity:.55} 50%{transform:translateY(-10px);opacity:1}}
-@keyframes ego-tree-sway {0%,100% {transform:rotate(-2deg)} 50%{transform:rotate(3deg)}}
-@keyframes ego-home-entry {from {opacity:0;transform:translateY(22px)} to {opacity:1;transform:translateY(0)}}
+@keyframes sy-intro {from {opacity:0;transform:translateY(30px) scale(.975);}to {opacity:1;transform:translateY(0) scale(1);}}
+@keyframes sy-house-enter {from {opacity:.2;transform:translateY(56px) scale(.88);}to {opacity:1;transform:translateY(0) scale(1);}}
+@keyframes sy-flow-move {to {stroke-dashoffset:-320;}}
+@keyframes sy-orbit {from {transform:rotate(0deg);}to {transform:rotate(360deg);}}
+@keyframes sy-pulse {0%,100%{opacity:.5;}50%{opacity:1;}}
+@keyframes sy-beam-move {0%,100% {transform:translate3d(0,0,0)}50%{transform:translate3d(110px,-60px,0)}}
+@keyframes sy-scanline {0%{background-position:0 -90px}100%{background-position:0 730px}}
+@keyframes sy-node-beat {0%,100%{opacity:.55;filter:drop-shadow(0 0 0 #52caff)}50%{opacity:1;filter:drop-shadow(0 0 9px #52caff)}}
+@keyframes sy-appliances-pulse {0%,100%{opacity:.2;}50%{opacity:1;}}
+@keyframes sy-track-fill {0%,100%{width:22%;}50%{width:90%;}}
 @media (prefers-reduced-motion: no-preference) {
-  .ego-cinematic-home { animation: ego-home-entry .75s ease-out both; }
-  .ego-cloud-one { animation: ego-cloud-drift 8s ease-in-out infinite; }
-  .ego-cloud-two { animation: ego-cloud-drift-back 11s ease-in-out infinite; }
-  .ego-sun-group { transform-origin: 143px 134px; animation: ego-sun-dance 4s ease-in-out infinite; }
-  .ego-sun-rays { transform-origin: 143px 134px; animation: ego-ray-spin 32s linear infinite; }
-  .ego-energy-flow { animation: ego-energy-dash 4s linear infinite; }
-  .ego-energy-delay {animation-duration: 3s;}
-  .ego-house-build {transform-origin: 380px 530px;animation:ego-house-arrive 1.2s ease-out both;}
-  .ego-family-people {transform-origin: 586px 567px; animation:ego-character-wave 3.5s ease-in-out infinite;}
-  .ego-flowers {transform-origin: 500px 580px;animation:ego-flowers-dance 5s ease-in-out infinite;}
-  .ego-bird {animation:ego-bird-flight 13s ease-in-out infinite;}
-  .ego-tree-sway {transform-origin:90px 550px;animation:ego-tree-sway 6s ease-in-out infinite;}
-  .ego-sparkle {transform-box:fill-box;transform-origin:center;animation:ego-sparkle-dance 3s ease-in-out infinite;}
-  .ego-sparkle-two {animation-delay:1s;}
-  .ego-sparkle-three {animation-delay:2s;}
-  .ego-window-glow {animation:ego-window-twinkle 3s ease-in-out infinite;}
-  .ego-window-right {animation-delay:1.2s;}
-  .ego-heat-lines {animation:ego-warm-rise 3s ease-in-out infinite;}
-  .ego-floating-badge {animation:ego-badge-bob 4s ease-in-out infinite;}
-  .ego-floating-badge-idea {animation-delay:1.7s;}
-  .ego-live-dot {animation:ego-window-twinkle 1.6s ease-in-out infinite;}
+  .sy-tech-panel {animation:sy-intro .85s cubic-bezier(.2,.8,.25,1) both;}
+  .sy-tech-house-assembly {transform-origin:420px 475px;animation:sy-house-enter 1.4s .1s cubic-bezier(.1,.85,.15,1) both;}
+  .sy-tech-path-primary {animation:sy-flow-move 6s linear infinite;}
+  .sy-tech-path-secondary {animation-duration:9s;}
+  .sy-tech-orbit-lines {transform-origin:412px 425px;animation:sy-orbit 70s linear infinite;}
+  .sy-tech-beam-one {animation:sy-beam-move 12s ease-in-out infinite;}
+  .sy-tech-beam-two {animation:sy-beam-move 15s ease-in-out infinite reverse;}
+  .sy-tech-grid {animation:sy-scanline 19s linear infinite;}
+  .sy-tech-node {animation:sy-node-beat 3s ease-in-out infinite;}
+  .sy-tech-node-2 {animation-delay:.8s;}
+  .sy-tech-node-3 {animation-delay:1.7s;}
+  .sy-tech-panel--appliances .sy-tech-appliance-pulses {animation:sy-appliances-pulse 2.5s ease-in-out infinite;}
+  .sy-tech-mini-track span {animation:sy-track-fill 5s ease-in-out infinite;}
+  .sy-tech-status-dot {animation:sy-pulse 2.2s ease-in-out infinite;}
+  .sy-tech-house-svg {transition:transform .25s ease-out;}
 }
-@media (max-width: 520px) {
-  .ego-cinematic-home {border-radius: 1.5rem; padding: 7px;}
-  .ego-stage {border-radius: 1.15rem;}
-  .ego-stage-topline {top:10px;left:9px;right:10px;}
-  .ego-stage-live {font-size:8px;padding:6px 8px;letter-spacing:.08em;}
-  .ego-stage-stars {font-size:15px;}
-  .ego-floating-badge {padding:5px 7px;font-size:8px;}
-  .ego-floating-badge span {font-size:12px;}
-  .ego-floating-badge-solar {top:35%;}
-  .ego-floating-badge-idea {top:69%;}
-  .ego-scene-story {bottom:8px;left:8px;width:58%;padding:10px;border-radius:14px;gap:2px;}
-  .ego-scene-story-eyebrow {font-size:7px;letter-spacing:.09em;}
-  .ego-scene-story strong {font-size:13px;}
-  .ego-scene-story > span:last-child {font-size:9px;}
-  .ego-control-buttons {gap:5px;}
-  .ego-control-buttons button {font-size:11px;padding:9px 3px;}
-  .ego-scene-footnote {font-size:9px;}
+@media (max-width: 1100px) and (min-width:1024px) {
+  .sy-tech-topbar {padding:15px 18px 0;}
+  .sy-tech-kicker-muted,.sy-tech-view-indicator {display:none;}
+  .sy-tech-bottom {padding:0 16px 19px;grid-template-columns:1fr;}
+  .sy-tech-focus-buttons {flex-direction:row;}
+  .sy-tech-focus-buttons button {justify-content:center;padding:10px 6px;gap:5px;}
+  .sy-tech-spec {transform:scale(.85);transform-origin:right top;}
+}
+@media (max-width: 690px) {
+  .sy-tech-panel {border-radius:20px;}
+  .sy-tech-topbar {padding:17px 16px 0;font-size:9px;}
+  .sy-tech-kicker {gap:8px;letter-spacing:.08em;}
+  .sy-tech-kicker-muted {display:none;}
+  .sy-tech-view-indicator {font-size:8px;letter-spacing:.06em;}
+  .sy-tech-crosshair {font-size:13px;}
+  .sy-tech-scene {min-height:0;}
+  .sy-tech-bottom {grid-template-columns:1fr;gap:18px;padding:0 16px 17px;}
+  .sy-tech-focus-buttons {flex-direction:row;gap:6px;}
+  .sy-tech-focus-buttons button {justify-content:center;gap:7px;padding:10px 4px;font-size:11px;}
+  .sy-tech-focus-buttons button:hover {transform:translateY(-2px);}
+  .sy-tech-spec {min-width:0;padding:7px 9px;border-radius:9px;}
+  .sy-tech-spec-top {right:2%;top:15%;}
+  .sy-tech-spec-bottom {left:2%;bottom:10%;}
+  .sy-tech-spec-eyebrow {font-size:7px;margin-bottom:4px;}
+  .sy-tech-spec strong {font-size:9px;}
+  .sy-tech-spec small {font-size:8px;margin-top:3px;}
+  .sy-tech-mini-track {margin-top:6px;}
+  .sy-tech-scene-axis {font-size:7px;}
+  .sy-tech-disclaimer {padding:11px;font-size:8px;}
+}
+@media (max-width: 390px) {
+  .sy-tech-view-indicator {display:none;}
+  .sy-tech-spec-bottom {bottom:7%;}
 }
 @media (prefers-reduced-motion: reduce) {
-  .ego-cinematic-home *, .ego-cinematic-home *::before, .ego-cinematic-home *::after {animation:none !important;transition:none !important;}
+  .sy-tech-panel,.sy-tech-panel *,.sy-tech-panel::before,.sy-tech-panel::after {animation:none !important;transition:none !important;}
+  .sy-tech-house-svg {transform:none !important;}
 }
