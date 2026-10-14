@@ -1,6 +1,7 @@
 import "../energy-motion.css";
+import "./dashboard-v2.css";
 import Image from "next/image";
-import { DashboardMotionGraphic } from "@/components/energy-motion-graphics";
+import DashboardEnergyConsoleV2, { type EnergyHistoryPoint } from "@/components/dashboard-energy-console-v2";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
@@ -260,13 +261,25 @@ async function DashboardContent() {
   const assessmentList = (assessments ?? []) as Assessment[];
   const latestAssessment = assessmentList[0];
 
+  // Chart only uses existing saved estimates; no synthetic values.
+  const energyHistory: EnergyHistoryPoint[] = assessmentList.slice(0, 8).reverse().map((assessment) => {
+    const electricity = Number(assessment.scores?.estimatedBillKwh);
+    const appliances = Number(assessment.scores?.applianceKwh);
+    return {
+      id: assessment.id,
+      date: formatDate(assessment.created_at),
+      electricityKwh: Number.isFinite(electricity) && electricity > 0 ? Math.round(electricity) : null,
+      applianceKwh: Number.isFinite(appliances) && appliances > 0 ? Math.round(appliances) : null,
+    };
+  });
+
   
 
   return (
-    <main className="sy-dashboard-page min-h-screen bg-[#f7fbff] px-5 py-24 text-[#050505] sm:px-8 lg:px-10">
+    <main className="sy-v2-dashboard-page sy-dashboard-page min-h-screen bg-[#f7fbff] px-5 py-24 text-[#050505] sm:px-8 lg:px-10">
 
       <div className="mx-auto max-w-6xl">
-        <section className="sy-dashboard-hero overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
+        <section className="sy-v2-dashboard-hero sy-dashboard-hero overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
             <div className="sy-dashboard-copy p-6 sm:p-8 lg:p-10">
               <Image
@@ -309,45 +322,12 @@ async function DashboardContent() {
               </div>
             </div>
 
-            <div className="sy-dashboard-panel bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
-              <DashboardMotionGraphic />
-              <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
-                Your snapshot
-              </p>
-
-              <div className="mt-8 grid gap-4">
-                <div className="sy-dashboard-snapshot-tile rounded-[1.5rem] bg-white/10 p-5 backdrop-blur">
-                  <p className="text-xs font-black uppercase tracking-wide text-white/60">
-                    Saved reports
-                  </p>
-                  <p className="mt-2 text-5xl font-black">
-                    {assessmentList.length}
-                  </p>
-                </div>
-
-                <div className="grid gap-4">
-                  <div className="sy-dashboard-snapshot-tile rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
-                      
-                    <p className="text-xs font-black uppercase opacity-70">
-                      Latest
-                    </p>
-                    <p className="mt-2 text-lg font-black">
-                      {latestAssessment
-                        ? formatDate(latestAssessment.created_at)
-                        : "None yet"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="sy-dashboard-snapshot-tile rounded-[1.5rem] bg-white p-5 text-black">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                    We look at
-                  </p>
-                  <p className="mt-2 text-xl font-black">
-                    Electricity. Gas. Oil.
-                  </p>
-                </div>
-              </div>
+            <div className="min-w-0">
+              <DashboardEnergyConsoleV2
+                history={energyHistory}
+                reportCount={assessmentList.length}
+                latestDate={latestAssessment ? formatDate(latestAssessment.created_at) : "None yet"}
+              />
             </div>
           </div>
         </section>
