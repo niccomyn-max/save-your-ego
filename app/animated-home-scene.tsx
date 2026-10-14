@@ -1,246 +1,219 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type PointerEvent } from "react";
 
-type SceneMode = "solar" | "lights" | "warmth";
+type Focus = "solar" | "heating" | "appliances";
 
-const sceneCopy: Record<SceneMode, { eyebrow: string; title: string; note: string }> = {
+const focusContent: Record<Focus, { code: string; title: string; description: string; detail: string }> = {
   solar: {
-    eyebrow: "SUNSHINE AT WORK",
-    title: "Hello, solar power!",
-    note: "See how daylight can help power a home.",
+    code: "01 / SOLAR",
+    title: "See your home's potential.",
+    description: "Explore the roof, daylight and opportunities to use energy more efficiently.",
+    detail: "ROOF + SOLAR",
   },
-  lights: {
-    eyebrow: "A BRIGHT IDEA",
-    title: "Every light matters.",
-    note: "Try turning off lights in empty rooms.",
+  heating: {
+    code: "02 / HEATING",
+    title: "Understand where heat goes.",
+    description: "Focus on insulation, draughts and the way your home is heated.",
+    detail: "HEAT + COMFORT",
   },
-  warmth: {
-    eyebrow: "KEEP THE COSY IN",
-    title: "Hold on to the heat.",
-    note: "Little draughts can make a big difference.",
+  appliances: {
+    code: "03 / ELECTRICITY",
+    title: "Find the everyday energy drains.",
+    description: "Discover the habits and appliances worth checking first.",
+    detail: "USAGE + APPLIANCES",
   },
 };
 
 export default function AnimatedHomeScene() {
-  const [mode, setMode] = useState<SceneMode>("solar");
-  const copy = sceneCopy[mode];
+  const [focus, setFocus] = useState<Focus>("solar");
+  const current = focusContent[focus];
+
+  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
+    event.currentTarget.style.setProperty("--move-x", (horizontal * 16).toFixed(2) + "px");
+    event.currentTarget.style.setProperty("--move-y", (vertical * 12).toFixed(2) + "px");
+  }
+
+  function resetPointer(event: PointerEvent<HTMLDivElement>) {
+    event.currentTarget.style.setProperty("--move-x", "0px");
+    event.currentTarget.style.setProperty("--move-y", "0px");
+  }
 
   return (
-    <div className={"ego-cinematic-home ego-cinematic-home--" + mode}>
-      <div className="ego-stage" aria-label="Animated illustrated house with moving sun, clouds, glowing windows and solar power">
-        <div className="ego-stage-topline" aria-hidden="true">
-          <span className="ego-stage-live"><span className="ego-live-dot" /> THE EGO HOME</span>
-          <span className="ego-stage-stars">✦ &nbsp; ✧ &nbsp; ✦</span>
-        </div>
+    <div className={"sy-tech-panel sy-tech-panel--" + focus} onPointerMove={onPointerMove} onPointerLeave={resetPointer}>
+      <div className="sy-tech-grain" aria-hidden="true" />
+      <div className="sy-tech-grid" aria-hidden="true" />
+      <div className="sy-tech-beam sy-tech-beam-one" aria-hidden="true" />
+      <div className="sy-tech-beam sy-tech-beam-two" aria-hidden="true" />
 
-        <svg
-          className="ego-illustration"
-          viewBox="0 0 760 600"
-          role="img"
-          aria-label="Colourful home with animated sunshine, solar panels, moving clouds, bright windows and a family in the garden"
-          xmlns="http://www.w3.org/2000/svg"
-        >
+      <div className="sy-tech-topbar">
+        <span className="sy-tech-kicker"><span className="sy-tech-status-dot" /> SAVE YOUR EGO <span className="sy-tech-kicker-muted">/ HOME INTELLIGENCE</span></span>
+        <span className="sy-tech-view-indicator">INTERACTIVE MODEL <span className="sy-tech-crosshair">✳</span></span>
+      </div>
+
+      <div className="sy-tech-scene" role="img" aria-label="Animated three-dimensional architectural house model with solar panels, illuminated windows and moving energy connections">
+        <div className="sy-tech-halo" />
+        <div className="sy-tech-radar sy-tech-radar-one" />
+        <div className="sy-tech-radar sy-tech-radar-two" />
+        <svg viewBox="0 0 840 625" xmlns="http://www.w3.org/2000/svg" className="sy-tech-house-svg" aria-hidden="true">
           <defs>
-            <linearGradient id="ego-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#4CB8F2" />
-              <stop offset=".62" stopColor="#B9E8FF" />
-              <stop offset="1" stopColor="#F5FDFF" />
+            <linearGradient id="sy-scene-left" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#316BB0" /><stop offset="1" stopColor="#0B3274" />
             </linearGradient>
-            <linearGradient id="ego-grass" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#89DE96" />
-              <stop offset="1" stopColor="#43A978" />
+            <linearGradient id="sy-scene-right" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#214F8F" /><stop offset="1" stopColor="#091F4C" />
             </linearGradient>
-            <linearGradient id="ego-house-front" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#FFFFFF" />
-              <stop offset=".72" stopColor="#F6FAFF" />
-              <stop offset="1" stopColor="#D8E5F7" />
+            <linearGradient id="sy-scene-roof" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#5885B5" /><stop offset=".5" stopColor="#1A4C89" /><stop offset="1" stopColor="#0B2A60" />
             </linearGradient>
-            <linearGradient id="ego-roof" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#173E86" />
-              <stop offset="1" stopColor="#0B2358" />
+            <linearGradient id="sy-scene-glass" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#BAEEFF" /><stop offset=".4" stopColor="#5CBBED" /><stop offset="1" stopColor="#0A5692" />
             </linearGradient>
-            <linearGradient id="ego-glass" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#FFE776" />
-              <stop offset="1" stopColor="#FFB937" />
+            <linearGradient id="sy-scene-panel" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#54D4FF" /><stop offset=".4" stopColor="#0E7CC4" /><stop offset="1" stopColor="#092552" />
             </linearGradient>
-            <linearGradient id="ego-panel" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#4AD4FA" />
-              <stop offset=".6" stopColor="#1161A6" />
-              <stop offset="1" stopColor="#0B3274" />
+            <linearGradient id="sy-scene-platform" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#1E4F89" /><stop offset="1" stopColor="#061832" />
             </linearGradient>
-            <radialGradient id="ego-sun-glow">
-              <stop offset=".1" stopColor="#FFF5A5" stopOpacity=".95" />
-              <stop offset=".45" stopColor="#FFD400" stopOpacity=".62" />
-              <stop offset="1" stopColor="#FFD400" stopOpacity="0" />
+            <radialGradient id="sy-scene-glow">
+              <stop offset="0" stopColor="#51BBFA" stopOpacity=".3" />
+              <stop offset="1" stopColor="#51BBFA" stopOpacity="0" />
             </radialGradient>
-            <filter id="ego-shadow" x="-40%" y="-60%" width="180%" height="240%">
-              <feDropShadow dx="0" dy="14" stdDeviation="13" floodColor="#0B3274" floodOpacity=".22" />
+            <filter id="sy-scene-house-shadow" x="-40%" y="-40%" width="180%" height="190%">
+              <feDropShadow dx="0" dy="25" stdDeviation="23" floodColor="#000718" floodOpacity=".52" />
             </filter>
-            <filter id="ego-soft-glow" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="10" />
+            <filter id="sy-scene-neon" x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="6" />
             </filter>
+            <pattern id="sy-panel-lines" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(26)">
+              <path d="M0 0H22M0 0V22" stroke="#99E6FF" strokeWidth=".65" opacity=".35" />
+            </pattern>
           </defs>
 
-          <rect width="760" height="600" fill="url(#ego-sky)" />
-          <g className="ego-sun-group">
-            <circle cx="143" cy="134" r="125" fill="url(#ego-sun-glow)" />
-            <g className="ego-sun-rays" stroke="#FFE66D" strokeWidth="8" strokeLinecap="round">
-              <path d="M143 47V27 M143 241v-20 M56 134H35 M251 134h-20 M81 72L65 56 M221 212l-15-15 M206 72l15-16 M65 212l16-16" />
-            </g>
-            <circle cx="143" cy="134" r="56" fill="#FFD400" />
-            <ellipse cx="125" cy="115" rx="15" ry="9" fill="#FFF2A0" opacity=".65" transform="rotate(-28 125 115)" />
-            <path d="M119 148q24 24 48 0" fill="none" stroke="#C78E00" strokeWidth="5" strokeLinecap="round" />
-            <circle cx="123" cy="130" r="4.5" fill="#C78E00" />
-            <circle cx="163" cy="130" r="4.5" fill="#C78E00" />
+          <circle cx="420" cy="343" r="315" fill="url(#sy-scene-glow)" />
+          <g className="sy-tech-ground" opacity=".72" stroke="#2675AF" fill="none">
+            <path d="M-70 420L420 625L920 413M-90 465L420 680L934 461M-80 373L420 580L915 369" strokeWidth="1" strokeDasharray="5 9" />
+            <path d="M-30 388L460 592M35 345L526 551M110 313L600 515M187 283L682 488M272 254L758 457M350 225L839 429" opacity=".5" />
+            <path d="M60 566L691 290M145 614L766 334M234 654L842 378M-16 515L620 248" opacity=".5" />
           </g>
 
-          <g className="ego-cloud ego-cloud-one" fill="#FFFFFF" opacity=".88">
-            <ellipse cx="479" cy="119" rx="79" ry="23" />
-            <ellipse cx="442" cy="106" rx="42" ry="33" />
-            <ellipse cx="491" cy="90" rx="51" ry="39" />
-            <ellipse cx="536" cy="108" rx="36" ry="28" />
-          </g>
-          <g className="ego-cloud ego-cloud-two" fill="#FFFFFF" opacity=".77">
-            <ellipse cx="639" cy="206" rx="63" ry="19" />
-            <ellipse cx="610" cy="193" rx="34" ry="27" />
-            <ellipse cx="650" cy="183" rx="43" ry="32" />
-          </g>
-          <g className="ego-bird" stroke="#2779A9" strokeWidth="3" strokeLinecap="round" fill="none">
-            <path d="M313 119q10-12 22 1q10-13 20-4 M361 142q7-8 14 1q7-9 14-3" />
+          <g className="sy-tech-orbit-lines" stroke="#50B9F5" strokeWidth="1" fill="none" opacity=".28">
+            <ellipse cx="412" cy="425" rx="330" ry="116" />
+            <ellipse cx="412" cy="425" rx="280" ry="99" />
+            <ellipse cx="412" cy="425" rx="240" ry="80" />
           </g>
 
-          <path d="M0 451 Q107 379 200 432 Q343 369 467 416 Q639 351 760 429 L760 600H0Z" fill="#ACE5B3" opacity=".8" />
-          <path d="M0 496 Q134 453 234 489 Q388 444 530 470 Q664 432 760 466V600H0Z" fill="url(#ego-grass)" />
-          <path d="M0 537q225-48 402-16q192-49 358-4v83H0Z" fill="#69C985" />
-          <path d="M340 522l-35 78h156l-54-78Z" fill="#EED5AA" />
-          <path d="M355 522l-15 78h86l-22-78Z" fill="#FFE7C2" />
+          <g className="sy-tech-house-assembly" filter="url(#sy-scene-house-shadow)">
+            <path d="M126 420L410 284L706 415L422 552Z" fill="#041733" stroke="#4A9CD2" strokeWidth="2" />
+            <path d="M126 420L422 552L422 578L126 446Z" fill="url(#sy-scene-platform)" stroke="#3273AB" strokeWidth="2" />
+            <path d="M422 552L706 415L706 442L422 578Z" fill="#0A2348" stroke="#3273AB" strokeWidth="2" />
+            <path d="M146 421L422 550L681 422L410 299Z" fill="#0A2A59" />
 
-          <g className="ego-house-build" filter="url(#ego-shadow)">
-            <rect x="181" y="274" width="414" height="253" rx="19" fill="url(#ego-house-front)" />
-            <rect x="184" y="280" width="22" height="243" rx="9" fill="#D1E4F6" />
-            <rect x="561" y="277" width="33" height="246" rx="10" fill="#E5EFFA" />
-            <rect x="273" y="219" width="46" height="75" rx="7" fill="#F7FAFF" />
-            <rect x="273" y="217" width="46" height="18" rx="5" fill="#CEDAE9" />
-            <path d="M143 294L372 142L633 295L611 314L372 181L165 313Z" fill="url(#ego-roof)" />
-            <path d="M143 294L372 142L633 295" fill="none" stroke="#3663A1" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M372 142L633 295" stroke="#071E4E" strokeWidth="10" opacity=".3" />
-            <path d="M143 294L372 142" stroke="#79AFE9" strokeWidth="5" opacity=".65" />
+            <path d="M170 293L416 406L416 529L170 414Z" fill="url(#sy-scene-left)" stroke="#5C9CD0" strokeWidth="3" />
+            <path d="M416 406L665 292L665 414L416 529Z" fill="url(#sy-scene-right)" stroke="#64A7DB" strokeWidth="3" />
+            <path d="M170 293L416 176L665 292L416 412Z" fill="url(#sy-scene-roof)" stroke="#89BFE6" strokeWidth="4" strokeLinejoin="round" />
+            <path d="M170 293L416 412L665 292" fill="none" stroke="#80CEF2" strokeWidth="3" opacity=".7" />
 
-            <g className="ego-solar-array">
-              <path d="M374 191L514 277H397L291 233Z" fill="#0C306D" stroke="#80DDFF" strokeWidth="5" strokeLinejoin="round" />
-              <path d="M374 193L409 275M326 219l93 56M413 216l-5 60M449 238l-3 39M349 251h122" stroke="#88DFFD" strokeWidth="3" opacity=".77" fill="none" />
-              <path d="M377 202L488 267" stroke="#C9F7FF" strokeWidth="4" opacity=".85" />
+            <path d="M200 314L402 406M206 335L402 427M206 356L402 448M438 423L642 328M438 445L642 351M438 467L642 373" fill="none" stroke="#74B4EB" strokeWidth="1.3" opacity=".17" />
+
+            <g className="sy-tech-solar-model">
+              <path d="M374 209L570 302L443 360L249 268Z" fill="#031B43" stroke="#73CFFF" strokeWidth="5" />
+              <path d="M373 217L554 302L444 351L264 267Z" fill="url(#sy-scene-panel)" opacity=".94" />
+              <path d="M373 217L554 302L444 351L264 267Z" fill="url(#sy-panel-lines)" />
+              <path d="M328 238L510 323M284 259L464 343M416 238L309 287M465 260L361 312M514 282L409 335" fill="none" stroke="#A5E8FF" strokeWidth="2.5" opacity=".8" />
+              <path d="M373 217L554 302" fill="none" stroke="#D6F6FF" strokeWidth="3" opacity=".8" />
             </g>
 
-            <rect x="214" y="342" width="123" height="115" rx="14" fill="#E8F4FF" stroke="#C3DFF5" strokeWidth="7" />
-            <rect className="ego-window-glow" x="222" y="351" width="107" height="97" rx="9" fill="url(#ego-glass)" />
-            <path d="M275 351v97M222 399h107" stroke="#FFFFFF" strokeWidth="8" />
-            <path d="M227 358q19 17 17 37v47" fill="none" stroke="#FFF5CA" strokeWidth="10" opacity=".65" />
-
-            <rect x="445" y="342" width="117" height="115" rx="14" fill="#E8F4FF" stroke="#C3DFF5" strokeWidth="7" />
-            <rect className="ego-window-glow ego-window-right" x="453" y="351" width="101" height="97" rx="9" fill="url(#ego-glass)" />
-            <path d="M504 351v97M453 399h101" stroke="#FFFFFF" strokeWidth="8" />
-            <path d="M547 358q-17 15-16 38v46" fill="none" stroke="#FFF5CA" strokeWidth="10" opacity=".6" />
-
-            <path d="M350 527V422q0-27 27-27h34q27 0 27 27v105Z" fill="#0B3274" />
-            <path d="M360 527V424q0-20 20-20h28q20 0 20 20v103Z" fill="#1C5B9A" />
-            <path d="M364 525v-99q0-17 16-17h24v116" fill="#2776B9" />
-            <circle cx="412" cy="472" r="5" fill="#FFD400" />
-            <path d="M173 523h432" stroke="#B8CCE4" strokeWidth="8" strokeLinecap="round" />
-            <rect x="345" y="524" width="102" height="17" rx="7" fill="#C3D4E9" />
-          </g>
-
-          <g className="ego-chimney-smoke" stroke="#FFFFFF" opacity=".65" strokeWidth="13" fill="none" strokeLinecap="round">
-            <path d="M293 206q-20-19 1-43q17-17 1-35" />
-            <path d="M301 189q26-20 4-41" opacity=".55" />
-          </g>
-
-          <g className="ego-energy-route" fill="none" strokeLinecap="round">
-            <path d="M175 158Q246 110 363 222" stroke="#FFFFFF" strokeWidth="15" opacity=".22" />
-            <path className="ego-energy-flow" d="M175 158Q246 110 363 222" stroke="#FFD400" strokeWidth="6" strokeDasharray="10 18" />
-            <path d="M444 280q53 20 63 59" stroke="#FFFFFF" strokeWidth="15" opacity=".24" />
-            <path className="ego-energy-flow ego-energy-delay" d="M444 280q53 20 63 59" stroke="#FFD400" strokeWidth="6" strokeDasharray="9 16" />
-          </g>
-
-          <g className="ego-heat-lines" fill="none" stroke="#FF9A58" strokeWidth="7" strokeLinecap="round" opacity=".93">
-            <path d="M228 328q-13-16 0-34q13-18 0-31" />
-            <path d="M269 327q-13-16 0-34q13-18 0-31" />
-            <path d="M310 328q-13-16 0-34q13-18 0-31" />
-            <path d="M470 328q-13-16 0-34q13-18 0-31" />
-            <path d="M512 327q-13-16 0-34q13-18 0-31" />
-          </g>
-
-          <g className="ego-family-people">
-            <ellipse cx="584" cy="557" rx="95" ry="12" fill="#2E9568" opacity=".3" />
-            <g className="ego-person-one">
-              <path d="M562 492q-17 5-21 29v32h56v-32q-3-24-21-29Z" fill="#FFD400" />
-              <rect x="553" y="546" width="14" height="28" rx="6" fill="#17356F" />
-              <rect x="580" y="546" width="14" height="28" rx="6" fill="#17356F" />
-              <path d="M541 516l-20 15" stroke="#F0B58D" strokeWidth="11" strokeLinecap="round" />
-              <path d="M594 517l15 16" stroke="#F0B58D" strokeWidth="11" strokeLinecap="round" />
-              <circle cx="570" cy="474" r="25" fill="#F0B58D" />
-              <path d="M548 464q-1-26 22-27q25 0 25 26q-23-12-47 1Z" fill="#513528" />
-              <circle cx="561" cy="475" r="2.5" fill="#513528" /><circle cx="579" cy="475" r="2.5" fill="#513528" />
-              <path d="M560 485q10 8 20 0" stroke="#A35E47" strokeWidth="2.7" fill="none" strokeLinecap="round" />
+            <g className="sy-tech-windows-model">
+              <path d="M201 338L288 378V447L201 408Z" fill="url(#sy-scene-glass)" stroke="#B6E8FA" strokeWidth="5" />
+              <path d="M297 383L389 426V493L297 451Z" fill="url(#sy-scene-glass)" stroke="#B6E8FA" strokeWidth="5" />
+              <path d="M244 357V425M343 407V470" stroke="#A3E3FA" strokeWidth="3" opacity=".8" />
+              <path d="M201 374L288 413M297 419L389 461" stroke="#A3E3FA" strokeWidth="3" opacity=".75" />
+              <path d="M442 429L539 385V461L442 505Z" fill="url(#sy-scene-glass)" stroke="#6BBCED" strokeWidth="5" />
+              <path d="M548 381L641 339V409L548 452Z" fill="url(#sy-scene-glass)" stroke="#6BBCED" strokeWidth="5" />
+              <path d="M490 408V483M593 360V431" stroke="#ABDBF7" strokeWidth="3" opacity=".73" />
+              <path d="M442 466L539 423M548 416L641 377" stroke="#ABDBF7" strokeWidth="3" opacity=".73" />
             </g>
-            <g className="ego-person-two">
-              <path d="M619 526q-14 7-15 19v24h40v-24q-3-14-16-19Z" fill="#54B6EE" />
-              <rect x="608" y="564" width="11" height="16" rx="5" fill="#17356F" />
-              <rect x="628" y="564" width="11" height="16" rx="5" fill="#17356F" />
-              <path d="M605 540l-10-10M641 542l9-15" stroke="#F8C5A2" strokeWidth="8" strokeLinecap="round" />
-              <circle cx="625" cy="510" r="19" fill="#F8C5A2" />
-              <path d="M607 502q3-24 23-15q15 4 13 22q-10-13-36-7Z" fill="#7C4329" />
-              <circle cx="618" cy="512" r="2.2" fill="#573B30" /><circle cx="632" cy="512" r="2.2" fill="#573B30" />
-              <path d="M619 519q7 6 13 0" stroke="#B66B51" strokeWidth="2" fill="none" strokeLinecap="round" />
-            </g>
+
+            <path d="M170 293L416 406L665 292" fill="none" stroke="#D5F4FF" strokeWidth="3" opacity=".56" />
+            <path d="M417 406V529" stroke="#8BD4FF" strokeWidth="4" opacity=".75" />
+            <path d="M176 417L416 529L660 414" stroke="#3D9CD5" strokeWidth="2" fill="none" opacity=".7" />
+            <path d="M173 297L415 182L662 295" fill="none" stroke="#A3D5FA" strokeWidth="2" opacity=".42" />
           </g>
 
-          <g className="ego-tree-sway">
-            <rect x="81" y="448" width="20" height="112" rx="9" fill="#996D4E" />
-            <circle cx="90" cy="436" r="48" fill="#399F7B" />
-            <circle cx="64" cy="415" r="37" fill="#51B788" />
-            <circle cx="118" cy="411" r="39" fill="#77CC90" />
-            <circle cx="95" cy="382" r="39" fill="#6ECF91" />
-            <circle cx="113" cy="429" r="5" fill="#FFE269" />
-            <circle cx="59" cy="435" r="4" fill="#FFE269" />
-          </g>
-          <g className="ego-flowers">
-            <path d="M134 568v-21M166 583v-21M689 554v-20M710 575v-25" stroke="#277B59" strokeWidth="4" />
-            <circle cx="134" cy="543" r="9" fill="#FF8CAF" /><circle cx="134" cy="543" r="3" fill="#FFD400" />
-            <circle cx="166" cy="558" r="8" fill="#FFD400" /><circle cx="166" cy="558" r="3" fill="#FFFFFF" />
-            <circle cx="689" cy="530" r="9" fill="#FF8CAF" /><circle cx="689" cy="530" r="3" fill="#FFD400" />
-            <circle cx="710" cy="548" r="9" fill="#FFD400" /><circle cx="710" cy="548" r="3" fill="#FFFFFF" />
+          <g className="sy-tech-heating-overlay" pointerEvents="none">
+            <path d="M172 304L411 414L411 526L172 412Z" fill="#FFD400" opacity=".14" />
+            <path d="M420 413L662 302L662 411L420 524Z" fill="#FFB64F" opacity=".16" />
+            <path d="M174 302L416 186L658 296" fill="none" stroke="#FFD400" strokeWidth="8" opacity=".55" />
+            <path d="M212 327Q296 279 395 348M446 362Q548 309 634 330" stroke="#FFD400" strokeWidth="4" fill="none" strokeDasharray="6 12" opacity=".88" />
           </g>
 
-          <g className="ego-sparkle ego-sparkle-one" fill="#FFFFFF">
-            <path d="M657 317l6 15 15 6-15 6-6 15-6-15-15-6 15-6Z" />
+          <g className="sy-tech-powerflow" fill="none" strokeLinecap="round">
+            <path className="sy-tech-path-glow" d="M503 316L575 351L611 399L713 367" stroke="#65DDFB" strokeWidth="15" opacity=".55" filter="url(#sy-scene-neon)" />
+            <path className="sy-tech-path-primary" d="M503 316L575 351L611 399L713 367" stroke="#FFD400" strokeWidth="4" strokeDasharray="3 13" />
+            <path className="sy-tech-path-primary sy-tech-path-secondary" d="M332 281L220 238L133 273" stroke="#7ADFFF" strokeWidth="3.5" strokeDasharray="3 12" />
           </g>
-          <g className="ego-sparkle ego-sparkle-two" fill="#FFD400">
-            <path d="M135 315l4 11 11 4-11 4-4 11-4-11-11-4 11-4Z" />
+
+          <g className="sy-tech-appliance-pulses" fill="none">
+            <rect x="194" y="331" width="100" height="125" stroke="#FFD400" strokeWidth="3" rx="5" opacity=".9" />
+            <rect x="434" y="379" width="112" height="137" stroke="#FFD400" strokeWidth="3" rx="5" opacity=".9" />
           </g>
-          <g className="ego-sparkle ego-sparkle-three" fill="#FFFFFF">
-            <path d="M703 131l4 11 11 4-11 4-4 11-4-11-11-4 11-4Z" />
+
+          <g fill="#55C7FC">
+            <circle className="sy-tech-node sy-tech-node-1" cx="119" cy="430" r="5" />
+            <circle className="sy-tech-node sy-tech-node-2" cx="720" cy="410" r="5" />
+            <circle className="sy-tech-node sy-tech-node-3" cx="418" cy="170" r="5" />
+          </g>
+          <g stroke="#69D3FF" opacity=".75" strokeWidth="1.5" fill="none">
+            <path d="M112 420L65 398H32M674 228L726 205H809M584 502L694 552H815" strokeDasharray="3 6" />
+          </g>
+          <g fill="#D5F4FF" fontSize="12" fontFamily="system-ui, sans-serif" fontWeight="700" letterSpacing="2">
+            <text x="30" y="388">ENERGY</text><text x="30" y="403">PROFILE</text>
+            <text x="682" y="189">SYSTEM</text><text x="682" y="203">OVERVIEW</text>
+            <text x="698" y="569">HOME</text><text x="698" y="584">MODEL</text>
+          </g>
+
+          <g className="sy-tech-corner-points" stroke="#8CD5F9" strokeWidth="2" fill="none" opacity=".75">
+            <path d="M47 69V48H67M773 48H795V69M47 552V574H67M773 574H795V552" />
           </g>
         </svg>
 
-        <div className="ego-floating-badge ego-floating-badge-solar" aria-hidden="true"><span>☀</span> Solar in action</div>
-        <div className="ego-floating-badge ego-floating-badge-idea" aria-hidden="true"><span>✦</span> Little changes. Big ideas.</div>
-        <div className="ego-scene-story" aria-live="polite">
-          <span className="ego-scene-story-eyebrow">{copy.eyebrow}</span>
-          <strong>{copy.title}</strong>
-          <span>{copy.note}</span>
+        <div className="sy-tech-spec sy-tech-spec-top">
+          <span className="sy-tech-spec-eyebrow">ACTIVE FOCUS</span>
+          <strong>{current.detail}</strong>
+          <span className="sy-tech-mini-track"><span /></span>
+        </div>
+        <div className="sy-tech-spec sy-tech-spec-bottom">
+          <span className="sy-tech-spec-eyebrow">HOME EFFICIENCY</span>
+          <strong>Explore the possibilities</strong>
+          <small>Electricity · Gas · Oil</small>
+        </div>
+        <div className="sy-tech-scene-axis">SYE / INTERACTIVE CONCEPT 01</div>
+      </div>
+
+      <div className="sy-tech-bottom">
+        <div className="sy-tech-description" aria-live="polite">
+          <span>{current.code}</span>
+          <strong>{current.title}</strong>
+          <p>{current.description}</p>
+        </div>
+        <div className="sy-tech-focus-buttons" role="group" aria-label="Change home visualization focus">
+          <button type="button" aria-pressed={focus === "solar"} className={focus === "solar" ? "sy-tech-button-active" : ""} onClick={() => setFocus("solar")}>
+            <span>01</span> Solar
+          </button>
+          <button type="button" aria-pressed={focus === "heating"} className={focus === "heating" ? "sy-tech-button-active" : ""} onClick={() => setFocus("heating")}>
+            <span>02</span> Heating
+          </button>
+          <button type="button" aria-pressed={focus === "appliances"} className={focus === "appliances" ? "sy-tech-button-active" : ""} onClick={() => setFocus("appliances")}>
+            <span>03</span> Electricity
+          </button>
         </div>
       </div>
-      <div className="ego-scene-controls" aria-label="Explore home energy ideas">
-        <span className="ego-controls-label">Tap to explore</span>
-        <div className="ego-control-buttons">
-          <button type="button" className={mode === "solar" ? "ego-mode-active" : ""} aria-pressed={mode === "solar"} onClick={() => setMode("solar")}>☀ Solar</button>
-          <button type="button" className={mode === "lights" ? "ego-mode-active" : ""} aria-pressed={mode === "lights"} onClick={() => setMode("lights")}>✦ Lighting</button>
-          <button type="button" className={mode === "warmth" ? "ego-mode-active" : ""} aria-pressed={mode === "warmth"} onClick={() => setMode("warmth")}>♨ Warmth</button>
-        </div>
-      </div>
-      <p className="ego-scene-footnote">An illustration of energy-saving ideas, not a live reading of your home.</p>
+      <div className="sy-tech-disclaimer">ILLUSTRATIVE MODEL — NO LIVE HOME DATA</div>
     </div>
   );
 }
