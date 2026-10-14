@@ -1,0 +1,24 @@
+/* Animated homepage experiment; intentionally scoped to this route. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ego-rise { from {opacity:0;transform:translateY(26px)} to {opacity:1;transform:translateY(0)} }
+  @keyframes ego-float { 0%,100% {transform:translateY(0) rotate(-2deg)} 50% {transform:translateY(-16px) rotate(2deg)} }
+  @keyframes ego-orbit { 0%,100% {transform:translate(0,0) rotate(-8deg)} 50% {transform:translate(8px,-18px) rotate(8deg)} }
+  @keyframes ego-shine { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
+  @keyframes ego-pulse { 0%,100% {opacity:.55;transform:scale(1)} 50% {opacity:.95;transform:scale(1.16)} }
+  .ego-intro {animation:ego-rise .75s both cubic-bezier(.2,.8,.2,1)}
+  .ego-intro-delay {animation:ego-rise .8s .2s both cubic-bezier(.2,.8,.2,1)}
+  .ego-report-float {animation:ego-float 6s ease-in-out infinite}
+  .ego-float-tag {animation:ego-orbit 5s ease-in-out infinite}
+  .ego-home-step {animation:ego-rise .7s both cubic-bezier(.2,.8,.2,1)}
+  .ego-home-step:nth-child(1) {animation-delay:.15s}
+  .ego-home-step:nth-child(2) {animation-delay:.28s}
+  .ego-home-step:nth-child(3) {animation-delay:.41s}
+  .ego-home-step:nth-child(4) {animation-delay:.54s}
+  .ego-sun {animation:ego-pulse 5s ease-in-out infinite}
+  .ego-energy-glow {background-size:200% 200%;animation:ego-shine 8s ease infinite}
+  .ego-home-step {transition:transform .3s ease,box-shadow .3s ease}
+  .ego-home-step:hover {transform:translateY(-7px);box-shadow:0 20px 45px rgba(23,53,111,.13)}
+}
+@media (prefers-reduced-motion: reduce) {
+  .ego-intro,.ego-intro-delay,.ego-report-float,.ego-float-tag,.ego-home-step,.ego-sun,.ego-energy-glow {animation:none!important;transition:none!important}
+}

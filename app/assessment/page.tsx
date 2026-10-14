@@ -1,6 +1,11 @@
 "use client";
 
+import "../energy-motion.css";
+import "./assessment-visualizer.css";
+import "./assessment-v2.css";
 import Image from "next/image";
+import AssessmentEnergyTwinV2 from "@/components/assessment-energy-twin-v2";
+import AssessmentSectionVisual from "@/components/assessment-section-visual";
 import { ClipboardCheck, FileText, House, PlugZap, ReceiptText, ShieldCheck, SunMedium } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -185,11 +190,11 @@ function SectionShell({
   return (
     <section
       id={id}
-      className={`scroll-mt-28 rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
+      className={`sy-assessment-section scroll-mt-28 rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
+          <div className="sy-assessment-section-number flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
             {number}
           </div>
 
@@ -207,14 +212,8 @@ function SectionShell({
         </div>
 
         {visual ? (
-          <div className={`flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-28 sm:w-40 ${iconClass}`}>
-            <Image
-              src={visual}
-              alt=""
-              width={320}
-              height={220}
-              className="h-full w-full object-cover"
-            />
+          <div className={`sy-assessment-visual flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl sm:h-28 sm:w-40 ${iconClass}`}>
+            <AssessmentSectionVisual topic={id} />
           </div>
         ) : icon ? (
           <div className={`hidden h-16 w-16 shrink-0 items-center justify-center rounded-2xl sm:flex ${iconClass}`}>
@@ -893,11 +892,11 @@ export default function AssessmentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
+    <main className="sy-assessment-page min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
-        <section className="overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
+        <section className="sy-assessment-hero overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="p-6 sm:p-8 lg:p-10">
+            <div className="sy-assessment-hero-copy p-6 sm:p-8 lg:p-10">
               <Image
                 src="/save-your-ego-logo.png"
                 alt="Save Your EGO"
@@ -926,24 +925,27 @@ export default function AssessmentPage() {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
+            <div className="sy-assessment-how bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
                 How it works
               </p>
 
-              <div className="mt-6 overflow-hidden rounded-[1.5rem] bg-white p-3 shadow-lg shadow-black/10">
-                <Image
-                  src="/assessment-journey.svg"
-                  alt="The Save Your EGO assessment journey from home details through to your personalised report"
-                  width={900}
-                  height={520}
-                  className="h-auto w-full"
+              <div className="mt-6">
+                <AssessmentEnergyTwinV2
+                  propertyType={answers.property_type}
+                  heatingSystem={answers.main_heating}
+                  glazing={answers.glazing}
+                  bedrooms={answers.bedrooms}
+                  occupants={answers.occupants}
+                  hasSolar={answers.has_solar}
+                  usesGas={answers.uses_gas}
+                  usesOil={answers.uses_oil}
                 />
               </div>
 
               <div className="mt-5 grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                  <div className="rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
+                  <div className="sy-assessment-info-tile rounded-[1.5rem] bg-[#ffd600] p-5 text-black">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70">
                       <ClipboardCheck className="h-6 w-6" aria-hidden="true" />
                     </div>
@@ -958,7 +960,7 @@ export default function AssessmentPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
+                  <div className="sy-assessment-info-tile rounded-[1.5rem] bg-[#59b9ec] p-5 text-[#17356f]">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/70">
                       <FileText className="h-6 w-6" aria-hidden="true" />
                     </div>
@@ -974,7 +976,7 @@ export default function AssessmentPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] bg-white p-5 text-black">
+                <div className="sy-assessment-info-tile rounded-[1.5rem] bg-white p-5 text-black">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#e9f6fe] text-[#17356f]">
                     <House className="h-6 w-6" aria-hidden="true" />
                   </div>
@@ -1001,7 +1003,7 @@ export default function AssessmentPage() {
 
         <nav
           aria-label="Assessment sections"
-          className="sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#dbe8f2] bg-white/95 p-2 shadow-lg shadow-[#17356f]/10 backdrop-blur"
+          className="sy-assessment-sticky sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#dbe8f2] bg-white/95 p-2 shadow-lg shadow-[#17356f]/10 backdrop-blur"
         >
           <div className="flex min-w-max gap-2">
             {assessmentSections.map((section, index) => {
@@ -1010,6 +1012,7 @@ export default function AssessmentPage() {
                 <a
                   key={section.id}
                   href={`#${section.id}`}
+                  aria-current={isActive ? "step" : undefined}
                   className={`inline-flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-black transition ${isActive ? "bg-[#17356f] text-white shadow-sm" : "text-[#17356f] hover:bg-[#e9f6fe]"}`}
                 >
                   <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] ${isActive ? "bg-white text-[#17356f]" : "bg-[#e9f6fe] text-[#17356f]"}`}>
