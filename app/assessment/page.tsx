@@ -1,8 +1,9 @@
 "use client";
 
 import "../energy-motion.css";
+import "./assessment-visualizer.css";
 import Image from "next/image";
-import { AssessmentMotionGraphic } from "@/components/energy-motion-graphics";
+import AssessmentEnergyVisualizer from "@/components/assessment-energy-visualizer";
 import { ClipboardCheck, FileText, House, PlugZap, ReceiptText, ShieldCheck, SunMedium } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -929,18 +930,17 @@ export default function AssessmentPage() {
             </div>
 
             <div className="sy-assessment-how bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-6 text-white sm:p-8 lg:p-10">
-              <AssessmentMotionGraphic />
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#ffd600]">
                 How it works
               </p>
 
-              <div className="sy-assessment-flow-frame mt-6 overflow-hidden rounded-[1.5rem] bg-white p-3 shadow-lg shadow-black/10">
-                <Image
-                  src="/assessment-journey.svg"
-                  alt="The Save Your EGO assessment journey from home details through to your personalised report"
-                  width={900}
-                  height={520}
-                  className="h-auto w-full"
+              <div className="mt-6">
+                <AssessmentEnergyVisualizer
+                  propertyType={answers.property_type}
+                  heatingSystem={answers.main_heating}
+                  hasSolar={answers.has_solar}
+                  usesGas={answers.uses_gas}
+                  usesOil={answers.uses_oil}
                 />
               </div>
 
