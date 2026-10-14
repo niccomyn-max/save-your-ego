@@ -1,4 +1,6 @@
 import "./home-animation.css";
+import "./home-cinematic.css";
+import AnimatedHomeScene from "./animated-home-scene";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -77,7 +79,7 @@ async function HomeContent() {
           </div>
         </nav>
 
-        <div className="relative z-10 mx-auto grid max-w-7xl gap-10 py-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-16">
+        <div className="relative z-10 mx-auto grid max-w-7xl gap-10 py-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:py-16">
           <div className="ego-intro">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#ffd600]/50 bg-white/80 px-4 py-2 text-sm font-black text-[#17356f] shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-[#ffd600]" />
@@ -133,73 +135,7 @@ async function HomeContent() {
             </div>
           </div>
 
-          <div className="relative ego-intro-delay">
-            <div className="ego-report-float rounded-[2rem] border border-white/80 bg-white/85 p-4 shadow-2xl shadow-[#17356f]/10 backdrop-blur-xl sm:p-6">
-              <div className="ego-energy-glow rounded-[1.5rem] bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-[#050505] p-5 text-white sm:p-6">
-                <p className="text-sm font-black uppercase tracking-[0.25em] text-[#ffd600]">
-                  Your report
-                </p>
-
-                <h2 className="mt-4 text-3xl font-black">
-                  Your Save Your EGO plan
-                </h2>
-
-                <p className="mt-3 text-sm leading-6 text-white/80">
-                  Clear next steps for your home. Free fixes first. Big spending later.
-                </p>
-
-                <div className="mt-6 grid gap-3">
-                  <div className="rounded-2xl bg-white/12 p-4 backdrop-blur">
-                    <p className="text-xs font-black uppercase text-white/60">
-                      Where your energy may be going
-                    </p>
-                    <p className="mt-1 text-lg font-black">
-                      Heating pattern, appliances, hot water
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="rounded-2xl bg-[#ffd600] p-4 text-black">
-                      <p className="text-xs font-black">Electricity</p>
-                      <p className="mt-3 text-lg font-black leading-tight">
-                        Bills & appliances
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-[#59b9ec] p-4 text-[#17356f]">
-                      <p className="text-xs font-black">Gas</p>
-                      <p className="mt-3 text-lg font-black leading-tight">
-                        Heating & bills
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl bg-white p-4 text-black">
-                      <p className="text-xs font-black">Oil</p>
-                      <p className="mt-3 text-lg font-black leading-tight">
-                        Heating & fuel
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-white p-4 text-black">
-                    <p className="text-xs font-black uppercase text-slate-500">
-                      Output
-                    </p>
-                    <p className="mt-1 text-lg font-black">
-                      A report you can save or print
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="ego-float-tag absolute -bottom-5 -left-3 rounded-2xl border border-white bg-white px-5 py-4 shadow-xl sm:-left-6">
-              <p className="text-xs font-black uppercase tracking-wide text-slate-500">
-                Built for
-              </p>
-              <p className="text-lg font-black text-[#17356f]">Real homes</p>
-            </div>
-          </div>
+          <AnimatedHomeScene />
         </div>
 
         <div className="relative z-10 mx-auto grid max-w-7xl gap-4 pb-10 sm:grid-cols-2 lg:grid-cols-4">
