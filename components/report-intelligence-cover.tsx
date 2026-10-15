@@ -122,8 +122,8 @@ export function ReportIntelligenceCover({
           </div>
           <div className="ri-cover-highlight">
             <span>APPLIANCE ESTIMATE</span>
-            <strong>{formatEnergyEstimate(applianceKwh)}</strong>
-            <small>Included within home electricity use; not additional</small>
+            <strong>{applianceKwh !== null && applianceKwh > 0 ? formatEnergyEstimate(applianceKwh) : "Details unavailable"}</strong>
+            <small>{applianceKwh !== null && applianceKwh > 0 ? "A part of total electricity use, not an extra amount" : "Appliance use cannot be estimated without enough details"}</small>
           </div>
         </div>
 
@@ -204,7 +204,7 @@ export function ReportEnergyAnalysis({
           </div>
           <div className="ri-usage-stats">
             <div><span>Estimated yearly electricity</span><strong>{formatEnergyEstimate(electricityKwh)}</strong></div>
-            <div><span>Estimated appliance use</span><strong>{formatEnergyEstimate(applianceKwh)}</strong></div>
+            <div><span>Estimated appliance use</span><strong>{applianceKwh !== null && applianceKwh > 0 ? formatEnergyEstimate(applianceKwh) : "Details unavailable"}</strong></div>
           </div>
           {hasComparableShare ? (
             <div className="ri-usage-bars">
@@ -215,7 +215,7 @@ export function ReportEnergyAnalysis({
               <p>The appliance figure is a part of the total estimate, not an extra amount to add on.</p>
             </div>
           ) : (
-            <div className="ri-usage-unavailable">A reliable appliance share cannot be shown from the figures available. Your individual estimates are listed above where available.</div>
+            <div className="ri-usage-unavailable"><strong>No appliance breakdown yet</strong><p>The information entered is not enough for a separate appliance estimate. Your whole-home electricity estimate still comes from your bill details, so you can use the recommendations without this comparison.</p></div>
           )}
         </div>
         <div className="ri-home-findings">
