@@ -784,62 +784,23 @@ const solarSuitability = isApartment
   const fuelNames = ["Electricity", ...(usesGas ? ["Gas"] : []), ...(usesOil ? ["Oil"] : [])];
   const firstPriorities = (aiReport?.top_5_priorities ?? []).slice(0, 3).map((item) => customerText(item));
 
+  const currencySymbol = String(answers.country ?? "") === "US" ? "$" : String(answers.country ?? "") === "UK" ? "£" : "€";
+  const annualElectricitySpend = yearlyBillSpend(answers.avg_electricity_bill, answers.bill_frequency, answers.annual_bill_override);
+  const annualGasSpend = usesGas ? yearlyBillSpend(answers.avg_gas_bill, answers.gas_bill_frequency, answers.annual_gas_spend) : null;
+  const oilVolume = positiveEstimate(answers.oil_litres_per_year);
+  const oilPrice = positiveEstimate(answers.oil_price_per_litre);
+  const annualOilSpend = usesOil ? positiveEstimate(answers.annual_oil_spend) ?? (oilVolume !== null && oilPrice !== null ? oilVolume * oilPrice : null) : null;
+  const knownFuelCosts = [
+    { fuel: "electricity", amount: annualElectricitySpend },
+    ...(usesGas ? [{ fuel: "gas", amount: annualGasSpend }] : []),
+    ...(usesOil ? [{ fuel: "oil", amount: annualOilSpend }] : []),
+  ].filter((item): item is { fuel: string; amount: number } => item.amount !== null && item.amount > 0);
+  const totalKnownCost = knownFuelCosts.reduce((sum, item) => sum + item.amount, 0);
+  const hasPhotoAnalysis = Boolean(aiReport?.photo_summary) && !/^no (home or equipment )?photos? (were )?analysed\.?$/i.test(String(aiReport?.photo_summary).trim());
+
   return (
     <main className="ri-report-page report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
-      <style>{`
-        @page {
-          margin: 9mm;
-        }
 
-        @media print {
-          body {
-            background: white !important;
-          }
-
-          .report-page {
-            background: white !important;
-            padding: 0 !important;
-          }
-
-          .report-section,
-          .report-cover,
-          .report-disclaimer {
-            box-shadow: none !important;
-          }
-
-          .report-section {
-            padding: 16px !important;
-            margin-top: 10px !important;
-            break-inside: auto;
-          }
-
-          .report-section h2 {
-            font-size: 18px !important;
-            line-height: 1.25 !important;
-          }
-
-          .report-section h3 {
-            line-height: 1.3 !important;
-          }
-
-          .report-section p,
-          .report-section li {
-            line-height: 1.45 !important;
-          }
-
-          .report-cover {
-            break-after: page;
-          }
-
-          article {
-            break-inside: avoid;
-          }
-
-          .print-break-before {
-            page-break-before: always;
-          }
-        }
-      `}</style>
 
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between gap-4 print:hidden">
