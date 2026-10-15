@@ -1,4 +1,11 @@
+import "../report-intelligence.css";
+import "../report-graphics.css";
+import "../report-print-refinements.css";
 import Image from "next/image";
+import { ReportIntelligenceCover, ReportEnergyAnalysis } from "@/components/report-intelligence-cover";
+import ReportProgressRoadmap from "@/components/report-progress-roadmap";
+import ReportBillExplanation from "@/components/report-bill-explanation";
+import ReportTechnicalGraphic from "@/components/report-technical-graphic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -118,17 +125,59 @@ function customerText(value: unknown, fallback = "Unknown") {
     .replace(/\bcontractors?\b/gi, "experts")
     .replace(/\bqualified installer\b/gi, "qualified expert")
     .replace(/\bannual generation\b/gi, "electricity it may make each year")
-    .replace(/\blikely demand profile\b/gi, "how and when you use electricity")
+    .replace(/\blikely demand profile\b/gi, "electricity habits")
     .replace(/\binverter limits\b/gi, "equipment limits")
     .replace(/\bexport limits\b/gi, "limits on sending spare power back to the grid")
     .replace(/\bexport rules\b/gi, "rules for sending spare power back to the grid")
     .replace(/\busable roof area\b/gi, "roof space that can be used")
     .replace(/\broof orientation\b/gi, "the direction your roof faces")
-    .replace(/\busage pattern\b/gi, "when and how you use electricity")
+    .replace(/\bif your solar and usage patterns? fit it\b/gi, "if solar suits when you use electricity")
+    .replace(/\bWould a battery pay back well with my daily usage patterns?\?/gi, "Would a battery be worth the cost based on my daily electricity use?")
+    .replace(/\bUse a battery only if your solar and usage patterns? fit it\./gi, "Consider a battery only if it suits your solar setup and electricity use.")
+    .replace(/\busage patterns?\b/gi, "electricity habits")
     .replace(/\bself-consumption\b/gi, "how much solar power you use at home")
     .replace(/\bPV expansion\b/gi, "adding more solar panels")
-    .replace(/\bpayback\b/gi, "time to earn the cost back")
+    .replace(/\bpayback period\b/gi, "time to earn the cost back")
     .replace(/\b(\d+(?:-\d+)?)\s*kW\+?\b/gi, "$1 kilowatts (kW)");
+}
+
+function positiveEstimate(value: unknown): number | null {
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  const numeric = Number(value);
+  return value !== "" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+
+const REPORT_BILL_FREQUENCIES: Record<string, number> = {
+  Monthly: 12,
+  "Bi-monthly": 6,
+  Quarterly: 4,
+  Annual: 1,
+};
+
+function yearlyBillSpend(average: unknown, frequency: unknown, override: unknown): number | null {
+  const enteredAnnual = positiveEstimate(override);
+  if (enteredAnnual !== null) return enteredAnnual;
+  const perBill = positiveEstimate(average);
+  const periods = REPORT_BILL_FREQUENCIES[String(frequency ?? "")];
+  if (perBill === null || !periods) return null;
+  return perBill * periods;
+}
+
+function reportMoney(amount: number, symbol: string): string {
+  return symbol + Math.round(amount).toLocaleString("en-US");
+}
+
+function prepareRoadmapAction(item: DetailedAction): DetailedAction {
+  return {
+    ...item,
+    action: customerText(item.action, "Recommended action"),
+    why_it_matters: item.why_it_matters ? customerText(item.why_it_matters) : undefined,
+    estimated_cost_range: item.estimated_cost_range ? customerText(item.estimated_cost_range) : undefined,
+    estimated_annual_saving_range: item.estimated_annual_saving_range ? customerText(item.estimated_annual_saving_range) : undefined,
+    effort_level: item.effort_level ? customerText(item.effort_level) : undefined,
+    suggested_next_step: item.suggested_next_step ? customerText(item.suggested_next_step) : undefined,
+  };
 }
 
 function shouldShowEstimatedCost(item: DetailedAction) {
@@ -253,7 +302,7 @@ function TopPrioritiesSection({ items }: { items?: string[] }) {
   }
 
   return (
-    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm print:break-inside-avoid">
+    <section className="ri-priority-summary report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm print:break-inside-avoid">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
         Customer action summary
       </p>
@@ -396,7 +445,7 @@ function ActionPlanSection({
 
   return (
     <section
-      className={`report-section rounded-3xl border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
+      className={`ri-action-group report-section rounded-3xl border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-6 shadow-sm`}
     >
       <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
 
@@ -404,7 +453,7 @@ function ActionPlanSection({
         <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
       )}
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+      <div className="ri-action-grid-online mt-5 grid gap-4 lg:grid-cols-2 print:hidden">
         {actions.map((item, index) => (
           <article
             key={`${title}-${index}-${item.action}`}
@@ -498,96 +547,28 @@ function ActionPlanSection({
           </article>
         ))}
       </div>
-    </section>
-  );
-}
 
-function CompactPriorityPlan({
-  actions,
-  lowCostActions,
-  mediumCostActions,
-  higherCostActions,
-}: {
-  actions?: DetailedAction[];
-  lowCostActions?: DetailedAction[];
-  mediumCostActions?: DetailedAction[];
-  higherCostActions?: DetailedAction[];
-}) {
-  if (!actions || actions.length === 0) {
-    return null;
-  }
-
-  const normalise = (value?: string) => (value ?? "").trim().toLowerCase();
-  const low = new Set((lowCostActions ?? []).map((item) => normalise(item.action)));
-  const medium = new Set((mediumCostActions ?? []).map((item) => normalise(item.action)));
-  const higher = new Set((higherCostActions ?? []).map((item) => normalise(item.action)));
-
-  function costLevel(item: DetailedAction) {
-    const key = normalise(item.action);
-    if (higher.has(key)) return { marker: "$$", label: "Higher cost", className: "bg-[#ffe8eb] text-[#9f1239]" };
-    if (medium.has(key)) return { marker: "$", label: "Medium cost", className: "bg-[#fff6bf] text-[#6b5200]" };
-    if (low.has(key)) return { marker: "$", label: "Low cost", className: "bg-[#eef7ef] text-[#285f36]" };
-    return { marker: "", label: "", className: "bg-slate-100 text-slate-600" };
-  }
-
-  return (
-    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm">
-      <h2 className="text-2xl font-black text-[#17356f]">Your priority action plan</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        Start at number 1. Work down the list when it suits your home and your budget.
-      </p>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-2 print:grid-cols-2">
-        {actions.map((item, index) => {
-          const level = costLevel(item);
-
-          return (
-            <article
-              key={`compact-priority-${index}-${item.action}`}
-              className={`rounded-2xl border p-4 print:break-inside-avoid ${
-                index < 3 ? "border-[#ffe76a] bg-[#fffdf0]" : "border-[#dbe8f2] bg-[#f7fbff]"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
-                  {index + 1}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {level.marker && (
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${level.className}`}>
-                        {level.marker} {level.label}
-                      </span>
-                    )}
-                    {item.priority && (
-                      <span className="rounded-full bg-[#ffd600] px-2.5 py-1 text-[11px] font-black text-black">
-                        {item.priority}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="mt-2 text-base font-black leading-5 text-black">
-                    {customerText(item.action, "Recommended action")}
-                  </h3>
-
-                  {item.why_it_matters && (
-                    <p className="mt-2 text-xs leading-5 text-slate-600">
-                      <span className="font-black text-[#17356f]">Why: </span>
-                      {customerText(item.why_it_matters)}
-                    </p>
-                  )}
-
-                  {item.estimated_annual_saving_range && (
-                    <p className="mt-2 text-xs font-bold text-[#17356f]">
-                      Could save each year: {customerText(item.estimated_annual_saving_range)}
-                    </p>
-                  )}
-                </div>
+      <div className="ri-print-action-grid hidden print:grid">
+        {actions.map((item, index) => (
+          <article className="ri-print-action-card" key={"print-" + title + "-" + index}>
+            <div className="ri-print-action-card-heading">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <p>{title} / Action {index + 1}</p>
+                <h3>{customerText(item.action, "Recommended action")}</h3>
               </div>
-            </article>
-          );
-        })}
+            </div>
+            {item.why_it_matters && <p><b>Why:</b> {customerText(item.why_it_matters)}</p>}
+            <div className="ri-print-action-facts">
+              {shouldShowEstimatedCost(item) && <span><b>Cost:</b> {customerText(item.estimated_cost_range)}</span>}
+              {item.estimated_annual_saving_range && <span><b>Could save/year:</b> {customerText(item.estimated_annual_saving_range)}</span>}
+              {item.effort_level && <span><b>Effort:</b> {customerText(item.effort_level)}</span>}
+              {item.likely_payback && <span><b>May pay back:</b> {customerText(item.likely_payback)}</span>}
+            </div>
+            {item.suggested_next_step && <p><b>Next:</b> {customerText(item.suggested_next_step)}</p>}
+            {item.question_to_ask && <p className="ri-print-expert"><b>Ask the Expert:</b> {customerText(item.question_to_ask)}</p>}
+          </article>
+        ))}
       </div>
     </section>
   );
@@ -644,7 +625,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
   const cautions = Array.isArray(solar.cautions) ? solar.cautions : [];
 
   return (
-    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#ffd600] bg-white p-6 shadow-sm print:break-inside-avoid">
+    <section id="report-solar" className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#ffd600] bg-white p-6 shadow-sm print:break-inside-avoid">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
@@ -657,13 +638,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
                 Is solar worth looking at?
               </h2>
             </div>
-            <Image
-              src="/visual-solar.svg"
-              alt="Illustration of rooftop solar panels and a home battery"
-              width={640}
-              height={420}
-              className="mx-auto h-auto w-full max-w-[220px]"
-            />
+            <div className="ri-graphic-aside ri-print-decor"><ReportTechnicalGraphic kind="solar" /></div>
           </div>
 
           <div className="mt-3 max-w-3xl">
@@ -805,62 +780,30 @@ const solarSuitability = isApartment
     Boolean(aiReport?.medium_cost_improvements?.length) ||
     Boolean(aiReport?.higher_cost_upgrades?.length);
 
+  const electricityEstimate = positiveEstimate(scores.estimatedBillKwh);
+  const applianceEstimate = positiveEstimate(scores.applianceKwh);
+  const heatLossArea = customerText(scores.biggestLossArea, "Not enough information");
+  const insulationOverview = customerText(scores.fabricBand, "Not enough information");
+  const fuelNames = ["Electricity", ...(usesGas ? ["Gas"] : []), ...(usesOil ? ["Oil"] : [])];
+  const firstPriorities = (aiReport?.top_5_priorities ?? []).slice(0, 3).map((item) => customerText(item));
+
+  const currencySymbol = String(answers.country ?? "") === "US" ? "$" : String(answers.country ?? "") === "UK" ? "£" : "€";
+  const annualElectricitySpend = yearlyBillSpend(answers.avg_electricity_bill, answers.bill_frequency, answers.annual_bill_override);
+  const annualGasSpend = usesGas ? yearlyBillSpend(answers.avg_gas_bill, answers.gas_bill_frequency, answers.annual_gas_spend) : null;
+  const oilVolume = positiveEstimate(answers.oil_litres_per_year);
+  const oilPrice = positiveEstimate(answers.oil_price_per_litre);
+  const annualOilSpend = usesOil ? positiveEstimate(answers.annual_oil_spend) ?? (oilVolume !== null && oilPrice !== null ? oilVolume * oilPrice : null) : null;
+  const knownFuelCosts = [
+    { fuel: "electricity", amount: annualElectricitySpend },
+    ...(usesGas ? [{ fuel: "gas", amount: annualGasSpend }] : []),
+    ...(usesOil ? [{ fuel: "oil", amount: annualOilSpend }] : []),
+  ].filter((item): item is { fuel: string; amount: number } => item.amount !== null && item.amount > 0);
+  const totalKnownCost = knownFuelCosts.reduce((sum, item) => sum + item.amount, 0);
+  const hasPhotoAnalysis = Boolean(aiReport?.photo_summary) && !/^no (home or equipment )?photos? (were )?analysed\.?$/i.test(String(aiReport?.photo_summary).trim());
+
   return (
-    <main className="report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
-      <style>{`
-        @page {
-          margin: 9mm;
-        }
+    <main className="ri-report-page report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
 
-        @media print {
-          body {
-            background: white !important;
-          }
-
-          .report-page {
-            background: white !important;
-            padding: 0 !important;
-          }
-
-          .report-section,
-          .report-cover,
-          .report-disclaimer {
-            box-shadow: none !important;
-          }
-
-          .report-section {
-            padding: 16px !important;
-            margin-top: 10px !important;
-            break-inside: auto;
-          }
-
-          .report-section h2 {
-            font-size: 18px !important;
-            line-height: 1.25 !important;
-          }
-
-          .report-section h3 {
-            line-height: 1.3 !important;
-          }
-
-          .report-section p,
-          .report-section li {
-            line-height: 1.45 !important;
-          }
-
-          .report-cover {
-            break-after: page;
-          }
-
-          article {
-            break-inside: avoid;
-          }
-
-          .print-break-before {
-            page-break-before: always;
-          }
-        }
-      `}</style>
 
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center justify-between gap-4 print:hidden">
@@ -874,169 +817,49 @@ const solarSuitability = isApartment
           <PrintReportButton />
         </div>
 
-        <section className="report-cover overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
-          <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="p-7 sm:p-10">
-              <Image
-                src="/save-your-ego-logo.png"
-                alt="Save Your EGO"
-                width={310}
-                height={120}
-                priority
-                className="h-auto w-64"
-              />
-
-              <p className="mt-8 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
-                Covering Electricity, Gas and Oil
-              </p>
-
-              <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-[#050505] sm:text-5xl">
-                Home Energy Report
-              </h1>
-
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                See where your home may be using extra energy. Then see what you can do first.
-              </p>
-
-              <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                <div className="rounded-2xl bg-[#f7fbff] p-4">
-                  <p className="font-bold text-slate-500">Assessment date</p>
-                  <p className="mt-1 font-black text-[#17356f]">
-                    {formatDate(assessment.created_at)}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-[#f7fbff] p-4">
-                  <p className="font-bold text-slate-500">Report type</p>
-                  <p className="mt-1 font-black text-[#17356f]">
-                    Personalised home energy assessment
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-7 text-white sm:p-10">
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-[#ffd600]">
-                Energy snapshot
-              </p>
-
-              <div className="mt-5 overflow-hidden rounded-3xl bg-white/95 p-3">
-                <Image
-                  src="/visual-home.svg"
-                  alt="Illustration of a more energy-efficient home"
-                  width={640}
-                  height={420}
-                  className="h-auto w-full"
-                />
-              </div>
-
-              <div className="mt-5 grid gap-4">
-                <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
-                  <p className="text-xs font-bold uppercase text-white/60">
-                    Where heat may escape
-                  </p>
-                  <p className="mt-2 text-2xl font-black">
-                    {displayValue(scores.biggestLossArea)}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-3xl bg-[#ffd600] p-5 text-black">
-                    <p className="text-xs font-black uppercase opacity-70">
-                      Insulation
-                    </p>
-                    <p className="mt-2 text-2xl font-black">
-                      {displayValue(scores.fabricBand)}
-                    </p>
-                  </div>
-
-                  <div className="rounded-3xl bg-[#59b9ec] p-5 text-[#17356f]">
-                    <p className="text-xs font-black uppercase opacity-70">
-                      Appliances
-                    </p>
-                    <p className="mt-2 text-2xl font-black">
-                      {Math.round(Number(scores.applianceKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-3xl bg-white p-5 text-black">
-                  <p className="text-xs font-bold uppercase text-slate-500">
-                    Energy used in this home
-                  </p>
-                  <p className="mt-2 text-xl font-black">
-                    Electricity{usesGas ? ", Gas" : ""}
-                    {usesOil ? ", Oil" : ""}
-                  </p>
-                </div>
-              </div>
-            </div>
+        <nav className="ri-report-nav print:hidden" aria-label="Jump to report sections">
+          <div className="ri-report-nav-inner">
+            <span className="ri-report-nav-label">YOUR REPORT /</span>
+            <a href="#report-overview">Overview</a>
+            <a href="#report-energy">Energy analysis</a>
+            <a href="#report-inputs">Your bills</a>
+            {aiReport && <a href="#report-actions">Recommendations</a>}
+            {aiReport?.priority_action_plan?.length ? <a href="#report-roadmap">Action roadmap</a> : null}
+            {solarSuitability && displayValue(solarSuitability.rating) !== "Not applicable" ? <a href="#report-solar">Solar</a> : null}
           </div>
-        </section>
+        </nav>
 
-        <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
-          <div className="grid gap-5 lg:grid-cols-[1fr_280px] lg:items-center">
-            <div>
-              <h2 className="text-2xl font-black text-[#17356f]">
-                Energy snapshot
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                A quick picture of where your home appears to be using energy and where the strongest opportunities may be.
-              </p>
-            </div>
-            <Image
-              src="/visual-savings.svg"
-              alt="Illustration showing energy savings and lower household bills"
-              width={640}
-              height={420}
-              className="mx-auto h-auto w-full max-w-[260px]"
-            />
-          </div>
+        <ReportIntelligenceCover
+          assessmentDate={formatDate(assessment.created_at)}
+          propertyType={customerText(answers.property_type, "Your home")}
+          fuels={fuelNames}
+          electricityKwh={electricityEstimate}
+          applianceKwh={applianceEstimate}
+          biggestLossArea={heatLossArea}
+          fabricBand={insulationOverview}
+          priorities={firstPriorities}
+        />
 
-          <div className="mt-5 grid gap-4 md:grid-cols-4">
-            <MetricCard
-              label="Yearly electricity use"
-              value={`${Math.round(Number(scores.estimatedBillKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year`}
-              colour="yellow"
-            />
+        <ReportEnergyAnalysis
+          electricityKwh={electricityEstimate}
+          applianceKwh={applianceEstimate}
+          biggestLossArea={heatLossArea}
+          fabricBand={insulationOverview}
+        />
 
-            <MetricCard
-              label="Appliance electricity use"
-              value={`${Math.round(Number(scores.applianceKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year`}
-              colour="blue"
-            />
-
-            <MetricCard
-              label="Where heat may escape"
-              value={displayValue(scores.biggestLossArea)}
-              colour="navy"
-            />
-
-            <MetricCard
-              label="How well your home holds heat"
-              value={displayValue(scores.fabricBand)}
-              colour="black"
-            />
-          </div>
-
-          {quickScores && (
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
+        {quickScores && (
+          <section className="ri-assessment-details report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+            <p className="ri-section-kicker">ASSESSMENT DETAILS</p>
+            <h2 className="text-2xl font-black text-[#17356f]">More about your home</h2>
+            <div className="ri-score-metrics mt-5 grid gap-4 md:grid-cols-3">
               {Object.entries(quickScores).map(([label, score]) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
-                >
-                  <p className="text-sm font-bold text-slate-500">{label}</p>
-                  <p className="mt-2 text-2xl font-black text-[#17356f]">
-                    {String(score)}
-                  </p>
-                </div>
+                <MetricCard key={label} label={label} value={String(score)} colour="white" />
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+        <section id="report-inputs" className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
           <div className="grid gap-4 lg:grid-cols-[1fr_250px] lg:items-center">
             <div>
               <h2 className="text-2xl font-black text-[#17356f]">
@@ -1046,44 +869,31 @@ const solarSuitability = isApartment
                 The figures you entered give the report its starting point.
               </p>
             </div>
-            <Image
-              src="/visual-bills.svg"
-              alt="Illustration of household energy bills for electricity, gas and oil"
-              width={640}
-              height={420}
-              className="mx-auto h-auto w-full max-w-[230px]"
-            />
+            <div className="ri-graphic-aside ri-print-decor"><ReportTechnicalGraphic kind="bills" /></div>
           </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className={`mt-5 grid gap-4 ${usesGas && usesOil ? "md:grid-cols-3" : usesGas || usesOil ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
             <InputCard title="Electricity" colour="yellow">
-              <p>
-                Average bill:{" "}
-                {displayValue(answers.avg_electricity_bill, "0")}
-              </p>
-              <p>Price per kilowatt-hour: {displayValue(answers.unit_rate)}</p>
-              <p>
-                Yearly spend:{" "}
-                {answers.annual_bill_override
-                  ? displayValue(answers.annual_bill_override)
-                  : "Estimated from bill"}
-              </p>
+              <p>Average bill: {currencySymbol}{displayValue(answers.avg_electricity_bill, "0")} ({String(answers.bill_frequency ?? "billing period not specified")})</p>
+              <p>Price per kilowatt-hour: {currencySymbol}{displayValue(answers.unit_rate, "Not specified")}</p>
+              <p>Fixed charge per bill: {currencySymbol}{displayValue(answers.standing_charge, "0")}</p>
+              <p>Estimated yearly spend: {annualElectricitySpend !== null ? reportMoney(annualElectricitySpend, currencySymbol) : "Not available"}</p>
             </InputCard>
 
-            <InputCard title="Gas" colour="blue">
-              <p>Used in home: {usesGas ? "Yes" : "No"}</p>
+            {usesGas && <InputCard title="Gas" colour="blue">
+              <p>Used in home: Yes</p>
               {usesGas && (
                 <>
                   <p>
-                    Average bill: {displayValue(answers.avg_gas_bill, "0")}
+                    Average bill: {currencySymbol}{displayValue(answers.avg_gas_bill, "0")} ({String(answers.gas_bill_frequency ?? "billing period not specified")})
                   </p>
                   <p>Boiler age: {displayValue(answers.gas_boiler_age)}</p>
                 </>
               )}
-            </InputCard>
+            </InputCard>}
 
-            <InputCard title="Oil" colour="black">
-              <p>Used in home: {usesOil ? "Yes" : "No"}</p>
+            {usesOil && <InputCard title="Oil" colour="black">
+              <p>Used in home: Yes</p>
               {usesOil && (
                 <>
                   <p>
@@ -1094,12 +904,22 @@ const solarSuitability = isApartment
                   <p>Boiler age: {displayValue(answers.oil_boiler_age)}</p>
                 </>
               )}
-            </InputCard>
+            </InputCard>}
           </div>
+
+          <ReportBillExplanation
+            currencySymbol={currencySymbol}
+            averageBill={positiveEstimate(answers.avg_electricity_bill)}
+            billingFrequency={String(answers.bill_frequency ?? "")}
+            annualSpendOverride={positiveEstimate(answers.annual_bill_override)}
+            fixedChargePerBill={positiveEstimate(answers.standing_charge)}
+            unitRate={positiveEstimate(answers.unit_rate)}
+            estimatedYearlyKwh={electricityEstimate}
+          />
         </section>
 
         {aiReport ? (
-          <div className="mt-6 space-y-5">
+          <div id="report-actions" className="mt-6 space-y-5">
             {aiReport.bottom_line && (
               <section className="report-section rounded-3xl border border-[#dbe8f2] bg-[#fff6bf] p-6 shadow-sm print:break-inside-avoid">
                 <h2 className="text-2xl font-black text-black">
@@ -1122,7 +942,22 @@ const solarSuitability = isApartment
                 title="What your energy costs look like"
                 accent="yellow"
               >
-                <p>{customerText(aiReport.estimated_annual_energy_cost_profile)}</p>
+                {knownFuelCosts.length > 0 ? (
+                  <>
+                    <p>
+                      Based on the bills entered, the estimated yearly energy spend is about{" "}
+                      <strong>{reportMoney(totalKnownCost, currencySymbol)}</strong>.
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Included:{" "}
+                      {knownFuelCosts.map((item) => reportMoney(item.amount, currencySymbol) + " for " + item.fuel).join("; ")}.
+                      {" "}This estimate depends on the bill periods and fuel details you entered.
+                      Amounts for any fuels without bill data are not included.
+                    </p>
+                  </>
+                ) : (
+                  <p>{customerText(aiReport.estimated_annual_energy_cost_profile)}</p>
+                )}
               </TextSection>
             )}
 
@@ -1130,7 +965,7 @@ const solarSuitability = isApartment
 
             <TopPrioritiesSection items={aiReport.top_5_priorities} />
 
-            {aiReport.photo_summary && (
+            {hasPhotoAnalysis && (
               <TextSection title="What we noticed in your photos" accent="blue">
                 <p>{customerText(aiReport.photo_summary)}</p>
               </TextSection>
@@ -1148,7 +983,7 @@ const solarSuitability = isApartment
               accent="blue"
             />
 
-            <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
+            <section className="ri-investment-preface report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
               <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
@@ -1161,13 +996,11 @@ const solarSuitability = isApartment
                     We have split the ideas into low, medium and higher-cost options so you can see what is realistic now and what may be worth planning for later.
                   </p>
                 </div>
-                <Image
-                  src="/visual-action-levels.svg"
-                  alt="Illustration showing low, medium and higher-cost home energy improvements"
-                  width={760}
-                  height={430}
-                  className="h-auto w-full rounded-2xl"
-                />
+                <div className="ri-upgrade-spectrum">
+                    <div className="ri-upgrade-tier"><span>01</span><div><strong>Low-cost quick wins</strong><small>Start with practical changes.</small></div></div>
+                    <div className="ri-upgrade-tier"><span>02</span><div><strong>Medium-cost improvements</strong><small>Consider what suits your home.</small></div></div>
+                    <div className="ri-upgrade-tier"><span>03</span><div><strong>Higher-cost upgrades</strong><small>Investigate bigger investments first.</small></div></div>
+                  </div>
               </div>
             </section>
 
@@ -1198,41 +1031,23 @@ const solarSuitability = isApartment
             />
 
 
-            <section className="report-section overflow-hidden rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
-              <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
-                    Ranked for this home
-                  </p>
-                  <h2 className="mt-1 text-2xl font-black text-[#17356f]">
-                    Your 14 actions, in the order we would tackle them
-                  </h2>
-                  <p className="mt-3 text-sm leading-7 text-slate-700">
-                    The first win matters. It builds momentum. We rank all 14 actions by what may help your home most.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
-                    <span className="rounded-full bg-[#fff6bf] px-3 py-2 text-[#6b5200]">Savings</span>
-                    <span className="rounded-full bg-[#e9f6fe] px-3 py-2 text-[#17356f]">Cost</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-2 text-black">Ease</span>
-                    <span className="rounded-full bg-[#eef7ef] px-3 py-2 text-[#285f36]">Comfort</span>
-                  </div>
-                </div>
-
-                <Image
-                  src="/priority-roadmap.svg"
-                  alt="A visual roadmap showing the Save Your EGO actions ranked from the best place to start through all fourteen priorities"
-                  width={900}
-                  height={440}
-                  className="h-auto w-full rounded-2xl"
-                />
+            <section className="ri-roadmap-preface report-section overflow-hidden rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
+              <p className="ri-section-kicker">YOUR PLAN</p>
+              <h2 className="text-2xl font-black text-[#17356f]">From first win to lasting improvements</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-700">You have seen the options. Here is the order we suggest tackling them. Progress is easier when you focus on one useful change at a time.</p>
+              <div className="ri-roadmap-preview mt-5">
+                <div><b>01</b><span>Understand the opportunity</span></div>
+                <div><b>02</b><span>Choose a practical next step</span></div>
+                <div><b>03</b><span>Track what you have completed</span></div>
               </div>
             </section>
 
-            <CompactPriorityPlan
-              actions={aiReport.priority_action_plan}
-              lowCostActions={aiReport.low_cost_quick_wins}
-              mediumCostActions={aiReport.medium_cost_improvements}
-              higherCostActions={aiReport.higher_cost_upgrades}
+            <ReportProgressRoadmap
+              reportId={assessment.id}
+              actions={(aiReport.priority_action_plan ?? []).map(prepareRoadmapAction)}
+              lowCostActions={(aiReport.low_cost_quick_wins ?? []).map(prepareRoadmapAction)}
+              mediumCostActions={(aiReport.medium_cost_improvements ?? []).map(prepareRoadmapAction)}
+              higherCostActions={(aiReport.higher_cost_upgrades ?? []).map(prepareRoadmapAction)}
             />
 
             <SolarPVSection solar={solarSuitability} />
@@ -1250,7 +1065,7 @@ const solarSuitability = isApartment
                     </ul>
                   </section>
 
-                  <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-[#59b9ec] bg-white p-6 shadow-sm print:break-inside-avoid">
+                  {usesGas && (aiReport.gas_specific_advice ?? []).length > 0 && <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-[#59b9ec] bg-white p-6 shadow-sm print:break-inside-avoid">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#59b9ec] text-lg font-black text-[#17356f]">G</div>
                       <h2 className="text-2xl font-black text-[#17356f]">Gas advice</h2>
@@ -1258,9 +1073,9 @@ const solarSuitability = isApartment
                     <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
                       {(aiReport.gas_specific_advice ?? []).map((item, index) => <li key={`gas-${index}`}>{customerText(item)}</li>)}
                     </ul>
-                  </section>
+                  </section>}
 
-                  <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-black bg-white p-6 shadow-sm print:break-inside-avoid">
+                  {usesOil && (aiReport.oil_specific_advice ?? []).length > 0 && <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-black bg-white p-6 shadow-sm print:break-inside-avoid">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-lg font-black text-white">O</div>
                       <h2 className="text-2xl font-black text-[#17356f]">Oil advice</h2>
@@ -1268,18 +1083,12 @@ const solarSuitability = isApartment
                     <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
                       {(aiReport.oil_specific_advice ?? []).map((item, index) => <li key={`oil-${index}`}>{customerText(item)}</li>)}
                     </ul>
-                  </section>
+                  </section>}
                 </div>
 
                 <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
                   <div className="grid gap-5 lg:grid-cols-[240px_1fr] lg:items-center">
-                    <Image
-                      src="/visual-appliances.svg"
-                      alt="Illustration of common household appliances and energy use"
-                      width={640}
-                      height={420}
-                      className="mx-auto h-auto w-full max-w-[240px]"
-                    />
+                    <div className="ri-graphic-aside ri-print-decor"><ReportTechnicalGraphic kind="appliances" /></div>
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
                         Everyday energy

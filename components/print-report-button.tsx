@@ -31,13 +31,19 @@ export function PrintReportButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={handlePrint}
-      disabled={isPreparing}
-      className="rounded-md bg-black px-5 py-3 text-sm font-medium text-white transition disabled:cursor-wait disabled:opacity-70 print:hidden"
-    >
-      {isPreparing ? "Preparing PDF..." : "Download / Save PDF report"}
-    </button>
+    <div className="flex max-w-sm flex-col items-end gap-2 print:hidden">
+      <button
+        type="button"
+        onClick={handlePrint}
+        disabled={isPreparing}
+        className="rounded-xl bg-[#0B3274] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#17478D] disabled:cursor-wait disabled:opacity-70"
+      >
+        {isPreparing ? "Preparing print view..." : "Print / Save as PDF"}
+      </button>
+      <p className="ri-print-dialog-note text-right text-[11px] leading-4 text-slate-500">
+        For a clean PDF, switch off <strong>Headers and footers</strong> in the
+        print dialog. Enable <strong>Background graphics</strong> for the full design.
+      </p>
+    </div>
   );
 }
