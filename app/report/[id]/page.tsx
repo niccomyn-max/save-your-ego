@@ -1,5 +1,6 @@
 import "../report-intelligence.css";
 import "../report-graphics.css";
+import "../report-print-refinements.css";
 import Image from "next/image";
 import { ReportIntelligenceCover, ReportEnergyAnalysis } from "@/components/report-intelligence-cover";
 import ReportProgressRoadmap from "@/components/report-progress-roadmap";
@@ -980,7 +981,7 @@ const solarSuitability = isApartment
               accent="blue"
             />
 
-            <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
+            <section className="ri-investment-preface report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
               <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
