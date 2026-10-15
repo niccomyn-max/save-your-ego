@@ -3,6 +3,7 @@ import "../report-graphics.css";
 import Image from "next/image";
 import { ReportIntelligenceCover, ReportEnergyAnalysis } from "@/components/report-intelligence-cover";
 import ReportProgressRoadmap from "@/components/report-progress-roadmap";
+import ReportBillExplanation from "@/components/report-bill-explanation";
 import ReportTechnicalGraphic from "@/components/report-technical-graphic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -123,16 +124,17 @@ function customerText(value: unknown, fallback = "Unknown") {
     .replace(/\bcontractors?\b/gi, "experts")
     .replace(/\bqualified installer\b/gi, "qualified expert")
     .replace(/\bannual generation\b/gi, "electricity it may make each year")
-    .replace(/\blikely demand profile\b/gi, "how and when you use electricity")
+    .replace(/\blikely demand profile\b/gi, "electricity habits")
     .replace(/\binverter limits\b/gi, "equipment limits")
     .replace(/\bexport limits\b/gi, "limits on sending spare power back to the grid")
     .replace(/\bexport rules\b/gi, "rules for sending spare power back to the grid")
     .replace(/\busable roof area\b/gi, "roof space that can be used")
     .replace(/\broof orientation\b/gi, "the direction your roof faces")
-    .replace(/\busage pattern\b/gi, "when and how you use electricity")
+    .replace(/\bif your solar and usage patterns? fit it\b/gi, "if solar suits when you use electricity")
+    .replace(/\busage patterns?\b/gi, "electricity habits")
     .replace(/\bself-consumption\b/gi, "how much solar power you use at home")
     .replace(/\bPV expansion\b/gi, "adding more solar panels")
-    .replace(/\bpayback\b/gi, "time to earn the cost back")
+    .replace(/\bpayback period\b/gi, "time to earn the cost back")
     .replace(/\b(\d+(?:-\d+)?)\s*kW\+?\b/gi, "$1 kilowatts (kW)");
 }
 
@@ -140,6 +142,27 @@ function positiveEstimate(value: unknown): number | null {
   if (typeof value !== "number" && typeof value !== "string") return null;
   const numeric = Number(value);
   return value !== "" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+
+const REPORT_BILL_FREQUENCIES: Record<string, number> = {
+  Monthly: 12,
+  "Bi-monthly": 6,
+  Quarterly: 4,
+  Annual: 1,
+};
+
+function yearlyBillSpend(average: unknown, frequency: unknown, override: unknown): number | null {
+  const enteredAnnual = positiveEstimate(override);
+  if (enteredAnnual !== null) return enteredAnnual;
+  const perBill = positiveEstimate(average);
+  const periods = REPORT_BILL_FREQUENCIES[String(frequency ?? "")];
+  if (perBill === null || !periods) return null;
+  return perBill * periods;
+}
+
+function reportMoney(amount: number, symbol: string): string {
+  return symbol + Math.round(amount).toLocaleString("en-US");
 }
 
 function prepareRoadmapAction(item: DetailedAction): DetailedAction {
