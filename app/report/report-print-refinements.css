@@ -1,0 +1,184 @@
+/* Report polish pass: trustworthy bill arithmetic and a separate, compact print experience. */
+.ri-bill-bridge{
+  margin-top:20px;
+  border:1px solid #D4E6F2;
+  border-radius:18px;
+  background:linear-gradient(130deg,#F6FBFF,#F0F8FD);
+  padding:19px 20px;
+}
+.ri-bill-bridge-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.ri-bill-bridge-heading h3{font-size:17px;letter-spacing:-.025em;color:#17356F;font-weight:900;}
+.ri-bill-bridge-heading>span{border:1px solid #D3E7F4;border-radius:999px;padding:6px 10px;background:#FFF;color:#39729C;font-size:10px;font-weight:800;}
+.ri-bill-steps{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;margin-top:16px;
+}
+.ri-bill-steps>div{
+  display:flex;flex-direction:column;gap:6px;
+  min-width:0;padding:13px;
+  background:#FFF;
+  border:1px solid #DFEBF4;
+  border-radius:12px;
+}
+.ri-bill-steps>div.ri-bill-result{
+  background:#103B73;
+  border-color:#164B86;
+  color:#FFF;
+}
+.ri-bill-steps span{display:block;font-size:9px;font-weight:900;line-height:1.35;letter-spacing:.09em;color:#5280A0;}
+.ri-bill-steps strong{display:block;line-height:1.2;color:#153E74;font-size:clamp(16px,1.5vw,20px);font-weight:900;overflow-wrap:anywhere;}
+.ri-bill-steps small{display:block;font-size:10px;line-height:1.5;color:#658096;}
+.ri-bill-result span,.ri-bill-result small{color:#B8DDF3;}
+.ri-bill-result strong{color:#FFD400!important;}
+.ri-bill-disclaimer{margin:12px 0 0;font-size:11px;line-height:1.6;color:#536D83;}
+.ri-usage-unavailable{
+  border:1px solid rgba(154,215,250,.22);
+  background:rgba(0,25,56,.22);
+  border-radius:13px;
+  padding:16px 17px;
+  color:#D2ECF9;
+}
+.ri-usage-unavailable>strong{display:block;color:#FFF;font-size:13px;font-weight:900;}
+.ri-usage-unavailable>p{margin:7px 0 0;color:#BEDAEB;font-size:11px;line-height:1.65;}
+.ri-print-action-grid,.ri-roadmap-print-table{display:none;}
+@media(max-width:1020px){
+  .ri-bill-steps{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media(max-width:590px){
+  .ri-bill-bridge{padding:15px;}
+  .ri-bill-bridge-heading h3{font-size:15px;}
+  .ri-bill-steps{gap:8px;}
+  .ri-bill-steps>div{padding:10px;}
+  .ri-bill-steps span{font-size:8px;}
+  .ri-bill-steps strong{font-size:16px;}
+  .ri-bill-steps small{font-size:9px;}
+}
+@media print{
+  @page {size:auto;margin:11mm 11mm 12mm;}
+  .ri-report-page .report-section,
+  .ri-report-page .report-disclaimer{break-inside:auto!important;page-break-inside:auto!important;}
+  .ri-report-page .ri-investment-preface,
+  .ri-report-page .ri-roadmap-preface,
+  .ri-report-page .ri-action-grid-online,
+  .ri-report-page .ri-roadmap-list,
+  .ri-report-page .ri-print-dialog-note{display:none!important;}
+  .ri-report-page .ri-bill-bridge{
+    margin-top:11px!important;padding:11px 12px!important;border-radius:8px!important;
+    background:#F6FAFD!important;border-color:#DCE8F0!important;
+    break-inside:avoid!important;
+  }
+  .ri-bill-bridge-heading h3{font-size:12pt!important;}
+  .ri-bill-bridge-heading>span{display:none!important;}
+  .ri-bill-steps{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:5px!important;margin-top:9px!important;}
+  .ri-bill-steps>div{padding:8px!important;border-radius:6px!important;gap:3px!important;}
+  .ri-bill-steps span{font-size:7pt!important;color:#315F83!important;letter-spacing:0!important;}
+  .ri-bill-steps strong{font-size:11pt!important;color:#143C6C!important;}
+  .ri-bill-steps small{font-size:7.5pt!important;color:#536F87!important;}
+  .ri-bill-steps .ri-bill-result{background:#E4F2FB!important;border-color:#B8D3EB!important;}
+  .ri-bill-steps .ri-bill-result strong{color:#103B73!important;}
+  .ri-bill-disclaimer{font-size:8pt!important;line-height:1.35!important;margin-top:8px!important;}
+  .ri-usage-unavailable{padding:10px!important;background:#F4F9FE!important;border-color:#DCE8F2!important;}
+  .ri-usage-unavailable>strong{color:#0B3274!important;font-size:10pt!important;}
+  .ri-usage-unavailable>p{color:#456784!important;font-size:9pt!important;}
+  .ri-report-page .ri-action-group{
+    display:block!important;
+    padding:10px 11px!important;
+    border-top-width:3px!important;
+    border-radius:0!important;
+    margin:0!important;
+    break-before:page!important;
+    page-break-before:always!important;
+    break-inside:auto!important;
+  }
+  .ri-report-page .ri-action-group>h2{
+    font-size:17pt!important;
+    margin:0!important;
+    padding-bottom:4px!important;
+    break-after:avoid-page!important;page-break-after:avoid!important;
+  }
+  .ri-report-page .ri-action-group>p{
+    margin:0 0 8px!important;
+    font-size:9pt!important;
+    break-after:avoid-page!important;page-break-after:avoid!important;
+  }
+  .ri-report-page .ri-print-action-grid{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    align-items:start!important;
+    margin-top:9px!important;
+  }
+  .ri-report-page .ri-print-action-card{
+    border:1px solid #CFDFEC!important;
+    border-radius:9px!important;
+    padding:11px!important;
+    background:#FFF!important;
+    box-shadow:none!important;
+    page-break-inside:avoid!important;
+    break-inside:avoid!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  .ri-print-action-card-heading{
+    display:flex!important;gap:8px!important;align-items:flex-start!important;
+  }
+  .ri-print-action-card-heading>span{
+    display:grid!important;place-items:center!important;
+    width:24px!important;height:24px!important;flex:none!important;
+    font-size:9pt!important;font-weight:900!important;
+    color:#FFF!important;background:#0B3274!important;border-radius:6px!important;
+  }
+  .ri-print-action-card-heading>div{min-width:0!important;}
+  .ri-print-action-card-heading>div>p{margin:0!important;font-size:7pt!important;letter-spacing:.05em!important;color:#51739A!important;font-weight:800!important;}
+  .ri-print-action-card-heading h3{margin:3px 0 0!important;font-size:10.4pt!important;line-height:1.32!important;font-weight:900!important;color:#163B70!important;}
+  .ri-print-action-card>p{margin:7px 0 0!important;font-size:8.7pt!important;line-height:1.42!important;color:#364A60!important;}
+  .ri-print-action-card b{font-weight:900!important;color:#1E4A7B!important;}
+  .ri-print-action-facts{
+    display:flex!important;flex-wrap:wrap!important;
+    gap:4px 9px!important;border-top:1px solid #DCE8F2!important;
+    padding-top:7px!important;margin-top:7px!important;
+    font-size:8pt!important;line-height:1.4!important;color:#405C78!important;
+  }
+  .ri-print-action-facts>span{max-width:100%!important;overflow-wrap:anywhere!important;}
+  .ri-print-action-card .ri-print-expert{border-top:1px dotted #BED3E4!important;padding-top:6px!important;}
+  .ri-report-page .ri-roadmap{
+    break-before:page!important;page-break-before:always!important;
+    padding:12px!important;
+    border-radius:0!important;
+    break-inside:auto!important;
+  }
+  .ri-report-page .ri-roadmap .ri-section-intro p{font-size:9pt!important;margin:5px 0 0!important;}
+  .ri-report-page .ri-roadmap-print-table{
+    display:table!important;width:100%!important;
+    table-layout:fixed!important;border-collapse:collapse!important;
+    margin-top:12px!important;font-size:8.7pt!important;
+    color:#26435F!important;
+  }
+  .ri-roadmap-print-table thead{display:table-header-group!important;}
+  .ri-roadmap-print-table th,.ri-roadmap-print-table td{
+    border:1px solid #D4E2ED!important;
+    text-align:left!important;vertical-align:top!important;
+    padding:7px 8px!important;line-height:1.4!important;
+    overflow-wrap:anywhere!important;
+  }
+  .ri-roadmap-print-table th{background:#EAF4FA!important;color:#17356F!important;font-weight:900!important;font-size:8.3pt!important;}
+  .ri-roadmap-print-table th:first-child,.ri-roadmap-print-table td:first-child{width:10%!important;text-align:center!important;font-weight:900!important;}
+  .ri-roadmap-print-table th:nth-child(2),.ri-roadmap-print-table td:nth-child(2){width:38%!important;}
+  .ri-roadmap-print-table th:nth-child(3),.ri-roadmap-print-table td:nth-child(3){width:43%!important;}
+  .ri-roadmap-print-table th:last-child,.ri-roadmap-print-table td:last-child{width:9%!important;text-align:center!important;}
+  .ri-roadmap-print-table tr{break-inside:avoid!important;page-break-inside:avoid!important;}
+  .ri-roadmap-print-table tbody tr:nth-child(even){background:#F9FCFE!important;}
+  .ri-roadmap-footnote{margin-top:10px!important;font-size:8pt!important;}
+  .ri-report-page #report-inputs{break-inside:auto!important;}
+  .ri-report-page .ri-cover,
+  .ri-report-page .ri-energy-section{break-inside:auto!important;}
+  .ri-report-page .report-section>h2,
+  .ri-report-page .report-section>h3,
+  .ri-report-page .report-section .ri-section-intro{
+    break-after:avoid-page!important;
+    page-break-after:avoid!important;
+  }
+  .ri-report-page .report-section ul,.ri-report-page .report-section li{
+    orphans:2;widows:2;
+  }
+}
