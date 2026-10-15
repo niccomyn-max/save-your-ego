@@ -132,6 +132,8 @@ function customerText(value: unknown, fallback = "Unknown") {
     .replace(/\busable roof area\b/gi, "roof space that can be used")
     .replace(/\broof orientation\b/gi, "the direction your roof faces")
     .replace(/\bif your solar and usage patterns? fit it\b/gi, "if solar suits when you use electricity")
+    .replace(/\bWould a battery pay back well with my daily usage patterns?\?/gi, "Would a battery be worth the cost based on my daily electricity use?")
+    .replace(/\bUse a battery only if your solar and usage patterns? fit it\./gi, "Consider a battery only if it suits your solar setup and electricity use.")
     .replace(/\busage patterns?\b/gi, "electricity habits")
     .replace(/\bself-consumption\b/gi, "how much solar power you use at home")
     .replace(/\bPV expansion\b/gi, "adding more solar panels")
