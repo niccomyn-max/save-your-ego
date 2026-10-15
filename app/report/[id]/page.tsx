@@ -939,7 +939,22 @@ const solarSuitability = isApartment
                 title="What your energy costs look like"
                 accent="yellow"
               >
-                <p>{customerText(aiReport.estimated_annual_energy_cost_profile)}</p>
+                {knownFuelCosts.length > 0 ? (
+                  <>
+                    <p>
+                      Based on the bills entered, the estimated yearly energy spend is about{" "}
+                      <strong>{reportMoney(totalKnownCost, currencySymbol)}</strong>.
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Included:{" "}
+                      {knownFuelCosts.map((item) => reportMoney(item.amount, currencySymbol) + " for " + item.fuel).join("; ")}.
+                      {" "}This estimate depends on the bill periods and fuel details you entered.
+                      Amounts for any fuels without bill data are not included.
+                    </p>
+                  </>
+                ) : (
+                  <p>{customerText(aiReport.estimated_annual_energy_cost_profile)}</p>
+                )}
               </TextSection>
             )}
 
@@ -947,7 +962,7 @@ const solarSuitability = isApartment
 
             <TopPrioritiesSection items={aiReport.top_5_priorities} />
 
-            {aiReport.photo_summary && (
+            {hasPhotoAnalysis && (
               <TextSection title="What we noticed in your photos" accent="blue">
                 <p>{customerText(aiReport.photo_summary)}</p>
               </TextSection>
@@ -1013,7 +1028,7 @@ const solarSuitability = isApartment
             />
 
 
-            <section className="report-section overflow-hidden rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+            <section className="ri-roadmap-preface report-section overflow-hidden rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:hidden">
               <p className="ri-section-kicker">YOUR PLAN</p>
               <h2 className="text-2xl font-black text-[#17356f]">From first win to lasting improvements</h2>
               <p className="mt-3 text-sm leading-7 text-slate-700">You have seen the options. Here is the order we suggest tackling them. Progress is easier when you focus on one useful change at a time.</p>
@@ -1047,7 +1062,7 @@ const solarSuitability = isApartment
                     </ul>
                   </section>
 
-                  <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-[#59b9ec] bg-white p-6 shadow-sm print:break-inside-avoid">
+                  {usesGas && (aiReport.gas_specific_advice ?? []).length > 0 && <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-[#59b9ec] bg-white p-6 shadow-sm print:break-inside-avoid">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#59b9ec] text-lg font-black text-[#17356f]">G</div>
                       <h2 className="text-2xl font-black text-[#17356f]">Gas advice</h2>
@@ -1055,9 +1070,9 @@ const solarSuitability = isApartment
                     <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
                       {(aiReport.gas_specific_advice ?? []).map((item, index) => <li key={`gas-${index}`}>{customerText(item)}</li>)}
                     </ul>
-                  </section>
+                  </section>}
 
-                  <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-black bg-white p-6 shadow-sm print:break-inside-avoid">
+                  {usesOil && (aiReport.oil_specific_advice ?? []).length > 0 && <section className="report-section rounded-3xl border border-[#dbe8f2] border-l-8 border-l-black bg-white p-6 shadow-sm print:break-inside-avoid">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black text-lg font-black text-white">O</div>
                       <h2 className="text-2xl font-black text-[#17356f]">Oil advice</h2>
@@ -1065,7 +1080,7 @@ const solarSuitability = isApartment
                     <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
                       {(aiReport.oil_specific_advice ?? []).map((item, index) => <li key={`oil-${index}`}>{customerText(item)}</li>)}
                     </ul>
-                  </section>
+                  </section>}
                 </div>
 
                 <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
