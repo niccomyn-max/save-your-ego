@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { PrintReportButton } from "@/components/print-report-button";
 import { ReportIntelligenceCover, ReportEnergyAnalysis } from "@/components/report-intelligence-cover";
 import ReportProgressRoadmap, { type RoadmapAction } from "@/components/report-progress-roadmap";
@@ -15,8 +14,7 @@ const sampleActions: RoadmapAction[] = [
   { action: "Investigate whether solar is appropriate for your roof", why_it_matters: "Suitability depends on orientation, shading, roof area, electricity use and local rules.", effort_level: "Ask the Expert", estimated_cost_range: "Higher cost", suggested_next_step: "Ask a qualified expert to review roof details and your energy needs." },
 ];
 
-export default async function ReportDesignLabPage() {
-  await connection();
+export default function ReportDesignLabPage() {
   if (process.env.VERCEL_ENV !== "preview") notFound();
 
   return (
