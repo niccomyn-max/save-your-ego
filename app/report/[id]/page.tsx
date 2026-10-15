@@ -302,7 +302,7 @@ function TopPrioritiesSection({ items }: { items?: string[] }) {
   }
 
   return (
-    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm print:break-inside-avoid">
+    <section className="ri-priority-summary report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm print:break-inside-avoid">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">
         Customer action summary
       </p>
@@ -848,10 +848,10 @@ const solarSuitability = isApartment
         />
 
         {quickScores && (
-          <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+          <section className="ri-assessment-details report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
             <p className="ri-section-kicker">ASSESSMENT DETAILS</p>
             <h2 className="text-2xl font-black text-[#17356f]">More about your home</h2>
-            <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="ri-score-metrics mt-5 grid gap-4 md:grid-cols-3">
               {Object.entries(quickScores).map(([label, score]) => (
                 <MetricCard key={label} label={label} value={String(score)} colour="white" />
               ))}
