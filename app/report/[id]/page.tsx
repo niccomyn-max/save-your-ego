@@ -419,7 +419,7 @@ function ActionPlanSection({
 
   return (
     <section
-      className={`ri-action-group report-section rounded-3xl border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
+      className={`ri-action-group report-section rounded-3xl border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-6 shadow-sm`}
     >
       <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
 
@@ -427,7 +427,7 @@ function ActionPlanSection({
         <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
       )}
 
-      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+      <div className="ri-action-grid-online mt-5 grid gap-4 lg:grid-cols-2 print:hidden">
         {actions.map((item, index) => (
           <article
             key={`${title}-${index}-${item.action}`}
@@ -518,6 +518,29 @@ function ActionPlanSection({
                 </p>
               </div>
             )}
+          </article>
+        ))}
+      </div>
+
+      <div className="ri-print-action-grid hidden print:grid">
+        {actions.map((item, index) => (
+          <article className="ri-print-action-card" key={"print-" + title + "-" + index}>
+            <div className="ri-print-action-card-heading">
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div>
+                <p>{title} / Action {index + 1}</p>
+                <h3>{customerText(item.action, "Recommended action")}</h3>
+              </div>
+            </div>
+            {item.why_it_matters && <p><b>Why:</b> {customerText(item.why_it_matters)}</p>}
+            <div className="ri-print-action-facts">
+              {shouldShowEstimatedCost(item) && <span><b>Cost:</b> {customerText(item.estimated_cost_range)}</span>}
+              {item.estimated_annual_saving_range && <span><b>Could save/year:</b> {customerText(item.estimated_annual_saving_range)}</span>}
+              {item.effort_level && <span><b>Effort:</b> {customerText(item.effort_level)}</span>}
+              {item.likely_payback && <span><b>May pay back:</b> {customerText(item.likely_payback)}</span>}
+            </div>
+            {item.suggested_next_step && <p><b>Next:</b> {customerText(item.suggested_next_step)}</p>}
+            {item.question_to_ask && <p className="ri-print-expert"><b>Ask the Expert:</b> {customerText(item.question_to_ask)}</p>}
           </article>
         ))}
       </div>
