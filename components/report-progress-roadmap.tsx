@@ -117,7 +117,7 @@ export default function ReportProgressRoadmap({
         </div>
       </div>
 
-      <ol className="ri-roadmap-list">
+      <ol className="ri-roadmap-list print:hidden">
         {actions.map((item, index) => {
           const key = makeActionKey(item, index);
           const isDone = Boolean(completed[key]);
@@ -159,6 +159,26 @@ export default function ReportProgressRoadmap({
           );
         })}
       </ol>
+      <table className="ri-roadmap-print-table hidden print:table">
+        <thead>
+          <tr>
+            <th scope="col">Priority</th>
+            <th scope="col">Recommended action</th>
+            <th scope="col">Your next step</th>
+            <th scope="col">Done</th>
+          </tr>
+        </thead>
+        <tbody>
+          {actions.map((item, index) => (
+            <tr key={"print-priority-" + index}>
+              <td>{String(index + 1).padStart(2, "0")}</td>
+              <td><strong>{item.action || "Recommended action"}</strong></td>
+              <td>{item.suggested_next_step || "See the detailed recommendation above."}</td>
+              <td>{completed[makeActionKey(item, index)] ? "Yes" : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <div className="ri-roadmap-footnote">Savings and costs are estimates. Actions may overlap, so individual potential savings should not be added together.</div>
     </section>
   );
