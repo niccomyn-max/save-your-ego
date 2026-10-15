@@ -1,4 +1,9 @@
+import "../report-intelligence.css";
+import "../report-graphics.css";
 import Image from "next/image";
+import { ReportIntelligenceCover, ReportEnergyAnalysis } from "@/components/report-intelligence-cover";
+import ReportProgressRoadmap from "@/components/report-progress-roadmap";
+import ReportTechnicalGraphic from "@/components/report-technical-graphic";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -129,6 +134,24 @@ function customerText(value: unknown, fallback = "Unknown") {
     .replace(/\bPV expansion\b/gi, "adding more solar panels")
     .replace(/\bpayback\b/gi, "time to earn the cost back")
     .replace(/\b(\d+(?:-\d+)?)\s*kW\+?\b/gi, "$1 kilowatts (kW)");
+}
+
+function positiveEstimate(value: unknown): number | null {
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  const numeric = Number(value);
+  return value !== "" && Number.isFinite(numeric) && numeric > 0 ? numeric : null;
+}
+
+function prepareRoadmapAction(item: DetailedAction): DetailedAction {
+  return {
+    ...item,
+    action: customerText(item.action, "Recommended action"),
+    why_it_matters: item.why_it_matters ? customerText(item.why_it_matters) : undefined,
+    estimated_cost_range: item.estimated_cost_range ? customerText(item.estimated_cost_range) : undefined,
+    estimated_annual_saving_range: item.estimated_annual_saving_range ? customerText(item.estimated_annual_saving_range) : undefined,
+    effort_level: item.effort_level ? customerText(item.effort_level) : undefined,
+    suggested_next_step: item.suggested_next_step ? customerText(item.suggested_next_step) : undefined,
+  };
 }
 
 function shouldShowEstimatedCost(item: DetailedAction) {
@@ -502,97 +525,6 @@ function ActionPlanSection({
   );
 }
 
-function CompactPriorityPlan({
-  actions,
-  lowCostActions,
-  mediumCostActions,
-  higherCostActions,
-}: {
-  actions?: DetailedAction[];
-  lowCostActions?: DetailedAction[];
-  mediumCostActions?: DetailedAction[];
-  higherCostActions?: DetailedAction[];
-}) {
-  if (!actions || actions.length === 0) {
-    return null;
-  }
-
-  const normalise = (value?: string) => (value ?? "").trim().toLowerCase();
-  const low = new Set((lowCostActions ?? []).map((item) => normalise(item.action)));
-  const medium = new Set((mediumCostActions ?? []).map((item) => normalise(item.action)));
-  const higher = new Set((higherCostActions ?? []).map((item) => normalise(item.action)));
-
-  function costLevel(item: DetailedAction) {
-    const key = normalise(item.action);
-    if (higher.has(key)) return { marker: "$$", label: "Higher cost", className: "bg-[#ffe8eb] text-[#9f1239]" };
-    if (medium.has(key)) return { marker: "$", label: "Medium cost", className: "bg-[#fff6bf] text-[#6b5200]" };
-    if (low.has(key)) return { marker: "$", label: "Low cost", className: "bg-[#eef7ef] text-[#285f36]" };
-    return { marker: "", label: "", className: "bg-slate-100 text-slate-600" };
-  }
-
-  return (
-    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#17356f] bg-white p-6 shadow-sm">
-      <h2 className="text-2xl font-black text-[#17356f]">Your priority action plan</h2>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        Start at number 1. Work down the list when it suits your home and your budget.
-      </p>
-
-      <div className="mt-5 grid gap-3 md:grid-cols-2 print:grid-cols-2">
-        {actions.map((item, index) => {
-          const level = costLevel(item);
-
-          return (
-            <article
-              key={`compact-priority-${index}-${item.action}`}
-              className={`rounded-2xl border p-4 print:break-inside-avoid ${
-                index < 3 ? "border-[#ffe76a] bg-[#fffdf0]" : "border-[#dbe8f2] bg-[#f7fbff]"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17356f] text-sm font-black text-white">
-                  {index + 1}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    {level.marker && (
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${level.className}`}>
-                        {level.marker} {level.label}
-                      </span>
-                    )}
-                    {item.priority && (
-                      <span className="rounded-full bg-[#ffd600] px-2.5 py-1 text-[11px] font-black text-black">
-                        {item.priority}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="mt-2 text-base font-black leading-5 text-black">
-                    {customerText(item.action, "Recommended action")}
-                  </h3>
-
-                  {item.why_it_matters && (
-                    <p className="mt-2 text-xs leading-5 text-slate-600">
-                      <span className="font-black text-[#17356f]">Why: </span>
-                      {customerText(item.why_it_matters)}
-                    </p>
-                  )}
-
-                  {item.estimated_annual_saving_range && (
-                    <p className="mt-2 text-xs font-bold text-[#17356f]">
-                      Could save each year: {customerText(item.estimated_annual_saving_range)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 function InputCard({
   title,
   colour,
@@ -805,8 +737,15 @@ const solarSuitability = isApartment
     Boolean(aiReport?.medium_cost_improvements?.length) ||
     Boolean(aiReport?.higher_cost_upgrades?.length);
 
+  const electricityEstimate = positiveEstimate(scores.estimatedBillKwh);
+  const applianceEstimate = positiveEstimate(scores.applianceKwh);
+  const heatLossArea = customerText(scores.biggestLossArea, "Not enough information");
+  const insulationOverview = customerText(scores.fabricBand, "Not enough information");
+  const fuelNames = ["Electricity", ...(usesGas ? ["Gas"] : []), ...(usesOil ? ["Oil"] : [])];
+  const firstPriorities = (aiReport?.top_5_priorities ?? []).slice(0, 3).map((item) => customerText(item));
+
   return (
-    <main className="report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
+    <main className="ri-report-page report-page min-h-screen bg-[#f7fbff] px-5 py-6 sm:px-8 lg:px-10">
       <style>{`
         @page {
           margin: 9mm;
@@ -874,169 +813,49 @@ const solarSuitability = isApartment
           <PrintReportButton />
         </div>
 
-        <section className="report-cover overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
-          <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
-            <div className="p-7 sm:p-10">
-              <Image
-                src="/save-your-ego-logo.png"
-                alt="Save Your EGO"
-                width={310}
-                height={120}
-                priority
-                className="h-auto w-64"
-              />
-
-              <p className="mt-8 text-sm font-black uppercase tracking-[0.18em] text-[#17356f]">
-                Covering Electricity, Gas and Oil
-              </p>
-
-              <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-[#050505] sm:text-5xl">
-                Home Energy Report
-              </h1>
-
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                See where your home may be using extra energy. Then see what you can do first.
-              </p>
-
-              <div className="mt-6 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                <div className="rounded-2xl bg-[#f7fbff] p-4">
-                  <p className="font-bold text-slate-500">Assessment date</p>
-                  <p className="mt-1 font-black text-[#17356f]">
-                    {formatDate(assessment.created_at)}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-[#f7fbff] p-4">
-                  <p className="font-bold text-slate-500">Report type</p>
-                  <p className="mt-1 font-black text-[#17356f]">
-                    Personalised home energy assessment
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-[#17356f] via-[#0d4f78] to-black p-7 text-white sm:p-10">
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-[#ffd600]">
-                Energy snapshot
-              </p>
-
-              <div className="mt-5 overflow-hidden rounded-3xl bg-white/95 p-3">
-                <Image
-                  src="/visual-home.svg"
-                  alt="Illustration of a more energy-efficient home"
-                  width={640}
-                  height={420}
-                  className="h-auto w-full"
-                />
-              </div>
-
-              <div className="mt-5 grid gap-4">
-                <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
-                  <p className="text-xs font-bold uppercase text-white/60">
-                    Where heat may escape
-                  </p>
-                  <p className="mt-2 text-2xl font-black">
-                    {displayValue(scores.biggestLossArea)}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-3xl bg-[#ffd600] p-5 text-black">
-                    <p className="text-xs font-black uppercase opacity-70">
-                      Insulation
-                    </p>
-                    <p className="mt-2 text-2xl font-black">
-                      {displayValue(scores.fabricBand)}
-                    </p>
-                  </div>
-
-                  <div className="rounded-3xl bg-[#59b9ec] p-5 text-[#17356f]">
-                    <p className="text-xs font-black uppercase opacity-70">
-                      Appliances
-                    </p>
-                    <p className="mt-2 text-2xl font-black">
-                      {Math.round(Number(scores.applianceKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year
-                    </p>
-                  </div>
-                </div>
-
-                <div className="rounded-3xl bg-white p-5 text-black">
-                  <p className="text-xs font-bold uppercase text-slate-500">
-                    Energy used in this home
-                  </p>
-                  <p className="mt-2 text-xl font-black">
-                    Electricity{usesGas ? ", Gas" : ""}
-                    {usesOil ? ", Oil" : ""}
-                  </p>
-                </div>
-              </div>
-            </div>
+        <nav className="ri-report-nav print:hidden" aria-label="Jump to report sections">
+          <div className="ri-report-nav-inner">
+            <span className="ri-report-nav-label">YOUR REPORT /</span>
+            <a href="#report-overview">Overview</a>
+            <a href="#report-energy">Energy analysis</a>
+            <a href="#report-inputs">Your bills</a>
+            {aiReport && <a href="#report-actions">Recommendations</a>}
+            {aiReport?.priority_action_plan?.length ? <a href="#report-roadmap">Action roadmap</a> : null}
+            {solarSuitability && displayValue(solarSuitability.rating) !== "Not applicable" ? <a href="#report-solar">Solar</a> : null}
           </div>
-        </section>
+        </nav>
 
-        <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
-          <div className="grid gap-5 lg:grid-cols-[1fr_280px] lg:items-center">
-            <div>
-              <h2 className="text-2xl font-black text-[#17356f]">
-                Energy snapshot
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                A quick picture of where your home appears to be using energy and where the strongest opportunities may be.
-              </p>
-            </div>
-            <Image
-              src="/visual-savings.svg"
-              alt="Illustration showing energy savings and lower household bills"
-              width={640}
-              height={420}
-              className="mx-auto h-auto w-full max-w-[260px]"
-            />
-          </div>
+        <ReportIntelligenceCover
+          assessmentDate={formatDate(assessment.created_at)}
+          propertyType={customerText(answers.property_type, "Your home")}
+          fuels={fuelNames}
+          electricityKwh={electricityEstimate}
+          applianceKwh={applianceEstimate}
+          biggestLossArea={heatLossArea}
+          fabricBand={insulationOverview}
+          priorities={firstPriorities}
+        />
 
-          <div className="mt-5 grid gap-4 md:grid-cols-4">
-            <MetricCard
-              label="Yearly electricity use"
-              value={`${Math.round(Number(scores.estimatedBillKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year`}
-              colour="yellow"
-            />
+        <ReportEnergyAnalysis
+          electricityKwh={electricityEstimate}
+          applianceKwh={applianceEstimate}
+          biggestLossArea={heatLossArea}
+          fabricBand={insulationOverview}
+        />
 
-            <MetricCard
-              label="Appliance electricity use"
-              value={`${Math.round(Number(scores.applianceKwh ?? 0)).toLocaleString("en-US")} kilowatt-hours/year`}
-              colour="blue"
-            />
-
-            <MetricCard
-              label="Where heat may escape"
-              value={displayValue(scores.biggestLossArea)}
-              colour="navy"
-            />
-
-            <MetricCard
-              label="How well your home holds heat"
-              value={displayValue(scores.fabricBand)}
-              colour="black"
-            />
-          </div>
-
-          {quickScores && (
+        {quickScores && (
+          <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+            <p className="ri-section-kicker">ASSESSMENT DETAILS</p>
+            <h2 className="text-2xl font-black text-[#17356f]">More about your home</h2>
             <div className="mt-5 grid gap-4 md:grid-cols-3">
               {Object.entries(quickScores).map(([label, score]) => (
-                <div
-                  key={label}
-                  className="rounded-2xl border border-[#dbe8f2] bg-[#f7fbff] p-4"
-                >
-                  <p className="text-sm font-bold text-slate-500">{label}</p>
-                  <p className="mt-2 text-2xl font-black text-[#17356f]">
-                    {String(score)}
-                  </p>
-                </div>
+                <MetricCard key={label} label={label} value={String(score)} colour="white" />
               ))}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
-        <section className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+        <section id="report-inputs" className="report-section mt-6 rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
           <div className="grid gap-4 lg:grid-cols-[1fr_250px] lg:items-center">
             <div>
               <h2 className="text-2xl font-black text-[#17356f]">
