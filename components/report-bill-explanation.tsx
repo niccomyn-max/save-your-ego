@@ -77,7 +77,7 @@ export default function ReportBillExplanation({
           <small>
             {useOverride
               ? "Using the annual electricity spend you entered"
-              : money(averageBill ?? 0, currencySymbol) + " per " + billingFrequency.toLowerCase() + " bill × " + frequency + " bills"}
+              : money(averageBill ?? 0, currencySymbol) + " per bill (" + billingFrequency.toLowerCase() + ") × " + frequency + " bills/year"}
           </small>
         </div>
         <div>
