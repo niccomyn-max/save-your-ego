@@ -3,6 +3,7 @@ import { PrintReportButton } from "@/components/print-report-button";
 import { ReportIntelligenceCover, ReportEnergyAnalysis } from "@/components/report-intelligence-cover";
 import ReportProgressRoadmap, { type RoadmapAction } from "@/components/report-progress-roadmap";
 import ReportTechnicalGraphic from "@/components/report-technical-graphic";
+import ReportBillExplanation from "@/components/report-bill-explanation";
 import "../report/report-intelligence.css";
 import "../report/report-graphics.css";
 import "../report/report-print-refinements.css";
@@ -41,17 +42,17 @@ export default function ReportDesignLabPage() {
         <ReportIntelligenceCover
           assessmentDate="15 Oct 2026"
           propertyType="Detached home (sample)"
-          fuels={["Electricity", "Gas"]}
-          electricityKwh={3720}
-          applianceKwh={1380}
+          fuels={["Electricity"]}
+          electricityKwh={10333.333333333334}
+          applianceKwh={null}
           biggestLossArea="Roof insulation (sample)"
           fabricBand="Medium (sample)"
           priorities={sampleActions.slice(0,3).map((item)=>item.action||"")}
         />
 
         <ReportEnergyAnalysis
-          electricityKwh={3720}
-          applianceKwh={1380}
+          electricityKwh={10333.333333333334}
+          applianceKwh={null}
           biggestLossArea="Roof insulation (sample)"
           fabricBand="Medium (sample)"
         />
@@ -65,6 +66,7 @@ export default function ReportDesignLabPage() {
             </div>
             <div className="ri-graphic-aside"><ReportTechnicalGraphic kind="bills" /></div>
           </div>
+          <ReportBillExplanation currencySymbol="$" averageBill={180} billingFrequency="Monthly" annualSpendOverride={null} fixedChargePerBill={25} unitRate={0.18} estimatedYearlyKwh={10333.333333333334}/>
         </section>
 
         <section className="report-section mt-6 rounded-3xl border border-[#DCEAF5] bg-white p-6 shadow-sm">
