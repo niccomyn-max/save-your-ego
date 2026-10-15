@@ -419,7 +419,7 @@ function ActionPlanSection({
 
   return (
     <section
-      className={`report-section rounded-3xl border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
+      className={`ri-action-group report-section rounded-3xl border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-6 shadow-sm print:break-inside-avoid`}
     >
       <h2 className="text-2xl font-black text-[#17356f]">{title}</h2>
 
@@ -576,7 +576,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
   const cautions = Array.isArray(solar.cautions) ? solar.cautions : [];
 
   return (
-    <section className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#ffd600] bg-white p-6 shadow-sm print:break-inside-avoid">
+    <section id="report-solar" className="report-section rounded-3xl border border-[#dbe8f2] border-t-8 border-t-[#ffd600] bg-white p-6 shadow-sm print:break-inside-avoid">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-[#6b5200]">
@@ -589,13 +589,7 @@ function SolarPVSection({ solar }: { solar?: JsonRecord | null }) {
                 Is solar worth looking at?
               </h2>
             </div>
-            <Image
-              src="/visual-solar.svg"
-              alt="Illustration of rooftop solar panels and a home battery"
-              width={640}
-              height={420}
-              className="mx-auto h-auto w-full max-w-[220px]"
-            />
+            <div className="ri-graphic-aside ri-print-decor"><ReportTechnicalGraphic kind="solar" /></div>
           </div>
 
           <div className="mt-3 max-w-3xl">
@@ -865,13 +859,7 @@ const solarSuitability = isApartment
                 The figures you entered give the report its starting point.
               </p>
             </div>
-            <Image
-              src="/visual-bills.svg"
-              alt="Illustration of household energy bills for electricity, gas and oil"
-              width={640}
-              height={420}
-              className="mx-auto h-auto w-full max-w-[230px]"
-            />
+            <div className="ri-graphic-aside ri-print-decor"><ReportTechnicalGraphic kind="bills" /></div>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
@@ -918,7 +906,7 @@ const solarSuitability = isApartment
         </section>
 
         {aiReport ? (
-          <div className="mt-6 space-y-5">
+          <div id="report-actions" className="mt-6 space-y-5">
             {aiReport.bottom_line && (
               <section className="report-section rounded-3xl border border-[#dbe8f2] bg-[#fff6bf] p-6 shadow-sm print:break-inside-avoid">
                 <h2 className="text-2xl font-black text-black">
@@ -980,13 +968,11 @@ const solarSuitability = isApartment
                     We have split the ideas into low, medium and higher-cost options so you can see what is realistic now and what may be worth planning for later.
                   </p>
                 </div>
-                <Image
-                  src="/visual-action-levels.svg"
-                  alt="Illustration showing low, medium and higher-cost home energy improvements"
-                  width={760}
-                  height={430}
-                  className="h-auto w-full rounded-2xl"
-                />
+                <div className="ri-upgrade-spectrum">
+                    <div className="ri-upgrade-tier"><span>01</span><div><strong>Low-cost quick wins</strong><small>Start with practical changes.</small></div></div>
+                    <div className="ri-upgrade-tier"><span>02</span><div><strong>Medium-cost improvements</strong><small>Consider what suits your home.</small></div></div>
+                    <div className="ri-upgrade-tier"><span>03</span><div><strong>Higher-cost upgrades</strong><small>Investigate bigger investments first.</small></div></div>
+                  </div>
               </div>
             </section>
 
@@ -1017,41 +1003,23 @@ const solarSuitability = isApartment
             />
 
 
-            <section className="report-section overflow-hidden rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
-              <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
-                    Ranked for this home
-                  </p>
-                  <h2 className="mt-1 text-2xl font-black text-[#17356f]">
-                    Your 14 actions, in the order we would tackle them
-                  </h2>
-                  <p className="mt-3 text-sm leading-7 text-slate-700">
-                    The first win matters. It builds momentum. We rank all 14 actions by what may help your home most.
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
-                    <span className="rounded-full bg-[#fff6bf] px-3 py-2 text-[#6b5200]">Savings</span>
-                    <span className="rounded-full bg-[#e9f6fe] px-3 py-2 text-[#17356f]">Cost</span>
-                    <span className="rounded-full bg-slate-100 px-3 py-2 text-black">Ease</span>
-                    <span className="rounded-full bg-[#eef7ef] px-3 py-2 text-[#285f36]">Comfort</span>
-                  </div>
-                </div>
-
-                <Image
-                  src="/priority-roadmap.svg"
-                  alt="A visual roadmap showing the Save Your EGO actions ranked from the best place to start through all fourteen priorities"
-                  width={900}
-                  height={440}
-                  className="h-auto w-full rounded-2xl"
-                />
+            <section className="report-section overflow-hidden rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm">
+              <p className="ri-section-kicker">YOUR PLAN</p>
+              <h2 className="text-2xl font-black text-[#17356f]">From first win to lasting improvements</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-700">You have seen the options. Here is the order we suggest tackling them. Progress is easier when you focus on one useful change at a time.</p>
+              <div className="ri-roadmap-preview mt-5">
+                <div><b>01</b><span>Understand the opportunity</span></div>
+                <div><b>02</b><span>Choose a practical next step</span></div>
+                <div><b>03</b><span>Track what you have completed</span></div>
               </div>
             </section>
 
-            <CompactPriorityPlan
-              actions={aiReport.priority_action_plan}
-              lowCostActions={aiReport.low_cost_quick_wins}
-              mediumCostActions={aiReport.medium_cost_improvements}
-              higherCostActions={aiReport.higher_cost_upgrades}
+            <ReportProgressRoadmap
+              reportId={assessment.id}
+              actions={(aiReport.priority_action_plan ?? []).map(prepareRoadmapAction)}
+              lowCostActions={(aiReport.low_cost_quick_wins ?? []).map(prepareRoadmapAction)}
+              mediumCostActions={(aiReport.medium_cost_improvements ?? []).map(prepareRoadmapAction)}
+              higherCostActions={(aiReport.higher_cost_upgrades ?? []).map(prepareRoadmapAction)}
             />
 
             <SolarPVSection solar={solarSuitability} />
@@ -1092,13 +1060,7 @@ const solarSuitability = isApartment
 
                 <section className="report-section rounded-3xl border border-[#dbe8f2] bg-white p-6 shadow-sm print:break-inside-avoid">
                   <div className="grid gap-5 lg:grid-cols-[240px_1fr] lg:items-center">
-                    <Image
-                      src="/visual-appliances.svg"
-                      alt="Illustration of common household appliances and energy use"
-                      width={640}
-                      height={420}
-                      className="mx-auto h-auto w-full max-w-[240px]"
-                    />
+                    <div className="ri-graphic-aside ri-print-decor"><ReportTechnicalGraphic kind="appliances" /></div>
                     <div>
                       <p className="text-xs font-black uppercase tracking-[0.18em] text-[#17356f]/60">
                         Everyday energy
