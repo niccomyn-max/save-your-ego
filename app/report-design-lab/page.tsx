@@ -5,6 +5,7 @@ import ReportProgressRoadmap, { type RoadmapAction } from "@/components/report-p
 import ReportTechnicalGraphic from "@/components/report-technical-graphic";
 import "../report/report-intelligence.css";
 import "../report/report-graphics.css";
+import "../report/report-print-refinements.css";
 
 const sampleActions: RoadmapAction[] = [
   { action: "Check whether your electricity plan still suits how you use energy", why_it_matters: "A better matched plan could reduce what you pay without changing appliances.", effort_level: "Easy", estimated_annual_saving_range: "Depends on current plan", suggested_next_step: "Compare recent bills and plans from available providers." },
