@@ -869,35 +869,28 @@ const solarSuitability = isApartment
             <div className="ri-graphic-aside ri-print-decor"><ReportTechnicalGraphic kind="bills" /></div>
           </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <div className={`mt-5 grid gap-4 ${usesGas && usesOil ? "md:grid-cols-3" : usesGas || usesOil ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
             <InputCard title="Electricity" colour="yellow">
-              <p>
-                Average bill:{" "}
-                {displayValue(answers.avg_electricity_bill, "0")}
-              </p>
-              <p>Price per kilowatt-hour: {displayValue(answers.unit_rate)}</p>
-              <p>
-                Yearly spend:{" "}
-                {answers.annual_bill_override
-                  ? displayValue(answers.annual_bill_override)
-                  : "Estimated from bill"}
-              </p>
+              <p>Average bill: {currencySymbol}{displayValue(answers.avg_electricity_bill, "0")} ({String(answers.bill_frequency ?? "billing period not specified")})</p>
+              <p>Price per kilowatt-hour: {currencySymbol}{displayValue(answers.unit_rate, "Not specified")}</p>
+              <p>Fixed charge per bill: {currencySymbol}{displayValue(answers.standing_charge, "0")}</p>
+              <p>Estimated yearly spend: {annualElectricitySpend !== null ? reportMoney(annualElectricitySpend, currencySymbol) : "Not available"}</p>
             </InputCard>
 
-            <InputCard title="Gas" colour="blue">
-              <p>Used in home: {usesGas ? "Yes" : "No"}</p>
+            {usesGas && <InputCard title="Gas" colour="blue">
+              <p>Used in home: Yes</p>
               {usesGas && (
                 <>
                   <p>
-                    Average bill: {displayValue(answers.avg_gas_bill, "0")}
+                    Average bill: {currencySymbol}{displayValue(answers.avg_gas_bill, "0")} ({String(answers.gas_bill_frequency ?? "billing period not specified")})
                   </p>
                   <p>Boiler age: {displayValue(answers.gas_boiler_age)}</p>
                 </>
               )}
-            </InputCard>
+            </InputCard>}
 
-            <InputCard title="Oil" colour="black">
-              <p>Used in home: {usesOil ? "Yes" : "No"}</p>
+            {usesOil && <InputCard title="Oil" colour="black">
+              <p>Used in home: Yes</p>
               {usesOil && (
                 <>
                   <p>
@@ -908,8 +901,18 @@ const solarSuitability = isApartment
                   <p>Boiler age: {displayValue(answers.oil_boiler_age)}</p>
                 </>
               )}
-            </InputCard>
+            </InputCard>}
           </div>
+
+          <ReportBillExplanation
+            currencySymbol={currencySymbol}
+            averageBill={positiveEstimate(answers.avg_electricity_bill)}
+            billingFrequency={String(answers.bill_frequency ?? "")}
+            annualSpendOverride={positiveEstimate(answers.annual_bill_override)}
+            fixedChargePerBill={positiveEstimate(answers.standing_charge)}
+            unitRate={positiveEstimate(answers.unit_rate)}
+            estimatedYearlyKwh={electricityEstimate}
+          />
         </section>
 
         {aiReport ? (
