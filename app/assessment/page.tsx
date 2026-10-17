@@ -406,6 +406,7 @@ export default function AssessmentPage() {
   const [answers, setAnswers] =
     useState<EnergyAssessmentAnswers>(defaultAnswers);
   const [saving, setSaving] = useState(false);
+  const [reportStage, setReportStage] = useState<"generating" | "saving" | "opening">("generating");
   const [errorMessage, setErrorMessage] = useState("");
 
   const [generatingAi, setGeneratingAi] = useState(false);
@@ -757,9 +758,11 @@ export default function AssessmentPage() {
       return;
     }
 
+    setReportStage("generating");
     setSaving(true);
     setErrorMessage("");
 
+    let navigationStarted = false;
     try {
       let reportTextToSave = aiReportText;
 
@@ -773,6 +776,8 @@ export default function AssessmentPage() {
 
         reportTextToSave = generated.reportText;
       }
+
+      setReportStage("saving");
 
       const {
         data: { user },
@@ -816,8 +821,8 @@ export default function AssessmentPage() {
       const reportPath = `/report/${savedAssessment.id}`;
 
       resetAssessmentDraft();
-      setSaving(false);
-
+      setReportStage("opening");
+      navigationStarted = true;
       router.push(reportPath);
       router.refresh();
     } catch {
@@ -825,7 +830,9 @@ export default function AssessmentPage() {
         "Something went wrong on our end. Try again in a moment."
       );
     } finally {
-      setSaving(false);
+      if (!navigationStarted) {
+        setSaving(false);
+      }
     }
   }
 
@@ -893,6 +900,55 @@ export default function AssessmentPage() {
 
   return (
     <main className="sy-assessment-page min-h-screen bg-[#f7fbff] px-5 py-6 text-[#050505] sm:px-8 lg:px-10">
+      {saving && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a1e41]/75 px-4 py-8 backdrop-blur-md"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div className="relative w-full max-w-md overflow-hidden rounded-[2rem] border border-white/40 bg-white p-7 text-center shadow-2xl sm:p-9">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#53afe8]/20 blur-3xl"
+            />
+            <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 animate-spin rounded-full border-[5px] border-[#dbe8f2] border-t-[#17356f] motion-reduce:animate-none"
+              />
+              <FileText aria-hidden="true" className="h-9 w-9 text-[#17356f]" />
+            </div>
+
+            <p className="relative mt-7 text-xs font-black uppercase tracking-[0.19em] text-[#17356f]">
+              Save Your EGO
+            </p>
+            <h2 className="relative mt-3 text-2xl font-black text-slate-950">
+              {reportStage === "opening"
+                ? "Your report is ready"
+                : reportStage === "saving"
+                  ? "Almost there..."
+                  : "Creating your report..."}
+            </h2>
+            <p className="relative mt-3 text-sm leading-6 text-slate-600">
+              {reportStage === "opening"
+                ? "Opening your personalised home energy report now."
+                : reportStage === "saving"
+                  ? "We’ve reviewed your answers and are saving your personalised plan."
+                  : "We’re reviewing your home, bills and appliances to find practical ways to save energy."}
+            </p>
+
+            <div aria-hidden="true" className="relative mt-6 flex items-center justify-center gap-2">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#17356f] motion-reduce:animate-none" />
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#53afe8] motion-reduce:animate-none" />
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#ffd600] motion-reduce:animate-none" />
+            </div>
+            <p className="relative mt-6 rounded-xl bg-[#f4f9ff] px-4 py-3 text-xs font-semibold leading-5 text-slate-600">
+              This may take a minute. Please keep this page open.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="mx-auto max-w-6xl">
         <section className="sy-assessment-hero overflow-hidden rounded-[2rem] border border-[#dbe8f2] bg-white shadow-xl shadow-[#17356f]/10">
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
