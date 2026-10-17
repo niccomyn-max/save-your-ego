@@ -20,10 +20,6 @@ export function AccountBar({ email, compact = false }: AccountBarProps) {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const cancelSubscriptionHref = `mailto:support@saveyourego.com?subject=Cancel%20my%20Save%20Your%20EGO%20subscription&body=Hi%20Save%20Your%20EGO%20team%2C%0A%0APlease%20cancel%20my%20subscription.%0A%0AAccount%20email%3A%20${encodeURIComponent(
-    email
-  )}%0A%0AI%20understand%20I%20need%20to%20request%20this%20before%20my%20next%20billing%20date.%0A%0AThanks`;
-
   async function handleSignOut() {
     setIsSigningOut(true);
     setMessage("");
@@ -156,16 +152,11 @@ export function AccountBar({ email, compact = false }: AccountBarProps) {
             )}
 
             <a
-              href={cancelSubscriptionHref}
+              href="https://www.saveyourego.com/cancel-subscription"
               className="block rounded-full border border-[#17356f] bg-white px-4 py-3 text-center text-sm font-black text-[#17356f] transition hover:bg-[#f5f8ff]"
             >
-              Cancel subscription request
+              Cancel subscription
             </a>
-
-            <p className="rounded-2xl bg-[#fff6bf] p-3 text-xs font-semibold leading-5 text-slate-700">
-              To cancel, email support@saveyourego.com before your next billing
-              date. Cancellation requests will be dealt with within 24 hours.
-            </p>
 
             <button
               type="button"
