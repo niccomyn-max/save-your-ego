@@ -153,7 +153,6 @@ export const APPLIANCE_LIBRARY: Record<string, string[]> = {
     "Portable electric heater",
     "Heated towel rail",
     "Dehumidifier",
-    "Air conditioning",
     "Sauna",
   ],
   "Entertainment and office": [
@@ -252,6 +251,10 @@ export const APPLIANCE_PROFILES: Record<
   Dehumidifier: {
     kwh_year: { Low: 100, Medium: 260, High: 520 },
     notes: "Useful, but can add up.",
+  },
+  "Air conditioning": {
+    kwh_year: { Low: 600, Medium: 1800, High: 3600 },
+    notes: "A major seasonal electricity load, especially in hot US climates. Actual usage depends on climate, home size, system efficiency and thermostat settings.",
   },
   "Main TV": {
     kwh_year: { Low: 60, Medium: 120, High: 220 },
