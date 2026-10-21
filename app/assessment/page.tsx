@@ -190,7 +190,7 @@ function SectionShell({
   return (
     <section
       id={id}
-      className={`sy-assessment-section scroll-mt-28 rounded-[1.75rem] border border-[#dbe8f2] border-t-8 ${accentClass} bg-white p-5 shadow-sm sm:p-6`}
+      className={`sy-assessment-section relative isolate scroll-mt-28 rounded-[1.75rem] border border-[#c4dbee] border-t-8 ${accentClass} bg-white p-5 shadow-md shadow-[#17356f]/10 sm:p-6`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
@@ -1059,7 +1059,7 @@ export default function AssessmentPage() {
 
         <nav
           aria-label="Assessment sections"
-          className="sy-assessment-sticky sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#dbe8f2] bg-white/95 p-2 shadow-lg shadow-[#17356f]/10 backdrop-blur"
+          className="sy-assessment-sticky sticky top-3 z-20 mt-5 overflow-x-auto rounded-2xl border border-[#c4dbee] bg-white p-2 shadow-lg shadow-[#17356f]/10"
         >
           <div className="flex min-w-max gap-2">
             {assessmentSections.map((section, index) => {
@@ -1605,6 +1605,28 @@ export default function AssessmentPage() {
             icon={<PlugZap className="h-8 w-8" aria-hidden="true" />}
             visual="/visual-appliances.svg"
           >
+            <div className="mb-6 rounded-2xl border-2 border-[#59b9ec] bg-[#e9f6fe] p-5 shadow-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-lg font-black text-[#17356f]">Air conditioning and home cooling</h3>
+                <span className="rounded-full bg-[#17356f] px-3 py-1 text-xs font-black text-white">High-impact energy use</span>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                Cooling can be one of the biggest electricity costs in US homes, especially during hot summers. Include central AC, mini-splits or window units when you select air conditioning below.
+              </p>
+              <label className="mt-4 flex items-center gap-3 rounded-xl border border-[#b5d8f2] bg-white px-4 py-3 font-bold text-[#17356f]">
+                <input
+                  type="checkbox"
+                  checked={answers.appliances.some((item) => item.appliance === "Air conditioning")}
+                  onChange={() => toggleAppliance("Hot water, heating and cooling", "Air conditioning")}
+                  className="h-5 w-5 accent-[#17356f]"
+                />
+                My home uses air conditioning
+              </label>
+              <p className="mt-2 text-xs leading-5 text-slate-600">
+                If selected, set the age, frequency of use and number of systems in the selected appliances section below. These provide an indicative estimate, not a metered AC reading.
+              </p>
+            </div>
+
             <div className="grid gap-5 md:grid-cols-2">
               {Object.entries(APPLIANCE_LIBRARY).map(
                 ([category, appliances]) => (
