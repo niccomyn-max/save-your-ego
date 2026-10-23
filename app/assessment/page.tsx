@@ -271,17 +271,28 @@ function NumberField({
   step?: number;
   onChange: (value: number) => void;
 }) {
+  // Keep the in-progress text separate from the numeric assessment value.
+  // Clearing a field with Backspace must not immediately turn it into zero.
+  const [draft, setDraft] = useState<string | null>(null);
+
   return (
     <label className="grid gap-2 text-sm font-bold text-slate-700">
       {label}
       <input
         type="number"
-        value={value}
+        value={draft ?? value}
         min={min}
         max={max}
         step={step}
         onFocus={(event) => event.target.select()}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onBlur={() => setDraft(null)}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          if (next.trim() !== "" && Number.isFinite(Number(next))) {
+            onChange(Number(next));
+          }
+        }}
         className="rounded-xl border border-[#dbe8f2] bg-white px-3 py-3 font-normal text-slate-900 shadow-sm outline-none transition focus:border-[#59b9ec] focus:ring-2 focus:ring-[#59b9ec]/20"
       />
     </label>
